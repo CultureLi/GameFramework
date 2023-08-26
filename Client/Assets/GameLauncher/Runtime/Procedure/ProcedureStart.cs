@@ -1,6 +1,6 @@
-﻿using GameEngine.Runtime.Procedure;
-using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Procedure.IProcedureManager>;
-namespace GameLauncher.Runtime.Procedure
+﻿using GameEngine.Runtime.Base.Procedure;
+using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
+namespace GameLauncher.Runtime.Base.Procedure
 {
     public class ProcedureStart : ProcedureBase
     {

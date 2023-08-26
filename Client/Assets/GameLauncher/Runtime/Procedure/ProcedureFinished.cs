@@ -1,12 +1,12 @@
-﻿using GameEngine.Runtime.Procedure;
-using GameEngine.Runtime.Utilitys;
+﻿using GameEngine.Runtime.Base.Procedure;
+using GameEngine.Runtime.Base.Utilitys;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Procedure.IProcedureManager>;
-namespace GameLauncher.Runtime.Procedure
+using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
+namespace GameLauncher.Runtime.Base.Procedure
 {
     public class ProcedureFinished : ProcedureBase
     {

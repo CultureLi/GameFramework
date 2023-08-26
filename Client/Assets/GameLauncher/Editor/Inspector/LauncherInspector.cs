@@ -1,5 +1,7 @@
 ﻿using GameEngine.Editor.Inspector;
-using GameEngine.Runtime.Procedure;
+using GameEngine.Editor.Misc;
+using GameEngine.Runtime.Base.Procedure;
+using GameLauncher.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -7,7 +9,7 @@ using UnityEngine;
 
 namespace GameLauncher.Editor
 {
-    [CustomEditor(typeof(GameLauncher.Runtime.Launcher))]
+    [CustomEditor(typeof(Launcher))]
     internal sealed class LauncherInspector : InspectorBase
     {
         private SerializedProperty m_AvailableProcedureTypeNames = null;
@@ -23,7 +25,7 @@ namespace GameLauncher.Editor
 
             serializedObject.Update();
 
-            GameLauncher.Runtime.Launcher t = (GameLauncher.Runtime.Launcher)target;
+            Launcher t = (Launcher)target;
 
             if (string.IsNullOrEmpty(m_EntranceProcedureTypeName.stringValue))
             {
@@ -106,7 +108,7 @@ namespace GameLauncher.Editor
 
         private void RefreshTypeNames()
         {
-            m_ProcedureTypeNames = Type.GetTypeNames(typeof(ProcedureBase));
+            m_ProcedureTypeNames = TypeUtility.GetTypeNames(typeof(ProcedureBase));
             ReadAvailableProcedureTypeNames();
             int oldCount = m_CurrentAvailableProcedureTypeNames.Count;
             m_CurrentAvailableProcedureTypeNames = m_CurrentAvailableProcedureTypeNames.Where(x => m_ProcedureTypeNames.Contains(x)).ToList();

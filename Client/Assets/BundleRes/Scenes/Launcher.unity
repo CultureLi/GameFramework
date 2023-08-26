@@ -253,11 +253,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_AvailableProcedureTypeNames:
-  - GameLauncher.Runtime.Procedure.ProcedureCheckVersion
-  - GameLauncher.Runtime.Procedure.ProcedureFinished
-  - GameLauncher.Runtime.Procedure.ProcedureHotUpdate
-  - GameLauncher.Runtime.Procedure.ProcedureStart
-  m_EntranceProcedureTypeName: GameLauncher.Runtime.Procedure.ProcedureStart
+  - GameLauncher.Runtime.Base.Procedure.ProcedureCheckVersion
+  - GameLauncher.Runtime.Base.Procedure.ProcedureFinished
+  - GameLauncher.Runtime.Base.Procedure.ProcedureHotUpdate
+  - GameLauncher.Runtime.Base.Procedure.ProcedureStart
+  m_EntranceProcedureTypeName: GameLauncher.Runtime.Base.Procedure.ProcedureStart
 --- !u!114 &414990413
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,4 +1,4 @@
-﻿using GameEngine.Runtime.Pool.ReferencePool;
+﻿using GameEngine.Runtime.Base.ReferencePool;
 using System;
 
 namespace GameEngine.Runtime.Base.Variable
