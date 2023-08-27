@@ -28,7 +28,7 @@ namespace GameMain.Runtime.Entrance
             //UnityEngine.Debug.LogFormat("item[1].name:{0}", tables.TbItem[10000].Name);
             //Debug.LogFormat("bag init capacity:{0}", tables.TbItem);
 
-            UnityEngine.Debug.Log("== load succ==ddddddddddd");
+            UnityEngine.Debug.Log("== load succ==Hello world !!!!");
 
             /*GameModule.EventModule.BroadCastAsync<LogEvent>(e =>
             {

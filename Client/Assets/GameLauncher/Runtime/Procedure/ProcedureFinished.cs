@@ -18,17 +18,7 @@ namespace GameLauncher.Runtime.Base.Procedure
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
-            //var entry = Utility.Assembly.GetType("GameMain.Runtime.Entrance.GameEntry");
-            //if (entry == null)
-            //    throw new Exception("GameEntry Not Found!!!");
-#if !UNITY_EDITOR
-            Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.dll.bytes"));
-
-            Assembly gameMain = Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameMain.Runtime.dll.bytes"));
-#else
             Assembly gameMain = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain.Runtime");
-
-#endif
             Type entry = gameMain.GetType("GameMain.Runtime.Entrance.GameEntry");
             entry.GetMethod("Entry").Invoke(null,null);
         }

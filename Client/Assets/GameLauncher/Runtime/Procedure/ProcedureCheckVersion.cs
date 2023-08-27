@@ -27,7 +27,7 @@ namespace GameLauncher.Runtime.Base.Procedure
             }
             else
             {
-                ChangeState<ProcedureFinished>(procedureOwner);
+                ChangeState<ProcedureLoadDll>(procedureOwner);
             }
         }
 
