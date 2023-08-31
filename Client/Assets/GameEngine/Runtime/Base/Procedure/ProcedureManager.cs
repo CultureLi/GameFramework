@@ -8,7 +8,6 @@ namespace GameEngine.Runtime.Base.Procedure
     /// </summary>
     public sealed class ProcedureManager : IProcedureManager
     {
-        private IFsmManager m_FsmManager;
         private IFsm<IProcedureManager> m_ProcedureFsm;
 
         /// <summary>
@@ -16,7 +15,6 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         public ProcedureManager()
         {
-            m_FsmManager = null;
             m_ProcedureFsm = null;
         }
 
@@ -71,6 +69,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
+            m_ProcedureFsm.OnUpdate(elapseSeconds,realElapseSeconds);
         }
 
         /// <summary>
@@ -78,32 +77,17 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         public void Release()
         {
-            if (m_FsmManager != null)
-            {
-                if (m_ProcedureFsm != null)
-                {
-                    m_FsmManager.DestroyFsm(m_ProcedureFsm);
-                    m_ProcedureFsm = null;
-                }
-
-                m_FsmManager = null;
-            }
+            m_ProcedureFsm.Release();
+            m_ProcedureFsm = null;
         }
 
         /// <summary>
         /// 初始化流程管理器。
         /// </summary>
-        /// <param name="fsmManager">有限状态机管理器。</param>
         /// <param name="procedures">流程管理器包含的流程。</param>
-        public void Initialize(IFsmManager fsmManager, params ProcedureBase[] procedures)
+        public void Initialize( params ProcedureBase[] procedures)
         {
-            if (fsmManager == null)
-            {
-                throw new Exception("FSM manager is invalid.");
-            }
-
-            m_FsmManager = fsmManager;
-            m_ProcedureFsm = m_FsmManager.CreateFsm(this, procedures);
+            m_ProcedureFsm = Fsm<IProcedureManager>.CreateFsm("procedure",this, procedures);
         }
 
         /// <summary>

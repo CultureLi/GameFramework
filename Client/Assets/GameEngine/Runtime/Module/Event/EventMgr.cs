@@ -5,20 +5,21 @@ using GameEngine.Runtime.Base.ReferencePool;
 
 namespace GameEngine.Runtime.Module.Event
 {
-    public class EventModule:ModuleBase
+    public class EventMgr
     {
-        public override int Priority => 0;
-
-        private EventMgr eventMgr;
+        // 事件类型和处理函数
+        private Dictionary<Type, IEventHandlers> m_EventHandlers = new();
+        //事件队列
+        private Queue<EventBase> m_EventQueue = new();
 
         public EventModule()
         {
-            eventMgr = new EventMgr();
         }
 
         public void Init(object[] args)
         {
-            eventMgr.Init();
+            m_EventHandlers.Clear();
+            m_EventQueue.Clear();
         }
 
         /// <summary>
@@ -28,7 +29,11 @@ namespace GameEngine.Runtime.Module.Event
         /// <param name="handler"></param>
         public void AddListener<T>(Action<T> handler) where T : EventBase, IReference, new()
         {
-            eventMgr.AddListener(handler);
+            var handlers = GetHandlers<T>();
+            if (handlers == null)
+                handlers = CreateHandlers<T>();
+
+            handlers.AddListener(handler);
         }
 
         /// <summary>
@@ -37,8 +42,8 @@ namespace GameEngine.Runtime.Module.Event
         /// <typeparam name="T"></typeparam>
         /// <param name="handler"></param>
         public void RemoveListener<T>(Action<T> handler) where T : EventBase, IReference, new()
-        {           
-            eventMgr.RemoveListener(handler);
+        {
+            GetHandlers<T>()?.RemoveListener(handler);
         }
 
         /// <summary>
@@ -48,17 +53,22 @@ namespace GameEngine.Runtime.Module.Event
         /// <param name="e"></param>
         public void BroadCast<T>(T e) where T : EventBase, IReference, new()
         {
-            eventMgr.BroadCast(e);
+            GetHandlers<T>()?.BroadCast(e);
+            e.Release();
         }
 
         public void BroadCast<T>(Action<T> initFun) where T : EventBase, IReference, new()
         {
-            eventMgr.BroadCast(initFun);
+            var e = EventBase.Acquire<T>();
+            initFun?.Invoke(e);
+            BroadCast(e);
+            e.Release();
         }
 
         private void BroadCast(Type type, EventBase e)
         {
-            eventMgr.BroadCast(type, e);
+            GetHanlders(type)?.BroadCast(e);
+            e.Release();
         }
 
         /// <summary>
@@ -68,22 +78,52 @@ namespace GameEngine.Runtime.Module.Event
         /// <param name="e"></param>
         public void BroadCastAsync<T>(T e) where T : EventBase, IReference, new()
         {
-            eventMgr.BroadCastAsync(e);
+            m_EventQueue.Enqueue(e);
         }
 
         public void BroadCastAsync<T>(Action<T> initFun) where T : EventBase, IReference, new()
         {
-            eventMgr.BroadCastAsync(initFun);
+            var e = EventBase.Acquire<T>();
+            initFun?.Invoke(e);
+            m_EventQueue.Enqueue(e);
         }
-       
+
+        private EventHandlers<T> CreateHandlers<T>() where T : EventBase, IReference, new()
+        {
+            var type = typeof(T);
+            if (!m_EventHandlers.TryGetValue(type, out var handlers))
+            {
+                handlers = new EventHandlers<T>();
+                m_EventHandlers[type] = handlers;
+            }
+            return (EventHandlers<T>)handlers;
+        }
+
+        private EventHandlers<T> GetHandlers<T>() where T : EventBase, IReference, new()
+        {
+            var type = typeof(T);
+            m_EventHandlers.TryGetValue(type, out var handlers);
+            return (EventHandlers<T>)handlers;
+        }
+
+        private IEventHandlers GetHanlders(Type type)
+        {
+            m_EventHandlers.TryGetValue(type, out var handlers);
+            return handlers;
+        }
+
         public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            eventMgr.OnUpdate(elapseSeconds, realElapseSeconds);
+            while (m_EventQueue.Count > 0)
+            {
+                var e = m_EventQueue.Dequeue();
+                BroadCast(e.GetType(), e);
+            }
         }
 
         public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            
+
         }
 
         public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)
@@ -92,7 +132,8 @@ namespace GameEngine.Runtime.Module.Event
 
         public override void Release()
         {
-            eventMgr.Release();
+            m_EventHandlers.Clear();
+            m_EventQueue.Clear();
         }
     }
 }

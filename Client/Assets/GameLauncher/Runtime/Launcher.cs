@@ -16,7 +16,6 @@ namespace GameLauncher.Runtime
 
 
         ProcedureManager m_ProcedureMgr = new();
-        FsmManager m_FsmManager = new();
         ProcedureBase m_EntranceProcedure = null;
         public ProcedureBase CurrentProcedure
         {
@@ -26,7 +25,7 @@ namespace GameLauncher.Runtime
 
         void Awake()
         {
-            ///创建所有Procedure
+            ///锟斤拷锟斤拷锟斤拷锟斤拷Procedure
             List<ProcedureBase> procedureList = new();
 
             foreach (var procedureName in m_AvailableProcedureTypeNames)
@@ -55,13 +54,12 @@ namespace GameLauncher.Runtime
             {
                 throw new Exception($"entranceProcedure {m_EntranceProcedureTypeName} not exist !!");
             }
-            m_ProcedureMgr.Initialize(m_FsmManager, procedureList.ToArray());
+            m_ProcedureMgr.Initialize(procedureList.ToArray());
         }
 
 
         void Start()
         {
-            //开始入口Procedure
             m_ProcedureMgr.StartProcedure(m_EntranceProcedure.GetType());
         }
 
@@ -69,13 +67,11 @@ namespace GameLauncher.Runtime
         void Update()
         {
             m_ProcedureMgr.Update(Time.deltaTime, Time.realtimeSinceStartup);
-            m_FsmManager.Update(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         void OnDestroy()
         {
             m_ProcedureMgr.Release();
-            m_FsmManager.Release();
         }
     }
 

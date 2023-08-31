@@ -7,24 +7,7 @@ namespace GameEngine.Runtime.Module.Timer
     public class TimerModule:ModuleBase
     {
         public override int Priority => 0;
-        private long m_TimeElapsed;
-        private int m_TimerUid;
-        private Dictionary<int, TimerInfo> m_TimerDict = new();
-        private SortedDictionary<long, List<int>> m_SortedIdDict = new();
-        private HashSet<int> m_RemoveTimerIdSet = new();
-
-
-        private bool m_IsPause = false;
-        public TimerModule()
-        {
-            m_TimerUid = 0;
-        }
-
-        private int GenTimerUid()
-        {
-            return ++m_TimerUid;
-        }
-
+        private TimerMgr timerMgr = new();
         /// <summary>
         /// 创建timer
         /// </summary>
@@ -35,13 +18,7 @@ namespace GameEngine.Runtime.Module.Timer
         /// <returns></returns>
         public int CreateTimer(int interval, Action<object> completedCb, int repeatCnt = 1, object userData = null)
         {
-            var timer = TimerInfo.Acquire();
-            var id = GenTimerUid();
-            timer.Init(id, interval, completedCb, repeatCnt, userData);
-
-            InternalAddTimer(timer);
-
-            return id;
+            return timerMgr.CreateTimer(interval, repeatCnt, userData);
         }
 
         /// <summary>
@@ -50,32 +27,7 @@ namespace GameEngine.Runtime.Module.Timer
         /// <param name="timerId"></param>
         public void DeleteTimer(int timerId)
         {
-            m_RemoveTimerIdSet.Add(timerId);
-        }
-
-        private void InternalAddTimer(TimerInfo timer)
-        {
-            m_TimerDict[timer.Id] = timer;
-            var completeTime = m_TimeElapsed + timer.Interval;
-            if (!m_SortedIdDict.TryGetValue(completeTime, out var lst))
-            {
-                lst = new List<int>();
-                m_SortedIdDict[completeTime] = lst;
-            }
-            lst.Add(timer.Id);
-        }
-
-        private void InternalDeleteTimer()
-        {
-            foreach (var timerId in m_RemoveTimerIdSet)
-            {
-                if(m_TimerDict.TryGetValue(timerId,out var timer))
-                {
-                    timer.Release();
-                    m_TimerDict.Remove(timerId);
-                }				
-            }
-            m_RemoveTimerIdSet.Clear();
+            timerMgr.DeleteTimer(timerId);
         }
 
         /// <summary>
@@ -83,7 +35,7 @@ namespace GameEngine.Runtime.Module.Timer
         /// </summary>
         public void Pause()
         {
-            m_IsPause = true;
+            timerMgr.Pause();
         }
 
         /// <summary>
@@ -91,65 +43,20 @@ namespace GameEngine.Runtime.Module.Timer
         /// </summary>
         public void Resume()
         {
-            m_IsPause = false;
+            timerMgr.Resume();
         }
 
-        
-        private List<long> tempTimeOutKeyList = new();
-        private List<int> tempTimeOutTimerList = new();
         /// <summary>
         /// 更新
         /// </summary>
         public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            InternalDeleteTimer();
-
-            if (m_IsPause)
-                return;
-
-            m_TimeElapsed += (long)(elapseSeconds * 1000);
-
-            tempTimeOutKeyList.Clear();
-            tempTimeOutTimerList.Clear();
-            foreach (var kv in m_SortedIdDict)
-            {
-                if (kv.Key > m_TimeElapsed)
-                {
-                    break;
-                }
-
-                tempTimeOutKeyList.Add(kv.Key);
-                if (m_SortedIdDict.TryGetValue(kv.Key, out var lst))
-                    tempTimeOutTimerList.AddRange(lst);
-            }
-
-            foreach (var key in tempTimeOutKeyList)
-            {
-                m_SortedIdDict.Remove(key);
-            }
-
-            foreach (var timerId in tempTimeOutTimerList)
-            {
-                if(m_TimerDict.TryGetValue(timerId, out var timer))
-                {
-                    var reCreate = (timer.RepeatCnt != 1);
-
-                    timer.Trigger();
-
-                    if (reCreate)
-                        InternalAddTimer(timer);
-                    else
-                        DeleteTimer(timerId);
-                }
-            }
+            timerMgr.OnUpdate(elapseSeconds, realElapseSeconds);
         }
 
         public override void Release()
         {
-            m_TimerDict.Clear();
-            m_SortedIdDict.Clear();
-            tempTimeOutKeyList.Clear();
-            tempTimeOutTimerList.Clear();
+            timerMgr.Release();
         }
 
         public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
