@@ -1,7 +1,7 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
 using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
 
-namespace GameLauncher.Runtime.Base.Procedure
+namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureHotUpdate : ProcedureBase
     {

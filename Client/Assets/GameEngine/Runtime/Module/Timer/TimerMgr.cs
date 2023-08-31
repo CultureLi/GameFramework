@@ -14,7 +14,7 @@ namespace GameEngine.Runtime.Module.Timer
 
 
         private bool m_IsPause = false;
-        public TimerModule()
+        public TimerMgr()
         {
             m_TimerUid = 0;
         }
@@ -99,7 +99,7 @@ namespace GameEngine.Runtime.Module.Timer
         /// <summary>
         /// 更新
         /// </summary>
-        public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        public void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             InternalDeleteTimer();
 
@@ -143,22 +143,13 @@ namespace GameEngine.Runtime.Module.Timer
             }
         }
 
-        public override void Release()
+        public void Release()
         {
             m_TimerDict.Clear();
             m_SortedIdDict.Clear();
             tempTimeOutKeyList.Clear();
             tempTimeOutTimerList.Clear();
         }
-
-        public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
-        {
-        }
-
-        public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)
-        {
-        }
-
        
     }
 }

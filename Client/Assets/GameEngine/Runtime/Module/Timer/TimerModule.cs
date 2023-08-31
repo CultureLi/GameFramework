@@ -18,7 +18,7 @@ namespace GameEngine.Runtime.Module.Timer
         /// <returns></returns>
         public int CreateTimer(int interval, Action<object> completedCb, int repeatCnt = 1, object userData = null)
         {
-            return timerMgr.CreateTimer(interval, repeatCnt, userData);
+            return timerMgr.CreateTimer(interval, completedCb,repeatCnt, userData);
         }
 
         /// <summary>

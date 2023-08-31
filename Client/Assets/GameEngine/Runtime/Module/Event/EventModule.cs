@@ -56,11 +56,6 @@ namespace GameEngine.Runtime.Module.Event
             eventMgr.BroadCast(initFun);
         }
 
-        private void BroadCast(Type type, EventBase e)
-        {
-            eventMgr.BroadCast(type, e);
-        }
-
         /// <summary>
         /// 广播事件，下一帧
         /// </summary>

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
-namespace GameLauncher.Runtime.Base.Procedure
+namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureFinished : ProcedureBase
     {

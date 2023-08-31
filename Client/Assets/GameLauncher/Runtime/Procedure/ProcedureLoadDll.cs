@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
-namespace GameLauncher.Runtime.Base.Procedure
+namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureLoadDll : ProcedureBase
     {
@@ -23,9 +23,8 @@ namespace GameLauncher.Runtime.Base.Procedure
 #if !UNITY_EDITOR
             // 先补充元数据
             LoadMetadataForAOTAssemblies();
-            //Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Base.dll.bytes"));
+            // 加载热更dll
             Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Module.dll.bytes"));
-            //Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.ThirdPart.dll.bytes"));
             Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameMain.Runtime.dll.bytes"));
 #endif
         }

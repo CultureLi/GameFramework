@@ -8,7 +8,7 @@ namespace GameEngine.Runtime.Base.Procedure
     /// </summary>
     public sealed class ProcedureManager : IProcedureManager
     {
-        private IFsm<IProcedureManager> m_ProcedureFsm;
+        private Fsm<IProcedureManager> m_ProcedureFsm;
 
         /// <summary>
         /// 初始化流程管理器的新实例。
@@ -69,7 +69,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            m_ProcedureFsm.OnUpdate(elapseSeconds,realElapseSeconds);
+            m_ProcedureFsm.Update(elapseSeconds,realElapseSeconds);
         }
 
         /// <summary>
@@ -77,6 +77,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         public void Release()
         {
+            m_ProcedureFsm.Clear();
             m_ProcedureFsm.Release();
             m_ProcedureFsm = null;
         }
@@ -87,7 +88,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// <param name="procedures">流程管理器包含的流程。</param>
         public void Initialize( params ProcedureBase[] procedures)
         {
-            m_ProcedureFsm = Fsm<IProcedureManager>.CreateFsm("procedure",this, procedures);
+            m_ProcedureFsm = Fsm<IProcedureManager>.Create("procedure",this, procedures);
         }
 
         /// <summary>

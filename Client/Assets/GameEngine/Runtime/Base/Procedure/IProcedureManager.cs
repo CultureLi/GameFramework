@@ -29,7 +29,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         /// <param name="fsmManager">有限状态机管理器。</param>
         /// <param name="procedures">流程管理器包含的流程。</param>
-        void Initialize(IFsmManager fsmManager, params ProcedureBase[] procedures);
+        void Initialize(params ProcedureBase[] procedures);
 
         /// <summary>
         /// 开始流程。

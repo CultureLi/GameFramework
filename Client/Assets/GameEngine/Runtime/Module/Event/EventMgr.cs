@@ -12,11 +12,11 @@ namespace GameEngine.Runtime.Module.Event
         //事件队列
         private Queue<EventBase> m_EventQueue = new();
 
-        public EventModule()
+        public EventMgr()
         {
         }
 
-        public void Init(object[] args)
+        public void Init()
         {
             m_EventHandlers.Clear();
             m_EventQueue.Clear();
@@ -112,7 +112,7 @@ namespace GameEngine.Runtime.Module.Event
             return handlers;
         }
 
-        public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        public void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             while (m_EventQueue.Count > 0)
             {
@@ -120,17 +120,9 @@ namespace GameEngine.Runtime.Module.Event
                 BroadCast(e.GetType(), e);
             }
         }
+               
 
-        public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
-        {
-
-        }
-
-        public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)
-        {
-        }
-
-        public override void Release()
+        public void Release()
         {
             m_EventHandlers.Clear();
             m_EventQueue.Clear();
