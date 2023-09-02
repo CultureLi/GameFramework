@@ -1,4 +1,6 @@
-﻿using GameEngine.Runtime.Module;
+﻿using Assets.GameEngine.Runtime.Module;
+using GameEngine.Runtime.Module;
+using GameEngine.Runtime.Module.Event;
 using System;
 using System.Collections.Generic;
 
@@ -8,6 +10,12 @@ namespace GameEngine.Runtime.Module.Timer
     {
         public override int Priority => 0;
         private TimerMgr timerMgr = new();
+
+        public override void OnInit(InitModuleParamBase param = null)
+        {
+
+        }
+
         /// <summary>
         /// 创建timer
         /// </summary>
@@ -21,6 +29,7 @@ namespace GameEngine.Runtime.Module.Timer
             return timerMgr.CreateTimer(interval, completedCb,repeatCnt, userData);
         }
 
+       
         /// <summary>
         /// 删除timer
         /// </summary>

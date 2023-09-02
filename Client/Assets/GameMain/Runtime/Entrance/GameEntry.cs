@@ -1,4 +1,5 @@
-﻿using Assets.GameMain.Runtime.Events;
+﻿using Assets.GameEngine.Runtime.Module;
+using Assets.GameMain.Runtime.Events;
 using Bright.Serialization;
 using GameEngine.Runtime.Module;
 using System;
@@ -10,14 +11,33 @@ using UnityEngine;
 
 namespace GameMain.Runtime.Entrance
 {
-    public partial class GameEntry : MonoBehaviour
+    public partial class GameMainModule:ModuleBase
     {
-        private void Awake()
+        public override void OnInit(InitModuleParamBase param)
         {
-            DontDestroyOnLoad(this);
             ModuleManager.Instance.Init();
             GameModule.InitBuiltinModules();
             GameModule.InitCustomModules();
+        }
+
+        public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public override void Release()
+        {
+            throw new System.NotImplementedException();
         }
 
         private void Start()

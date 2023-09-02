@@ -1,15 +1,18 @@
 ﻿using GameEngine.Runtime.Base;
+using GameEngine.Runtime.Module;
 using UnityEngine;
 
 namespace GameMain.Runtime.Entrance
 {
-    public partial class GameEntry:MonoBehaviour
+    public class GameEntry
     {
         public static void Entry()
         {
             Log.Debug("GameMainEntry");
-            var go = new GameObject("GameEntry");            
-            go.AddComponent<GameEntry>();
+
+            ModuleManager.Instance.GetModule<GameMainModule>();
         }
+
+        
     }
 }

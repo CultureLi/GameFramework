@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using GameEngine.Runtime.Module;
 using GameEngine.Runtime.Base.ReferencePool;
+using Assets.GameEngine.Runtime.Module;
 
 namespace GameEngine.Runtime.Module.Event
 {
@@ -16,7 +17,7 @@ namespace GameEngine.Runtime.Module.Event
             eventMgr = new EventMgr();
         }
 
-        public void Init(object[] args)
+        public override void OnInit(InitModuleParamBase param = null)
         {
             eventMgr.Init();
         }
@@ -89,5 +90,6 @@ namespace GameEngine.Runtime.Module.Event
         {
             eventMgr.Release();
         }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Assets.GameEngine.Runtime.Module;
+using UnityEngine;
 
 namespace GameEngine.Runtime.Module
 {
@@ -18,6 +19,8 @@ namespace GameEngine.Runtime.Module
                 return 0;
             }
         }
+
+        public abstract void OnInit(InitModuleParamBase param=null);
         /// <summary>
         /// 游戏框架模块轮询。
         /// </summary>
