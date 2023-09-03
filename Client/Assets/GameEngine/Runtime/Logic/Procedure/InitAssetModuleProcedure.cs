@@ -1,7 +1,7 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
 using GameEngine.Runtime.Fsm;
 
-namespace Assets.GameEngine.Runtime.Logic.Procedure
+namespace GameEngine.Runtime.Logic.Procedure
 {
     internal class InitAssetModuleProcedure : ProcedureBase
     {
@@ -13,7 +13,7 @@ namespace Assets.GameEngine.Runtime.Logic.Procedure
         protected override void OnEnter(IFsm<IProcedureManager> procedureOwner)
         {
             base.OnEnter(procedureOwner);
-
+            ChangeState<InitEventModuleProcedure>(procedureOwner);
         }
 
         protected override void OnUpdate(IFsm<IProcedureManager> procedureOwner, float elapseSeconds, float realElapseSeconds)

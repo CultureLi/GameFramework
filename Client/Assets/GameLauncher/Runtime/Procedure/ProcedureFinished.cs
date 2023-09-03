@@ -18,8 +18,8 @@ namespace GameLauncher.Runtime.Procedure
         protected override void OnEnter(ProcedureOwner procedureOwner)
         {
             base.OnEnter(procedureOwner);
-            Assembly gameMain = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain.Runtime");
-            Type entry = gameMain.GetType("GameMain.Runtime.Entrance.GameEntry");
+            Assembly gameMain = Utility.Assembly.GetAssembly("GameEngine.Runtime.Logic");
+            Type entry = gameMain.GetType("GameEngine.Runtime.Logic.GameEngineEntry");
             entry.GetMethod("Entry").Invoke(null,null);
         }
 

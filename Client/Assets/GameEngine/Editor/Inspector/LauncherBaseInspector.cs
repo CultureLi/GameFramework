@@ -1,4 +1,4 @@
-﻿using GameEngine.Editor.Inspector;
+﻿/*using GameEngine.Editor.Inspector;
 using GameEngine.Editor.Misc;
 using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Base.Procedure;
@@ -166,3 +166,4 @@ namespace GameLauncher.Editor
         }
     }
 }
+*/

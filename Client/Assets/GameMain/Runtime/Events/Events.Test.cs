@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.GameMain.Runtime.Events
+namespace GameMain.Runtime.Events
 {
     internal class LogEvent:EventBase
     {

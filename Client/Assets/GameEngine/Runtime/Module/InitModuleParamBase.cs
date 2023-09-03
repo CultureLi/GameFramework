@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.GameEngine.Runtime.Module
+namespace GameEngine.Runtime.Module
 {
     public class InitModuleParamBase
     {

@@ -1,4 +1,4 @@
-﻿using Assets.GameEngine.Runtime.Module;
+﻿using GameEngine.Runtime.Module;
 using UnityEngine;
 
 namespace GameEngine.Runtime.Module

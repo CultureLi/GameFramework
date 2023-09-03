@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.GameMain.Runtime
+namespace GameMain.Runtime
 {
     internal class GameModule
     {

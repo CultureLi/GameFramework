@@ -1,9 +1,13 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
+using GameEngine.Runtime.Base.Utilitys;
 using GameEngine.Runtime.Fsm;
+using System;
+using System.Linq;
+using System.Reflection;
 
 namespace GameEngine.Runtime.Logic.Procedure
 {
-    internal class InitNetModuleProcedure : ProcedureBase
+    internal class InitFinishedProcedure : ProcedureBase
     {
         protected override void OnInit(IFsm<IProcedureManager> procedureOwner)
         {
@@ -13,7 +17,11 @@ namespace GameEngine.Runtime.Logic.Procedure
         protected override void OnEnter(IFsm<IProcedureManager> procedureOwner)
         {
             base.OnEnter(procedureOwner);
-            ChangeState<InitAudioModuleProcedure>(procedureOwner);
+            
+            Assembly gameMain = Utility.Assembly.GetAssembly("GameMain.Runtime");
+            Type entry = gameMain.GetType("GameMain.Runtime.GameMainEntry");
+            entry.GetMethod("Entry").Invoke(null, null);
+
         }
 
         protected override void OnUpdate(IFsm<IProcedureManager> procedureOwner, float elapseSeconds, float realElapseSeconds)
@@ -33,10 +41,5 @@ namespace GameEngine.Runtime.Logic.Procedure
             base.OnDestroy(procedureOwner);
         }
 
-
-        private void InitLanguageSettings()
-        {
-
-        }
     }
 }

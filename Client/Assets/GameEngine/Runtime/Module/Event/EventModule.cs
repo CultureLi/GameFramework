@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using GameEngine.Runtime.Module;
 using GameEngine.Runtime.Base.ReferencePool;
-using Assets.GameEngine.Runtime.Module;
 
 namespace GameEngine.Runtime.Module.Event
 {

@@ -1,10 +1,10 @@
 ﻿using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Module;
-using UnityEngine;
+using GameMain.Runtime.CustomModule;
 
-namespace GameMain.Runtime.Entrance
+namespace GameMain.Runtime
 {
-    public class GameEntry
+    public class GameMainEntry
     {
         public static void Entry()
         {

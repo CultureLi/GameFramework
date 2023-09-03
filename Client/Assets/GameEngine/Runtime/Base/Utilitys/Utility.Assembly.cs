@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GameEngine.Runtime.Base.Utilitys
 {
@@ -25,6 +26,11 @@ namespace GameEngine.Runtime.Base.Utilitys
             public static System.Reflection.Assembly[] GetAssemblies()
             {
                 return s_Assemblies;
+            }
+
+            public static System.Reflection.Assembly GetAssembly(string name)
+            {
+                return s_Assemblies.First(a => a.GetName().Name == name);
             }
 
             /// <summary>

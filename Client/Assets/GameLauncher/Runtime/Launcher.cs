@@ -1,6 +1,7 @@
 using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Base.Procedure;
 using GameEngine.Runtime.Fsm;
+using GameLauncher.Runtime.Procedure;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +15,14 @@ namespace GameLauncher.Runtime
 
         private void Awake()
         {
-            base.Awake();
+            Initialize(new ProcedureBase[]{
+                new ProcedureStart(),
+                new ProcedureCheckVersion(),
+                new ProcedureHotUpdate(),
+                new ProcedureLoadDll(),
+                new ProcedureFinished()
+            });
+            EntranceProcedure = typeof(ProcedureStart);
         }
 
         private void Start()
