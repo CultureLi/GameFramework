@@ -1,9 +1,4 @@
 ﻿using GameEngine.Runtime.Base;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace GameEngine.Runtime.Logic
@@ -13,7 +8,9 @@ namespace GameEngine.Runtime.Logic
         public static void Entry()
         {
             Log.Debug("GameEngineEntry");
-            new GameObject("GameEngineLauncher").AddComponent<GameEngineLauncher>();
+            var go = new GameObject("GameEngineLauncher");
+            go.AddComponent<ConsoleToScreen>();
+            go.AddComponent<GameEngineLauncher>();
         }
     }
 }

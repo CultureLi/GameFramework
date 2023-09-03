@@ -1,13 +1,4 @@
 ﻿using GameEngine.Runtime.Module;
-using GameMain.Runtime.Events;
-using Bright.Serialization;
-using GameEngine.Runtime.Module;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using UnityEngine;
 using GameEngine.Runtime.Base;
 
 namespace GameMain.Runtime.CustomModule
@@ -26,12 +17,13 @@ namespace GameMain.Runtime.CustomModule
 
         public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
         {
-
+            Log.Info("GameMainModule OnFixUpdate ... ");
         }
 
 
         public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)
         {
+            Log.Info("GameMainModule OnLateUpdate ... ");
         }
 
 

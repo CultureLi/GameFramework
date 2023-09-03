@@ -43,12 +43,12 @@ namespace GameEngine.Runtime.Logic
 
         protected void FixedUpdate()
         {
-
+            ModuleManager.Instance.FixUpdate(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         protected void LateUpdate()
         {
-            
+            ModuleManager.Instance.LateUpdate(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         protected void OnDestroy()

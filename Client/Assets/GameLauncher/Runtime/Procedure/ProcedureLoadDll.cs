@@ -24,6 +24,7 @@ namespace GameLauncher.Runtime.Procedure
             LoadMetadataForAOTAssemblies();
             // 加载热更dll
             Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Module.dll.bytes"));
+            Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Logic.dll.bytes"));
             Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameMain.Runtime.dll.bytes"));
 #endif
         }

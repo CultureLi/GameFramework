@@ -1,4 +1,5 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
+
 namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureStart : ProcedureBase

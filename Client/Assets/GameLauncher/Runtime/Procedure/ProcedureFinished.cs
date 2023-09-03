@@ -2,7 +2,6 @@
 using GameEngine.Runtime.Base.Utilitys;
 using System;
 using System.Reflection;
-using UnityEngine;
 
 namespace GameLauncher.Runtime.Procedure
 {
@@ -21,7 +20,7 @@ namespace GameLauncher.Runtime.Procedure
             entry.GetMethod("Entry").Invoke(null,null);
 
             
-            GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
+            //GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
