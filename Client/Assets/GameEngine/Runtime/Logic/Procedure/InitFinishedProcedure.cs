@@ -9,14 +9,14 @@ namespace GameEngine.Runtime.Logic.Procedure
 {
     internal class InitFinishedProcedure : ProcedureBase
     {
-        protected override void OnInit(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
-        protected override void OnEnter(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnEnter()
         {
-            base.OnEnter(procedureOwner);
+            base.OnEnter();
             
             Assembly gameMain = Utility.Assembly.GetAssembly("GameMain.Runtime");
             Type entry = gameMain.GetType("GameMain.Runtime.GameMainEntry");
@@ -24,21 +24,21 @@ namespace GameEngine.Runtime.Logic.Procedure
 
         }
 
-        protected override void OnUpdate(IFsm<IProcedureManager> procedureOwner, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
 
         }
 
 
-        protected override void OnLeave(IFsm<IProcedureManager> procedureOwner, bool isShutdown)
+        protected override void OnLeave(bool isShutdown)
         {
-            base.OnLeave(procedureOwner, isShutdown);
+            base.OnLeave(isShutdown);
         }
 
-        protected override void OnDestroy(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnDestroy()
         {
-            base.OnDestroy(procedureOwner);
+            base.OnDestroy();
         }
 
     }

@@ -7,10 +7,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using GameEngine.Runtime.Base.Launcher;
 
 namespace GameEngine.Runtime.Logic
 {
-    internal class GameEngineLauncher:LauncherBase
+    internal class GameEngineLauncher: LauncherBase
     {
         protected void Awake()
         {

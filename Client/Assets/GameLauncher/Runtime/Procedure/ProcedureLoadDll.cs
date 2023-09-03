@@ -7,19 +7,18 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
 namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureLoadDll : ProcedureBase
     {
-        protected override void OnInit(ProcedureOwner procedureOwner)
+        protected override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
-        protected override void OnEnter(ProcedureOwner procedureOwner)
+        protected override void OnEnter()
         {
-            base.OnEnter(procedureOwner);
+            base.OnEnter();
 #if !UNITY_EDITOR
             // 先补充元数据
             LoadMetadataForAOTAssemblies();
@@ -48,28 +47,23 @@ namespace GameLauncher.Runtime.Procedure
             }
         }
 
-        protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-            ChangeState<ProcedureFinished>(procedureOwner);
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
+            ChangeState<ProcedureFinished>();
         }
 
 
-        protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+        protected override void OnLeave(bool isShutdown)
         {
-            base.OnLeave(procedureOwner, isShutdown);
+            base.OnLeave(isShutdown);
         }
 
-        protected override void OnDestroy(ProcedureOwner procedureOwner)
+        protected override void OnDestroy()
         {
-            base.OnDestroy(procedureOwner);
+            base.OnDestroy();
         }
 
-
-        private void InitLanguageSettings()
-        {
-            
-        }
     }
 }
 

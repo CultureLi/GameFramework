@@ -1,43 +1,36 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
-using GameEngine.Runtime.Fsm;
 
 namespace GameEngine.Runtime.Logic.Procedure
 {
     internal class InitEventModuleProcedure : ProcedureBase
     {
-        protected override void OnInit(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
-        protected override void OnEnter(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnEnter()
         {
-            base.OnEnter(procedureOwner);
-            ChangeState<InitTimerModuleProcedure>(procedureOwner);
-
-        }
-
-        protected override void OnUpdate(IFsm<IProcedureManager> procedureOwner, float elapseSeconds, float realElapseSeconds)
-        {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+            base.OnEnter();
+            ChangeState<InitTimerModuleProcedure>();
 
         }
 
-
-        protected override void OnLeave(IFsm<IProcedureManager> procedureOwner, bool isShutdown)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnLeave(procedureOwner, isShutdown);
-        }
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-        protected override void OnDestroy(IFsm<IProcedureManager> procedureOwner)
-        {
-            base.OnDestroy(procedureOwner);
         }
 
 
-        private void InitLanguageSettings()
+        protected override void OnLeave(bool isShutdown)
         {
+            base.OnLeave(isShutdown);
+        }
 
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
         }
     }
 }

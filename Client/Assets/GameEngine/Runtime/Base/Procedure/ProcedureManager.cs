@@ -1,4 +1,6 @@
-﻿using GameEngine.Runtime.Fsm;
+﻿using GameEngine.Runtime.Base.Launcher;
+using GameEngine.Runtime.Fsm;
+using PlasticGui.WorkspaceWindow;
 using System;
 
 namespace GameEngine.Runtime.Base.Procedure
@@ -8,6 +10,10 @@ namespace GameEngine.Runtime.Base.Procedure
     /// </summary>
     public sealed class ProcedureManager : IProcedureManager
     {
+        ILauncher owner;
+
+        public ILauncher Owner { get { return owner; } }
+
         private Fsm<IProcedureManager> m_ProcedureFsm;
 
         /// <summary>
@@ -86,8 +92,9 @@ namespace GameEngine.Runtime.Base.Procedure
         /// 初始化流程管理器。
         /// </summary>
         /// <param name="procedures">流程管理器包含的流程。</param>
-        public void Initialize( params ProcedureBase[] procedures)
+        public void Initialize(ILauncher owner,params ProcedureBase[] procedures)
         {
+            this.owner = owner;
             m_ProcedureFsm = Fsm<IProcedureManager>.Create("procedure",this, procedures);
         }
 

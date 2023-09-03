@@ -1,6 +1,4 @@
-﻿using GameEngine.Runtime.Base;
-using GameEngine.Runtime.Fsm;
-using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
+﻿using GameEngine.Runtime.Fsm;
 
 namespace GameEngine.Runtime.Base.Procedure
 {
@@ -13,18 +11,20 @@ namespace GameEngine.Runtime.Base.Procedure
         /// 状态初始化时调用。
         /// </summary>
         /// <param name="procedureOwner">流程持有者。</param>
-        protected internal override void OnInit(ProcedureOwner procedureOwner)
+        /// 
+
+        protected internal override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
         /// <summary>
         /// 进入状态时调用。
         /// </summary>
         /// <param name="procedureOwner">流程持有者。</param>
-        protected internal override void OnEnter(ProcedureOwner procedureOwner)
+        protected internal override void OnEnter()
         {
-            base.OnEnter(procedureOwner);
+            base.OnEnter();
             Log.Info($"Procedure {this.GetType()} OnEnter");
         }
 
@@ -34,9 +34,9 @@ namespace GameEngine.Runtime.Base.Procedure
         /// <param name="procedureOwner">流程持有者。</param>
         /// <param name="elapseSeconds">逻辑流逝时间，以秒为单位。</param>
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
-        protected internal override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
+        protected internal override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
         }
 
         /// <summary>
@@ -44,19 +44,19 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         /// <param name="procedureOwner">流程持有者。</param>
         /// <param name="isShutdown">是否是关闭状态机时触发。</param>
-        protected internal override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+        protected internal override void OnLeave(bool isShutdown)
         {
             Log.Info($"Procedure {this.GetType()} OnLeave");
-            base.OnLeave(procedureOwner, isShutdown);
+            base.OnLeave(isShutdown);
         }
 
         /// <summary>
         /// 状态销毁时调用。
         /// </summary>
         /// <param name="procedureOwner">流程持有者。</param>
-        protected internal override void OnDestroy(ProcedureOwner procedureOwner)
+        protected internal override void OnDestroy()
         {
-            base.OnDestroy(procedureOwner);
+            base.OnDestroy();
         }
     }
 }

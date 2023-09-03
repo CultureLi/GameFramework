@@ -9,25 +9,39 @@ namespace GameEngine.Runtime.Fsm
     public abstract class FsmState<T> where T : class
     {
         /// <summary>
+        /// 所属的FSM
+        /// </summary>
+        private Fsm<T> owner;
+
+        public Fsm<T> Owner { get { return owner; } }
+
+        /// <summary>
         /// 初始化有限状态机状态基类的新实例。
         /// </summary>
         public FsmState()
         {
         }
 
+        protected internal void Init(Fsm<T> owner)
+        {
+            this.owner = owner;
+            OnInit();
+        }
+
         /// <summary>
         /// 有限状态机状态初始化时调用。
         /// </summary>
         /// <param name="fsm">有限状态机引用。</param>
-        protected internal virtual void OnInit(IFsm<T> fsm)
+        protected internal virtual void OnInit()
         {
+            
         }
 
         /// <summary>
         /// 有限状态机状态进入时调用。
         /// </summary>
         /// <param name="fsm">有限状态机引用。</param>
-        protected internal virtual void OnEnter(IFsm<T> fsm)
+        protected internal virtual void OnEnter()
         {
         }
 
@@ -37,7 +51,7 @@ namespace GameEngine.Runtime.Fsm
         /// <param name="fsm">有限状态机引用。</param>
         /// <param name="elapseSeconds">逻辑流逝时间，以秒为单位。</param>
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
-        protected internal virtual void OnUpdate(IFsm<T> fsm, float elapseSeconds, float realElapseSeconds)
+        protected internal virtual void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
         }
 
@@ -46,7 +60,7 @@ namespace GameEngine.Runtime.Fsm
         /// </summary>
         /// <param name="fsm">有限状态机引用。</param>
         /// <param name="isShutdown">是否是关闭有限状态机时触发。</param>
-        protected internal virtual void OnLeave(IFsm<T> fsm, bool isShutdown)
+        protected internal virtual void OnLeave(bool isShutdown)
         {
         }
 
@@ -54,7 +68,7 @@ namespace GameEngine.Runtime.Fsm
         /// 有限状态机状态销毁时调用。
         /// </summary>
         /// <param name="fsm">有限状态机引用。</param>
-        protected internal virtual void OnDestroy(IFsm<T> fsm)
+        protected internal virtual void OnDestroy()
         {
         }
 
@@ -63,15 +77,9 @@ namespace GameEngine.Runtime.Fsm
         /// </summary>
         /// <typeparam name="TState">要切换到的有限状态机状态类型。</typeparam>
         /// <param name="fsm">有限状态机引用。</param>
-        protected void ChangeState<TState>(IFsm<T> fsm) where TState : FsmState<T>
+        protected void ChangeState<TState>() where TState : FsmState<T>
         {
-            Fsm<T> fsmImplement = (Fsm<T>)fsm;
-            if (fsmImplement == null)
-            {
-                throw new Exception("FSM is invalid.");
-            }
-
-            fsmImplement.ChangeState<TState>();
+            owner.ChangeState<TState>();
         }
 
         /// <summary>
@@ -79,14 +87,8 @@ namespace GameEngine.Runtime.Fsm
         /// </summary>
         /// <param name="fsm">有限状态机引用。</param>
         /// <param name="stateType">要切换到的有限状态机状态类型。</param>
-        protected void ChangeState(IFsm<T> fsm, Type stateType)
+        protected void ChangeState(Type stateType)
         {
-            Fsm<T> fsmImplement = (Fsm<T>)fsm;
-            if (fsmImplement == null)
-            {
-                throw new Exception("FSM is invalid.");
-            }
-
             if (stateType == null)
             {
                 throw new Exception("State type is invalid.");
@@ -97,7 +99,7 @@ namespace GameEngine.Runtime.Fsm
                 throw new Exception($"State type '{stateType.FullName}' is invalid.");
             }
 
-            fsmImplement.ChangeState(stateType);
+            owner.ChangeState(stateType);
         }
     }
 }

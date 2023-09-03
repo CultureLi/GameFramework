@@ -1,5 +1,6 @@
-﻿using GameEngine.Runtime.Fsm;
+﻿using GameEngine.Runtime.Base.Launcher;
 using System;
+using static UnityEngine.UI.GridLayoutGroup;
 
 namespace GameEngine.Runtime.Base.Procedure
 {
@@ -8,6 +9,15 @@ namespace GameEngine.Runtime.Base.Procedure
     /// </summary>
     public interface IProcedureManager
     {
+        /// <summary>
+        /// 获取拥有者
+        /// </summary>
+        public ILauncher Owner
+        {
+            get;
+
+        }
+
         /// <summary>
         /// 获取当前流程。
         /// </summary>
@@ -29,7 +39,7 @@ namespace GameEngine.Runtime.Base.Procedure
         /// </summary>
         /// <param name="fsmManager">有限状态机管理器。</param>
         /// <param name="procedures">流程管理器包含的流程。</param>
-        void Initialize(params ProcedureBase[] procedures);
+        void Initialize(ILauncher owner,params ProcedureBase[] procedures);
 
         /// <summary>
         /// 开始流程。

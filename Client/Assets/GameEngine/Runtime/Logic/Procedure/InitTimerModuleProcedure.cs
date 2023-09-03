@@ -5,38 +5,31 @@ namespace GameEngine.Runtime.Logic.Procedure
 {
     internal class InitTimerModuleProcedure : ProcedureBase
     {
-        protected override void OnInit(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
-        protected override void OnEnter(IFsm<IProcedureManager> procedureOwner)
+        protected override void OnEnter()
         {
-            base.OnEnter(procedureOwner);
-            ChangeState<InitNetModuleProcedure>(procedureOwner);
+            base.OnEnter();
+            ChangeState<InitNetModuleProcedure>();
         }
-
-        protected override void OnUpdate(IFsm<IProcedureManager> procedureOwner, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
+            base.OnUpdate(elapseSeconds, realElapseSeconds);
 
-        }
-
-
-        protected override void OnLeave(IFsm<IProcedureManager> procedureOwner, bool isShutdown)
-        {
-            base.OnLeave(procedureOwner, isShutdown);
-        }
-
-        protected override void OnDestroy(IFsm<IProcedureManager> procedureOwner)
-        {
-            base.OnDestroy(procedureOwner);
         }
 
 
-        private void InitLanguageSettings()
+        protected override void OnLeave(bool isShutdown)
         {
+            base.OnLeave(isShutdown);
+        }
 
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
         }
     }
 }

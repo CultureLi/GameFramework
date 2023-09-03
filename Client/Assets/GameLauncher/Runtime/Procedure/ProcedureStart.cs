@@ -1,43 +1,37 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
-using ProcedureOwner = GameEngine.Runtime.Fsm.IFsm<GameEngine.Runtime.Base.Procedure.IProcedureManager>;
 namespace GameLauncher.Runtime.Procedure
 {
     public class ProcedureStart : ProcedureBase
     {
-        protected override void OnInit(ProcedureOwner procedureOwner)
+        protected override void OnInit()
         {
-            base.OnInit(procedureOwner);
+            base.OnInit();
         }
 
-        protected override void OnEnter(ProcedureOwner procedureOwner)
+        protected override void OnEnter()
         {
             // 语言配置：设置当前使用的语言，如果不设置，则默认使用操作系统语言。
-            InitLanguageSettings();
-            base.OnEnter(procedureOwner);
+        
+            base.OnEnter();
         }
 
-        protected override void OnUpdate(ProcedureOwner procedureOwner, float elapseSeconds, float realElapseSeconds)
+        protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-            base.OnUpdate(procedureOwner, elapseSeconds, realElapseSeconds);
-            ChangeState<ProcedureCheckVersion>(procedureOwner);
+            base.OnUpdate( elapseSeconds, realElapseSeconds);
+            ChangeState<ProcedureCheckVersion>();
         }
 
 
-        protected override void OnLeave(ProcedureOwner procedureOwner, bool isShutdown)
+        protected override void OnLeave(bool isShutdown)
         {
-            base.OnLeave(procedureOwner, isShutdown);
+            base.OnLeave( isShutdown);
         }
 
-        protected override void OnDestroy(ProcedureOwner procedureOwner)
+        protected override void OnDestroy()
         {
-            base.OnDestroy(procedureOwner);
+            base.OnDestroy();
         }
 
-
-        private void InitLanguageSettings()
-        {
-            
-        }
     }
 }
 

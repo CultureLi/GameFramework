@@ -156,7 +156,7 @@ namespace GameEngine.Runtime.Fsm
                 }
 
                 fsm.m_States.Add(stateType, state);
-                state.OnInit(fsm);
+                state.Init(fsm);
             }
 
             return fsm;
@@ -199,7 +199,7 @@ namespace GameEngine.Runtime.Fsm
                 }
 
                 fsm.m_States.Add(stateType, state);
-                state.OnInit(fsm);
+                state.Init(fsm);
             }
 
             return fsm;
@@ -212,12 +212,12 @@ namespace GameEngine.Runtime.Fsm
         {
             if (m_CurrentState != null)
             {
-                m_CurrentState.OnLeave(this, true);
+                m_CurrentState.OnLeave(true);
             }
 
             foreach (KeyValuePair<Type, FsmState<T>> state in m_States)
             {
-                state.Value.OnDestroy(this);
+                state.Value.OnDestroy();
             }
 
             Name = null;
@@ -263,7 +263,7 @@ namespace GameEngine.Runtime.Fsm
 
             m_CurrentStateTime = 0f;
             m_CurrentState = state;
-            m_CurrentState.OnEnter(this);
+            m_CurrentState.OnEnter();
         }
 
         /// <summary>
@@ -295,7 +295,7 @@ namespace GameEngine.Runtime.Fsm
 
             m_CurrentStateTime = 0f;
             m_CurrentState = state;
-            m_CurrentState.OnEnter(this);
+            m_CurrentState.OnEnter();
         }
 
         /// <summary>
@@ -537,7 +537,7 @@ namespace GameEngine.Runtime.Fsm
             }
 
             m_CurrentStateTime += elapseSeconds;
-            m_CurrentState.OnUpdate(this, elapseSeconds, realElapseSeconds);
+            m_CurrentState.OnUpdate(elapseSeconds, realElapseSeconds);
         }
 
         /// <summary>
@@ -574,10 +574,10 @@ namespace GameEngine.Runtime.Fsm
                 throw new Exception($"FSM '{typeof(T)}' can not change state to '{stateType.FullName}' which is not exist.");
             }
 
-            m_CurrentState.OnLeave(this, false);
+            m_CurrentState.OnLeave(false);
             m_CurrentStateTime = 0f;
             m_CurrentState = state;
-            m_CurrentState.OnEnter(this);
+            m_CurrentState.OnEnter();
         }
     }
 }

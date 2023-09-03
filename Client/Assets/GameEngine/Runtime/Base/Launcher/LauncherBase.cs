@@ -1,11 +1,10 @@
-using GameEngine.Runtime.Base.Utilitys;
+using GameEngine.Runtime.Base.Procedure;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
-namespace GameEngine.Runtime.Base.Procedure
+namespace GameEngine.Runtime.Base.Launcher
 {
-    public partial class LauncherBase : MonoBehaviour
+    public partial class LauncherBase : MonoBehaviour,ILauncher
     {
         ProcedureManager procedureMgr = new();
         Type entranceProcedure = null;
@@ -22,7 +21,7 @@ namespace GameEngine.Runtime.Base.Procedure
 
         public void Initialize(params ProcedureBase[] procedures)
         {
-            procedureMgr.Initialize(procedures);
+            procedureMgr.Initialize(this,procedures);
         }
 
         protected void Start()

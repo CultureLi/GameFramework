@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using GameEngine.Runtime.Base;
 
 namespace GameMain.Runtime.CustomModule
 {
@@ -15,12 +16,12 @@ namespace GameMain.Runtime.CustomModule
     {
         public override void OnInit(InitModuleParamBase param)
         {
-
+            Log.Info("GameMainModule Init ... ");
         }
 
         public override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
-
+            Log.Info("GameMainModule Update ... ");
         }
 
         public override void OnFixUpdate(float elapseSeconds, float realElapseSeconds)
