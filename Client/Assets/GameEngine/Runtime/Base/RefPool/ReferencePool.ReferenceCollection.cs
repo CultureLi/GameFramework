@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GameEngine.Runtime.Base.ReferencePool
+namespace GameEngine.Runtime.Base.RefPool
 {
     public static partial class ReferencePool
     {

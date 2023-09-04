@@ -1,3 +1,4 @@
+using Assets.GameEngine.Runtime.Base.Setting;
 using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Base.Launcher;
 using GameEngine.Runtime.Base.Procedure;
@@ -10,18 +11,18 @@ namespace GameLauncher.Runtime
     public partial class Launcher : LauncherBase
     {
         [SerializeField]
-        private AssetLoadMode assetLoadMode;
+        public LauncherSetting launcherSetting;
 
         private void Awake()
         {
             Initialize(new ProcedureBase[]{
-                new ProcedureStart(),
+                new StartProcedure(),
                 new ProcedureCheckVersion(),
                 new ProcedureHotUpdate(),
                 new ProcedureLoadDll(),
                 new ProcedureFinished()
             });
-            EntranceProcedure = typeof(ProcedureStart);
+            EntranceProcedure = typeof(StartProcedure);
         }
 
         private void Start()

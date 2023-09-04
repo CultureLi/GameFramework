@@ -1,4 +1,4 @@
-﻿using GameEngine.Runtime.Base.ReferencePool;
+﻿using GameEngine.Runtime.Base.RefPool;
 using System;
 
 namespace GameEngine.Runtime.Base.Variable
@@ -6,12 +6,12 @@ namespace GameEngine.Runtime.Base.Variable
     /// <summary>
     /// 变量。
     /// </summary>
-    public abstract class Variable : IReference
+    public abstract class VariableBase : IReference
     {
         /// <summary>
         /// 初始化变量的新实例。
         /// </summary>
-        public Variable()
+        public VariableBase()
         {
         }
 

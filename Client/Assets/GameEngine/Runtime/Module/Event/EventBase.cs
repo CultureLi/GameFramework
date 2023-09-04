@@ -1,4 +1,4 @@
-﻿using GameEngine.Runtime.Base.ReferencePool;
+﻿using GameEngine.Runtime.Base.RefPool;
 
 namespace GameEngine.Runtime.Module.Event
 {

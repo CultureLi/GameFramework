@@ -1,4 +1,4 @@
-﻿namespace GameEngine.Runtime.Base.ReferencePool
+﻿namespace GameEngine.Runtime.Base.RefPool
 {
     /// <summary>
     /// 引用接口。

@@ -1,5 +1,5 @@
 ﻿using GameEngine.Runtime.Base.Launcher;
-using GameEngine.Runtime.Fsm;
+using GameEngine.Runtime.Base.Fsm;
 using System;
 
 namespace GameEngine.Runtime.Base.Procedure

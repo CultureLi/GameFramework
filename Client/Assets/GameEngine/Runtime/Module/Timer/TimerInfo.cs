@@ -1,4 +1,4 @@
-﻿using GameEngine.Runtime.Base.ReferencePool;
+﻿using GameEngine.Runtime.Base.RefPool;
 using System;
 namespace GameEngine.Runtime.Module.Timer
 {

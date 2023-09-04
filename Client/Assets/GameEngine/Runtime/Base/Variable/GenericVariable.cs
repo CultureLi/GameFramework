@@ -6,7 +6,7 @@ namespace GameEngine.Runtime.Base.Variable
     /// 变量。
     /// </summary>
     /// <typeparam name="T">变量类型。</typeparam>
-    public abstract class Variable<T> : Variable
+    public abstract class Variable<T> : VariableBase
     {
         private T m_Value;
 

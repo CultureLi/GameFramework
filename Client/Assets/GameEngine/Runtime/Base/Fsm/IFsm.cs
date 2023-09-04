@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GameEngine.Runtime.Fsm
+namespace GameEngine.Runtime.Base.Fsm
 {
     /// <summary>
     /// 有限状态机接口。
@@ -139,14 +139,14 @@ namespace GameEngine.Runtime.Fsm
         /// <typeparam name="TData">要获取的有限状态机数据的类型。</typeparam>
         /// <param name="name">有限状态机数据名称。</param>
         /// <returns>要获取的有限状态机数据。</returns>
-        TData GetData<TData>(string name) where TData : Variable;
+        TData GetData<TData>(string name) where TData : VariableBase;
 
         /// <summary>
         /// 获取有限状态机数据。
         /// </summary>
         /// <param name="name">有限状态机数据名称。</param>
         /// <returns>要获取的有限状态机数据。</returns>
-        Variable GetData(string name);
+        VariableBase GetData(string name);
 
         /// <summary>
         /// 设置有限状态机数据。
@@ -154,14 +154,14 @@ namespace GameEngine.Runtime.Fsm
         /// <typeparam name="TData">要设置的有限状态机数据的类型。</typeparam>
         /// <param name="name">有限状态机数据名称。</param>
         /// <param name="data">要设置的有限状态机数据。</param>
-        void SetData<TData>(string name, TData data) where TData : Variable;
+        void SetData<TData>(string name, TData data) where TData : VariableBase;
 
         /// <summary>
         /// 设置有限状态机数据。
         /// </summary>
         /// <param name="name">有限状态机数据名称。</param>
         /// <param name="data">要设置的有限状态机数据。</param>
-        void SetData(string name, Variable data);
+        void SetData(string name, VariableBase data);
 
         /// <summary>
         /// 移除有限状态机数据。

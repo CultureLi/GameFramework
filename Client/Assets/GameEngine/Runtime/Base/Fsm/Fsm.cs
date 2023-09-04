@@ -1,9 +1,9 @@
 ﻿using GameEngine.Runtime.Base.Variable;
-using GameEngine.Runtime.Base.ReferencePool;
+using GameEngine.Runtime.Base.RefPool;
 using System;
 using System.Collections.Generic;
 
-namespace GameEngine.Runtime.Fsm
+namespace GameEngine.Runtime.Base.Fsm
 {
     /// <summary>
     /// 有限状态机。
@@ -13,7 +13,7 @@ namespace GameEngine.Runtime.Fsm
     {
         private T m_Owner;
         private readonly Dictionary<Type, FsmState<T>> m_States;
-        private Dictionary<string, Variable> m_Datas;
+        private Dictionary<string, VariableBase> m_Datas;
         private FsmState<T> m_CurrentState;
         private float m_CurrentStateTime;
         private bool m_IsDestroyed;
@@ -226,7 +226,7 @@ namespace GameEngine.Runtime.Fsm
 
             if (m_Datas != null)
             {
-                foreach (KeyValuePair<string, Variable> data in m_Datas)
+                foreach (KeyValuePair<string, VariableBase> data in m_Datas)
                 {
                     if (data.Value == null)
                     {
@@ -430,7 +430,7 @@ namespace GameEngine.Runtime.Fsm
         /// <typeparam name="TData">要获取的有限状态机数据的类型。</typeparam>
         /// <param name="name">有限状态机数据名称。</param>
         /// <returns>要获取的有限状态机数据。</returns>
-        public TData GetData<TData>(string name) where TData : Variable
+        public TData GetData<TData>(string name) where TData : VariableBase
         {
             return (TData)GetData(name);
         }
@@ -440,7 +440,7 @@ namespace GameEngine.Runtime.Fsm
         /// </summary>
         /// <param name="name">有限状态机数据名称。</param>
         /// <returns>要获取的有限状态机数据。</returns>
-        public Variable GetData(string name)
+        public VariableBase GetData(string name)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -452,7 +452,7 @@ namespace GameEngine.Runtime.Fsm
                 return null;
             }
 
-            Variable data = null;
+            VariableBase data = null;
             if (m_Datas.TryGetValue(name, out data))
             {
                 return data;
@@ -467,9 +467,9 @@ namespace GameEngine.Runtime.Fsm
         /// <typeparam name="TData">要设置的有限状态机数据的类型。</typeparam>
         /// <param name="name">有限状态机数据名称。</param>
         /// <param name="data">要设置的有限状态机数据。</param>
-        public void SetData<TData>(string name, TData data) where TData : Variable
+        public void SetData<TData>(string name, TData data) where TData : VariableBase
         {
-            SetData(name, (Variable)data);
+            SetData(name, (VariableBase)data);
         }
 
         /// <summary>
@@ -477,7 +477,7 @@ namespace GameEngine.Runtime.Fsm
         /// </summary>
         /// <param name="name">有限状态机数据名称。</param>
         /// <param name="data">要设置的有限状态机数据。</param>
-        public void SetData(string name, Variable data)
+        public void SetData(string name, VariableBase data)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -486,10 +486,10 @@ namespace GameEngine.Runtime.Fsm
 
             if (m_Datas == null)
             {
-                m_Datas = new Dictionary<string, Variable>(StringComparer.Ordinal);
+                m_Datas = new Dictionary<string, VariableBase>(StringComparer.Ordinal);
             }
 
-            Variable oldData = GetData(name);
+            VariableBase oldData = GetData(name);
             if (oldData != null)
             {
                 ReferencePool.Release(oldData);
@@ -515,7 +515,7 @@ namespace GameEngine.Runtime.Fsm
                 return false;
             }
 
-            Variable oldData = GetData(name);
+            VariableBase oldData = GetData(name);
             if (oldData != null)
             {
                 ReferencePool.Release(oldData);

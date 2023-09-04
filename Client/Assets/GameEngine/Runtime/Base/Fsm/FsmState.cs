@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GameEngine.Runtime.Fsm
+namespace GameEngine.Runtime.Base.Fsm
 {
     /// <summary>
     /// 有限状态机状态基类。

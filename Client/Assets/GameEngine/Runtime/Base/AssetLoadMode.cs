@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 
 namespace GameEngine.Runtime.Base
 {
+    /// <summary>
+    /// 资源启动模式，对应YooAsset 中的 EPlayMode
+    /// </summary>
     public enum AssetLoadMode
     {
         //编辑器模式，不打bundle
-        Editor,
+        EditorSimulateMode,
         //单机模式
-        Single,
+        OfflinePlayMode,
         //热更模式
-        HotUpdate,
+        HostPlayMode
     }
 }

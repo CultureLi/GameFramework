@@ -1,5 +1,6 @@
 ﻿using GameEngine.Runtime.Module;
 using System;
+using System.Collections;
 
 namespace Assets.GameEngine.Runtime.Module.Config
 {
@@ -9,10 +10,10 @@ namespace Assets.GameEngine.Runtime.Module.Config
         {
             throw new NotImplementedException();
         }
-
         public override void OnInit(InitModuleParamBase param = null)
         {
-            throw new NotImplementedException();
+           
+
         }
 
         public override void OnLateUpdate(float elapseSeconds, float realElapseSeconds)

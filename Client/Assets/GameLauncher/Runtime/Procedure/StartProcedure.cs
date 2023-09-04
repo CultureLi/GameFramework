@@ -1,8 +1,10 @@
-﻿using GameEngine.Runtime.Base.Procedure;
+﻿using Assets.GameLauncher.Runtime.Procedure;
+using dnlib.DotNet;
+using GameEngine.Runtime.Base.Procedure;
 
 namespace GameLauncher.Runtime.Procedure
 {
-    public class ProcedureStart : ProcedureBase
+    public class StartProcedure : ProcedureBase
     {
         protected override void OnInit()
         {
@@ -11,15 +13,17 @@ namespace GameLauncher.Runtime.Procedure
 
         protected override void OnEnter()
         {
-            // 语言配置：设置当前使用的语言，如果不设置，则默认使用操作系统语言。
-        
+            // 打开热更界面
+
+
+            ChangeState<InitGlobalBlackboardProcedure>();
             base.OnEnter();
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate( elapseSeconds, realElapseSeconds);
-            ChangeState<ProcedureCheckVersion>();
+            
         }
 
 

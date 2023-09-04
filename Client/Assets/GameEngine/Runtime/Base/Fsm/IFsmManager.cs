@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GameEngine.Runtime.Fsm
+namespace GameEngine.Runtime.Base.Fsm
 {
     /// <summary>
     /// 有限状态机管理器。

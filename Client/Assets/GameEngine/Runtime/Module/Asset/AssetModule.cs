@@ -14,25 +14,7 @@ namespace GameEngine.Runtime.Module.Asset
 
         public override void OnInit(InitModuleParamBase param = null)
         {
-            var assetLoadMode = AssetLoadMode.Editor;
-
-            switch (assetLoadMode)
-            {
-                case AssetLoadMode.Editor:
-                    {
-                        break;
-                    }
-                case AssetLoadMode.Single:
-                    {
-                        break;
-                    }
-                case AssetLoadMode.HotUpdate:
-                    {
-                        break;
-                    }
-                default:
-                    break;
-            }
+           
         }
 
         public override void OnUpdate(float elapseSeconds, float realElapseSeconds)

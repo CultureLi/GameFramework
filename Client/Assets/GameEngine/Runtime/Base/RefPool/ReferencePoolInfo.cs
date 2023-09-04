@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace GameEngine.Runtime.Base.ReferencePool
+namespace GameEngine.Runtime.Base.RefPool
 {
     /// <summary>
     /// 引用池信息。
