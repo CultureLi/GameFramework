@@ -1,11 +1,13 @@
 ﻿using GameEngine.Runtime.Base.Procedure;
 using GameEngine.Runtime.Base.Utilitys;
+using GameLauncher.Runtime.Event;
 using System;
 using System.Reflection;
+using UnityEngine;
 
 namespace GameLauncher.Runtime.Procedure
 {
-    public class ProcedureFinished : ProcedureBase
+    public class EndProcedure : ProcedureBase
     {
         protected override void OnInit()
         {
@@ -15,12 +17,17 @@ namespace GameLauncher.Runtime.Procedure
         protected override void OnEnter()
         {
             base.OnEnter();
+
+            LauncherEventMgr.Instance.BroadCast<CommonMessageEvent>(arg =>
+            {
+                arg.content = "启动结束，进入游戏...";
+            });
+
             Assembly gameMain = Utility.Assembly.GetAssembly("GameEngine.Runtime.Logic");
             Type entry = gameMain.GetType("GameEngine.Runtime.Logic.GameEngineEntry");
             entry.GetMethod("Entry").Invoke(null,null);
-
             
-            //GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
+            GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)

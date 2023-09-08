@@ -1,10 +1,11 @@
-using Assets.GameEngine.Runtime.Base.Setting;
+using GameEngine.Runtime.Base.Setting;
 using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Base.Launcher;
 using GameEngine.Runtime.Base.Procedure;
 using GameLauncher.Runtime.Procedure;
 using System;
 using UnityEngine;
+using YooAsset;
 
 namespace GameLauncher.Runtime
 {
@@ -15,12 +16,21 @@ namespace GameLauncher.Runtime
 
         private void Awake()
         {
+            LauncherMgr.Instance.Init();
+            YooAssets.Initialize();
+            YooAssets.SetOperationSystemMaxTimeSlice(30);
+
             Initialize(new ProcedureBase[]{
                 new StartProcedure(),
-                new ProcedureCheckVersion(),
-                new ProcedureHotUpdate(),
-                new ProcedureLoadDll(),
-                new ProcedureFinished()
+                new InitGlobalBlackboardProcedure(),
+                new InitYooAssetProcedure(),
+                new UpdateVersionProcedure(),
+                new UpdateManifestProcedure(),
+                new CreateDownloaderProcedure(),
+                new DownloadingProcedure(),
+                new DownloadFinishedProcedure(),
+                new LoadDllProcedure(),
+                new EndProcedure()
             });
             EntranceProcedure = typeof(StartProcedure);
         }
@@ -28,6 +38,8 @@ namespace GameLauncher.Runtime
         private void Start()
         {
             base.Start();
+
+            
         }
 
         private void Update()

@@ -9,7 +9,7 @@ using System.Reflection;
 using UnityEngine;
 namespace GameLauncher.Runtime.Procedure
 {
-    public class ProcedureLoadDll : ProcedureBase
+    public class LoadDllProcedure : ProcedureBase
     {
         protected override void OnInit()
         {
@@ -51,7 +51,7 @@ namespace GameLauncher.Runtime.Procedure
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
-            ChangeState<ProcedureFinished>();
+            ChangeState<EndProcedure>();
         }
 
 

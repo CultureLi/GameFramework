@@ -1,5 +1,4 @@
-﻿using Assets.GameLauncher.Runtime.Procedure;
-using dnlib.DotNet;
+﻿using GameLauncher.Runtime.Event;
 using GameEngine.Runtime.Base.Procedure;
 
 namespace GameLauncher.Runtime.Procedure
@@ -13,11 +12,18 @@ namespace GameLauncher.Runtime.Procedure
 
         protected override void OnEnter()
         {
+            base.OnEnter();
+
+            LauncherEventMgr.Instance.BroadCast<CommonMessageEvent>(arg =>
+            {
+                arg.content = "开启启动流程";
+            });
+
             // 打开热更界面
 
 
             ChangeState<InitGlobalBlackboardProcedure>();
-            base.OnEnter();
+         
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)

@@ -1,14 +1,10 @@
-﻿using GameEngine.Runtime.Base.Setting;
-using GameEngine.Runtime.Base;
+﻿using dnlib.PE;
 using GameEngine.Runtime.Base.Procedure;
 using GameLauncher.Runtime.Event;
 
 namespace GameLauncher.Runtime.Procedure
 {
-    /// <summary>
-    /// 设置全局黑板参数
-    /// </summary>
-    internal class InitGlobalBlackboardProcedure:ProcedureBase
+    internal class DownloadFinishedProcedure : ProcedureBase
     {
         protected override void OnInit()
         {
@@ -21,18 +17,23 @@ namespace GameLauncher.Runtime.Procedure
 
             LauncherEventMgr.Instance.BroadCast<CommonMessageEvent>(arg =>
             {
-                arg.content = "初始化全局黑板";
+                arg.content = "下载完毕，清理缓存...";
             });
 
+            var package = YooAsset.YooAssets.GetPackage("DefaultPackage");
+            var operation = package.ClearUnusedCacheFilesAsync();
+            operation.Completed += OperationCompleted;
+        }
 
-            GlobalBlackboard.SetValue("LauncherSetting", new LauncherSetting());
-            ChangeState<InitYooAssetProcedure>();
-
+        private void OperationCompleted(YooAsset.AsyncOperationBase obj)
+        {
+            ChangeState<LoadDllProcedure>();
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
+
         }
 
 
