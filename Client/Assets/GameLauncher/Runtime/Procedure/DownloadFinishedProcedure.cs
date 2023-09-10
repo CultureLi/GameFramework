@@ -1,5 +1,4 @@
-﻿using dnlib.PE;
-using GameEngine.Runtime.Base.Procedure;
+﻿using GameEngine.Runtime.Base.Procedure;
 using GameLauncher.Runtime.Event;
 
 namespace GameLauncher.Runtime.Procedure
@@ -20,9 +19,10 @@ namespace GameLauncher.Runtime.Procedure
                 arg.content = "下载完毕，清理缓存...";
             });
 
-            var package = YooAsset.YooAssets.GetPackage("DefaultPackage");
-            var operation = package.ClearUnusedCacheFilesAsync();
-            operation.Completed += OperationCompleted;
+            ChangeState<LoadDllProcedure>();
+            //var package = YooAsset.YooAssets.GetPackage("DefaultPackage");
+            //var operation = package.ClearUnusedCacheFilesAsync();
+            //operation.Completed += OperationCompleted;
         }
 
         private void OperationCompleted(YooAsset.AsyncOperationBase obj)

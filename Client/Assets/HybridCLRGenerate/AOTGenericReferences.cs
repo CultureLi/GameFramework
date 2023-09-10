@@ -18,6 +18,8 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// }} 
 
 	// {{ AOT generic types
+	// GameEngine.Runtime.Base.Fsm.Fsm<object>
+	// GameEngine.Runtime.Base.Fsm.FsmState<object>
 	// GameEngine.Runtime.Base.Singleton<object>
 	// System.Action<!!0>
 	// System.Action<!0>
@@ -132,9 +134,12 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	public void RefMethods()
 	{
 		// string Bright.Common.StringUtil.CollectionToString<object>(System.Collections.Generic.IEnumerable<object>)
-		// !!0 GameEngine.Runtime.Base.ReferencePool.ReferencePool.Acquire<!!0>()
-		// !!0 GameEngine.Runtime.Base.ReferencePool.ReferencePool.ReferenceCollection.Acquire<!!0>()
+		// System.Void GameEngine.Runtime.Base.Fsm.Fsm<object>.ChangeState<object>()
+		// System.Void GameEngine.Runtime.Base.Fsm.FsmState<object>.ChangeState<object>()
+		// !!0 GameEngine.Runtime.Base.RefPool.ReferencePool.Acquire<!!0>()
+		// !!0 GameEngine.Runtime.Base.RefPool.ReferencePool.ReferenceCollection.Acquire<!!0>()
 		// !!0 System.Activator.CreateInstance<!!0>()
+		// object System.Activator.CreateInstance<object>()
 		// object UnityEngine.GameObject.AddComponent<object>()
 		// string string.Join<object>(string,System.Collections.Generic.IEnumerable<object>)
 		// string string.JoinCore<object>(System.Char*,int,System.Collections.Generic.IEnumerable<object>)

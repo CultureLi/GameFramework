@@ -10,7 +10,7 @@ namespace GameEngine.Runtime.Base.Setting
 {
     public class LauncherSetting:Variable<LauncherSetting>
     {
-        public AssetLoadMode playMode = AssetLoadMode.EditorSimulateMode;
+        public AssetLoadMode playMode = AssetLoadMode.OfflinePlayMode;
         public int test;
     }
 }

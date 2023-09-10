@@ -1,4 +1,5 @@
-﻿using GameEngine.Runtime.Base.Procedure;
+﻿using GameEngine.Runtime.Base;
+using GameEngine.Runtime.Base.Procedure;
 using GameEngine.Runtime.Base.Utilitys;
 using GameLauncher.Runtime.Event;
 using System;
@@ -24,10 +25,14 @@ namespace GameLauncher.Runtime.Procedure
             });
 
             Assembly gameMain = Utility.Assembly.GetAssembly("GameEngine.Runtime.Logic");
+            Log.Info($"Get Assembly{gameMain == null}");
             Type entry = gameMain.GetType("GameEngine.Runtime.Logic.GameEngineEntry");
+            Log.Info($"Get entry {entry == null}");
             entry.GetMethod("Entry").Invoke(null,null);
+
+
             
-            GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
+            //GameObject.Destroy((Owner.Owner.Owner as Launcher).gameObject);
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)

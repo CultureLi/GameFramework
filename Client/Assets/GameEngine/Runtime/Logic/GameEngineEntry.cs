@@ -9,7 +9,7 @@ namespace GameEngine.Runtime.Logic
         {
             Log.Debug("GameEngineEntry");
             var go = new GameObject("GameEngineLauncher");
-            go.AddComponent<ConsoleToScreen>();
+            //go.AddComponent<ConsoleToScreen>();
             go.AddComponent<GameEngineLauncher>();
         }
     }

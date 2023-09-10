@@ -6,6 +6,10 @@ using System.IO;
 using YooAsset;
 using Cysharp.Threading.Tasks;
 using GameLauncher.Runtime.Event;
+using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace GameLauncher.Runtime.Procedure
 {
@@ -65,7 +69,7 @@ namespace GameLauncher.Runtime.Procedure
                 string fallbackHostServer = GetHostServerURL();
                 var createParameters = new HostPlayModeParameters();
                 createParameters.DecryptionServices = new GameDecryptionServices();
-                createParameters.QueryServices = new GameQueryServices();
+                createParameters.BuildinQueryServices = new GameQueryServices();
                 //createParameters.DeliveryQueryServices = new DefaultDeliveryQueryServices();
                 createParameters.RemoteServices = new RemoteServices(defaultHostServer, fallbackHostServer);
                 initializationOperation = package.InitializeAsync(createParameters);
@@ -78,7 +82,7 @@ namespace GameLauncher.Runtime.Procedure
                 string fallbackHostServer = GetHostServerURL();
                 var createParameters = new WebPlayModeParameters();
                 createParameters.DecryptionServices = new GameDecryptionServices();
-                //createParameters.BuildinQueryServices = new GameQueryServices();
+                createParameters.BuildinQueryServices = new GameQueryServices();
                 createParameters.RemoteServices = new RemoteServices(defaultHostServer, fallbackHostServer);
                 initializationOperation = package.InitializeAsync(createParameters);
             }

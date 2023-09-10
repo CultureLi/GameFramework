@@ -1,4 +1,5 @@
-﻿using GameEngine.Runtime.Base;
+﻿using Cysharp.Threading.Tasks;
+using GameEngine.Runtime.Base;
 using GameEngine.Runtime.Base.Procedure;
 using GameEngine.Runtime.Base.Utilitys;
 using System;
@@ -7,6 +8,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.XR;
+using YooAsset;
+
 namespace GameLauncher.Runtime.Procedure
 {
     public class LoadDllProcedure : ProcedureBase
@@ -19,39 +23,43 @@ namespace GameLauncher.Runtime.Procedure
         protected override void OnEnter()
         {
             base.OnEnter();
+
 #if !UNITY_EDITOR
-            // 先补充元数据
+            // 补充元数据
             LoadMetadataForAOTAssemblies();
+
             // 加载热更dll
-            Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Module.dll.bytes"));
-            Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameEngine.Runtime.Logic.dll.bytes"));
-            Assembly.Load(File.ReadAllBytes($"{Application.streamingAssetsPath}/GameMain.Runtime.dll.bytes"));
+            var list = new []{"GameEngine.Runtime.Module.dll","GameEngine.Runtime.Logic.dll" ,"GameMain.Runtime.dll"};
+            foreach (var name in list)
+            {
+                var handle = YooAssets.LoadAssetSync<TextAsset>(name);
+                var bytes = (handle.AssetObject as TextAsset).bytes;
+                var dll = Assembly.Load(bytes);
+
+                Log.Info($"加载热更dll..{name}");
+            }
 #endif
+
+            ChangeState<EndProcedure>();
         }
 
-        private void LoadMetadataForAOTAssemblies()
+        private async void LoadMetadataForAOTAssemblies()
         {
-            List<string> aotDllList = new List<string>
-        {
-            "mscorlib.dll",
-            "System.dll",
-            "System.Core.dll", // 如果使用了Linq，需要这个
-            // "Newtonsoft.Json.dll", 
-            // "protobuf-net.dll",
-        };
-
-            foreach (var aotDllName in aotDllList)
+            var list = new[] { "mscorlib.dll", "System.dll", "System.Core.dll" };
+            foreach (var name in list)
             {
-                byte[] dllBytes = File.ReadAllBytes($"{Application.streamingAssetsPath}/{aotDllName}.bytes");
-                int err = (int)HybridCLR.RuntimeApi.LoadMetadataForAOTAssembly(dllBytes, HybridCLR.HomologousImageMode.SuperSet);
-                Log.Debug($"LoadMetadataForAOTAssembly:{aotDllName}. ret:{err}");
+                var handle = YooAssets.LoadAssetSync<TextAsset>(name);
+                var bytes = (handle.AssetObject as TextAsset).bytes;
+                int err = (int)HybridCLR.RuntimeApi.LoadMetadataForAOTAssembly(bytes, HybridCLR.HomologousImageMode.SuperSet);
+                Log.Info($"补充元数据:{name}. ret:{err}");
+
             }
         }
 
         protected override void OnUpdate(float elapseSeconds, float realElapseSeconds)
         {
             base.OnUpdate(elapseSeconds, realElapseSeconds);
-            ChangeState<EndProcedure>();
+            
         }
 
 
