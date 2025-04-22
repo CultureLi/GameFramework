@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <linker>
-  <assembly fullname="GameEngine.Runtime.Base">
-    <type fullname="GameEngine.Runtime.Base.ConsoleToScreen" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Fsm.FsmState`1" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Launcher.LauncherBase" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Log" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Procedure.IProcedureManager" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Procedure.ProcedureBase" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.RefPool.IReference" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.RefPool.ReferencePool" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Singleton`1" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Utilitys.Utility" preserve="all" />
-    <type fullname="GameEngine.Runtime.Base.Utilitys.Utility/Assembly" preserve="all" />
+  <assembly fullname="GameMain.Runtime.Base">
+    <type fullname="GameMain.Runtime.Base.ConsoleToScreen" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Fsm.FsmState`1" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Launcher.LauncherBase" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Log" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Procedure.IProcedureManager" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Procedure.ProcedureBase" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.RefPool.IReference" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.RefPool.ReferencePool" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Singleton`1" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Utilitys.Utility" preserve="all" />
+    <type fullname="GameMain.Runtime.Base.Utilitys.Utility/Assembly" preserve="all" />
   </assembly>
   <assembly fullname="GameEngine.Runtime.ThirdPart">
     <type fullname="Bright.Common.StringUtil" preserve="all" />

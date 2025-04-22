@@ -5,7 +5,7 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// {{ AOT assemblies
 	public static readonly IReadOnlyList<string> PatchedAOTAssemblyList = new List<string>
 	{
-		"GameEngine.Runtime.Base.dll",
+		"GameMain.Runtime.Base.dll",
 		"GameEngine.Runtime.ThirdPart.dll",
 		"System.Core.dll",
 		"System.dll",
@@ -18,9 +18,9 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// }} 
 
 	// {{ AOT generic types
-	// GameEngine.Runtime.Base.Fsm.Fsm<object>
-	// GameEngine.Runtime.Base.Fsm.FsmState<object>
-	// GameEngine.Runtime.Base.Singleton<object>
+	// GameMain.Runtime.Base.Fsm.Fsm<object>
+	// GameMain.Runtime.Base.Fsm.FsmState<object>
+	// GameMain.Runtime.Base.Singleton<object>
 	// System.Action<!!0>
 	// System.Action<!0>
 	// System.Action<int>
@@ -134,10 +134,10 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	public void RefMethods()
 	{
 		// string Bright.Common.StringUtil.CollectionToString<object>(System.Collections.Generic.IEnumerable<object>)
-		// System.Void GameEngine.Runtime.Base.Fsm.Fsm<object>.ChangeState<object>()
-		// System.Void GameEngine.Runtime.Base.Fsm.FsmState<object>.ChangeState<object>()
-		// !!0 GameEngine.Runtime.Base.RefPool.ReferencePool.Acquire<!!0>()
-		// !!0 GameEngine.Runtime.Base.RefPool.ReferencePool.ReferenceCollection.Acquire<!!0>()
+		// System.Void GameMain.Runtime.Base.Fsm.Fsm<object>.ChangeState<object>()
+		// System.Void GameMain.Runtime.Base.Fsm.FsmState<object>.ChangeState<object>()
+		// !!0 GameMain.Runtime.Base.RefPool.ReferencePool.Acquire<!!0>()
+		// !!0 GameMain.Runtime.Base.RefPool.ReferencePool.ReferenceCollection.Acquire<!!0>()
 		// !!0 System.Activator.CreateInstance<!!0>()
 		// object System.Activator.CreateInstance<object>()
 		// object UnityEngine.GameObject.AddComponent<object>()

@@ -1,57 +1,40 @@
-using GameEngine.Runtime.Base.Setting;
-using GameEngine.Runtime.Base;
-using GameEngine.Runtime.Base.Launcher;
-using GameEngine.Runtime.Base.Procedure;
-using GameLauncher.Runtime.Procedure;
+using Assets.GameLauncher.Runtime.Stage;
 using System;
 using UnityEngine;
-using YooAsset;
 
 namespace GameLauncher.Runtime
 {
-    public partial class Launcher : LauncherBase
+    public partial class Launcher : MonoBehaviour
     {
-        [SerializeField]
-        public LauncherSetting launcherSetting;
-
+        StageMgr stageMgr = new StageMgr();
         private void Awake()
         {
-            LauncherMgr.Instance.Init();
-            YooAssets.Initialize();
-            YooAssets.SetOperationSystemMaxTimeSlice(30);
+            stageMgr.AddStage(new LauncherStartStage());
+            stageMgr.AddStage(new DownloadVersionStage(this));
+            stageMgr.AddStage(new DownloadCatalogHashStage(this));
+            stageMgr.AddStage(new DownloadCatalogStage(this));
+            stageMgr.AddStage(new DownloadBundleStage(this));
+            stageMgr.AddStage(new ReloadCatalogStage());
+            stageMgr.AddStage(new OverrideCatalogHashStage());
+            stageMgr.AddStage(new LauncherEndStage());
 
-            Initialize(new ProcedureBase[]{
-                new StartProcedure(),
-                new InitGlobalBlackboardProcedure(),
-                new InitYooAssetProcedure(),
-                new UpdateVersionProcedure(),
-                new UpdateManifestProcedure(),
-                new CreateDownloaderProcedure(),
-                new DownloadingProcedure(),
-                new DownloadFinishedProcedure(),
-                new LoadDllProcedure(),
-                new EndProcedure()
-            });
-            EntranceProcedure = typeof(StartProcedure);
+            stageMgr.ChangeStage<LauncherStartStage>();
         }
 
         private void Start()
         {
-            base.Start();
 
-            
         }
 
         private void Update()
         {
-            base.Update();
+            stageMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
         }
 
         private void OnDestroy()
         {
-            base.OnDestroy();
-        }
 
+        }
     }
 
 }
