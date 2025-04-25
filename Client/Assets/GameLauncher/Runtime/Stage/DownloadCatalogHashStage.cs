@@ -1,4 +1,4 @@
-﻿using GameLauncher.Runtime;
+﻿using Launcher.Runtime;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
-namespace Assets.GameLauncher.Runtime.Stage
+namespace Launcher.Runtime.Stage
 {
     internal class DownloadCatalogHashStage : StageBase
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.GameLauncher.Runtime.Stage
+namespace Launcher.Runtime.Stage
 {
     abstract class StageBase
     {
@@ -23,9 +23,14 @@ namespace Assets.GameLauncher.Runtime.Stage
             owner = mgr;
         }
 
-        protected internal void ChangeStage()
+        protected internal void ChangeStage(Type stage)
         {
-        
+            owner.ChangeStage(stage);
+        }
+
+        protected internal void ChangeStage<T>() where T : StageBase
+        {
+            owner.ChangeStage(typeof(T));
         }
 
         protected internal virtual void OnEnter()

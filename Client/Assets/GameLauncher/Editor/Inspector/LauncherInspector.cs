@@ -1,13 +1,13 @@
 ﻿/*using GameEngine.Editor.Inspector;
 using GameEngine.Editor.Misc;
 using GameMain.Runtime.Base.Procedure;
-using GameLauncher.Runtime;
+using Launcher.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace GameLauncher.Editor
+namespace Launcher.Editor
 {
     [CustomEditor(typeof(Launcher))]
     internal sealed class LauncherInspector : LauncherBaseInspector

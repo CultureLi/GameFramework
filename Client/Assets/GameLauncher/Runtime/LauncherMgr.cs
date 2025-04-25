@@ -11,7 +11,7 @@ using System.Linq;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using System.IO;
 
-namespace GameLauncher.Runtime
+namespace Launcher.Runtime
 {
     internal partial class LauncherMgr
     {

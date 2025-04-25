@@ -1,4 +1,4 @@
-﻿using GameLauncher.Runtime;
+﻿using Launcher.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Assets.GameLauncher.Runtime.Stage
+namespace Launcher.Runtime.Stage
 {
     /// <summary>
     /// 下载版本信息，检查是否需要热更，此版本为AppVersion

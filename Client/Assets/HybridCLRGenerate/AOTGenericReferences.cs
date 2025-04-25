@@ -5,8 +5,6 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// {{ AOT assemblies
 	public static readonly IReadOnlyList<string> PatchedAOTAssemblyList = new List<string>
 	{
-		"GameMain.Runtime.Base.dll",
-		"GameEngine.Runtime.ThirdPart.dll",
 		"System.Core.dll",
 		"System.dll",
 		"UnityEngine.CoreModule.dll",
@@ -18,11 +16,6 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// }} 
 
 	// {{ AOT generic types
-	// GameMain.Runtime.Base.Fsm.Fsm<object>
-	// GameMain.Runtime.Base.Fsm.FsmState<object>
-	// GameMain.Runtime.Base.Singleton<object>
-	// System.Action<!!0>
-	// System.Action<!0>
 	// System.Action<int>
 	// System.Action<long>
 	// System.Action<object>
@@ -121,27 +114,18 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// System.Comparison<int>
 	// System.Comparison<long>
 	// System.Comparison<object>
-	// System.Func<object,object>
-	// System.Nullable<long>
+	// System.Func<object,byte>
+	// System.IEquatable<GameMain.Runtime.Base.TypeNamePair>
 	// System.Predicate<int>
 	// System.Predicate<long>
 	// System.Predicate<object>
-	// System.Runtime.CompilerServices.ConditionalWeakTable.CreateValueCallback<object,object>
-	// System.Runtime.CompilerServices.ConditionalWeakTable.Enumerator<object,object>
-	// System.Runtime.CompilerServices.ConditionalWeakTable<object,object>
 	// }}
 
 	public void RefMethods()
 	{
-		// string Bright.Common.StringUtil.CollectionToString<object>(System.Collections.Generic.IEnumerable<object>)
-		// System.Void GameMain.Runtime.Base.Fsm.Fsm<object>.ChangeState<object>()
-		// System.Void GameMain.Runtime.Base.Fsm.FsmState<object>.ChangeState<object>()
-		// !!0 GameMain.Runtime.Base.RefPool.ReferencePool.Acquire<!!0>()
-		// !!0 GameMain.Runtime.Base.RefPool.ReferencePool.ReferenceCollection.Acquire<!!0>()
-		// !!0 System.Activator.CreateInstance<!!0>()
 		// object System.Activator.CreateInstance<object>()
+		// object System.Linq.Enumerable.First<object>(System.Collections.Generic.IEnumerable<object>,System.Func<object,bool>)
+		// System.Void System.Runtime.InteropServices.Marshal.StructureToPtr<object>(object,System.IntPtr,bool)
 		// object UnityEngine.GameObject.AddComponent<object>()
-		// string string.Join<object>(string,System.Collections.Generic.IEnumerable<object>)
-		// string string.JoinCore<object>(System.Char*,int,System.Collections.Generic.IEnumerable<object>)
 	}
 }

@@ -7,7 +7,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace GameLauncher.Editor
+namespace Launcher.Editor
 {
     [CustomEditor(typeof(LauncherBase))]
     internal class LauncherBaseInspector : InspectorBase

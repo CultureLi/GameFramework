@@ -1,73 +1,89 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <linker>
-  <assembly fullname="GameMain.Runtime.Base">
-    <type fullname="GameMain.Runtime.Base.ConsoleToScreen" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Fsm.FsmState`1" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Launcher.LauncherBase" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Log" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Procedure.IProcedureManager" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Procedure.ProcedureBase" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.RefPool.IReference" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.RefPool.ReferencePool" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Singleton`1" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Utilitys.Utility" preserve="all" />
-    <type fullname="GameMain.Runtime.Base.Utilitys.Utility/Assembly" preserve="all" />
-  </assembly>
-  <assembly fullname="GameEngine.Runtime.ThirdPart">
-    <type fullname="Bright.Common.StringUtil" preserve="all" />
-    <type fullname="Bright.Config.BeanBase" preserve="all" />
-    <type fullname="Bright.Serialization.ByteBuf" preserve="all" />
-  </assembly>
   <assembly fullname="System">
+    <type fullname="System.CodeDom.Compiler.GeneratedCodeAttribute" preserve="all" />
     <type fullname="System.Collections.Generic.Queue`1" preserve="all" />
     <type fullname="System.Collections.Generic.SortedDictionary`2" preserve="all" />
     <type fullname="System.Collections.Generic.SortedDictionary`2/Enumerator" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableAttribute" preserve="all" />
+    <type fullname="System.ComponentModel.EditorBrowsableState" preserve="all" />
   </assembly>
   <assembly fullname="System.Core">
     <type fullname="System.Collections.Generic.HashSet`1" preserve="all" />
     <type fullname="System.Collections.Generic.HashSet`1/Enumerator" preserve="all" />
+    <type fullname="System.Linq.Enumerable" preserve="all" />
   </assembly>
   <assembly fullname="UnityEngine.CoreModule">
+    <type fullname="UnityEngine.Color" preserve="all" />
+    <type fullname="UnityEngine.Color32" preserve="all" />
     <type fullname="UnityEngine.Component" preserve="all" />
+    <type fullname="UnityEngine.Debug" preserve="all" />
     <type fullname="UnityEngine.GameObject" preserve="all" />
+    <type fullname="UnityEngine.Material" preserve="all" />
     <type fullname="UnityEngine.MonoBehaviour" preserve="all" />
     <type fullname="UnityEngine.Object" preserve="all" />
+    <type fullname="UnityEngine.Quaternion" preserve="all" />
+    <type fullname="UnityEngine.Rect" preserve="all" />
+    <type fullname="UnityEngine.Texture" preserve="all" />
     <type fullname="UnityEngine.Time" preserve="all" />
     <type fullname="UnityEngine.Transform" preserve="all" />
+    <type fullname="UnityEngine.Vector2" preserve="all" />
+    <type fullname="UnityEngine.Vector3" preserve="all" />
+    <type fullname="UnityEngine.Vector4" preserve="all" />
   </assembly>
   <assembly fullname="mscorlib">
     <type fullname="System.Action`1" preserve="all" />
     <type fullname="System.Activator" preserve="all" />
-    <type fullname="System.Boolean" preserve="all" />
+    <type fullname="System.AppDomain" preserve="all" />
+    <type fullname="System.Array" preserve="all" />
+    <type fullname="System.BitConverter" preserve="all" />
+    <type fullname="System.Byte" preserve="all" />
     <type fullname="System.Collections.Generic.Dictionary`2" preserve="all" />
     <type fullname="System.Collections.Generic.Dictionary`2/Enumerator" preserve="all" />
     <type fullname="System.Collections.Generic.IEnumerable`1" preserve="all" />
+    <type fullname="System.Collections.Generic.IEqualityComparer`1" preserve="all" />
     <type fullname="System.Collections.Generic.KeyValuePair`2" preserve="all" />
     <type fullname="System.Collections.Generic.List`1" preserve="all" />
     <type fullname="System.Collections.Generic.List`1/Enumerator" preserve="all" />
+    <type fullname="System.DateTime" preserve="all" />
+    <type fullname="System.Decimal" preserve="all" />
+    <type fullname="System.Diagnostics.ConditionalAttribute" preserve="all" />
     <type fullname="System.Diagnostics.DebuggableAttribute" preserve="all" />
     <type fullname="System.Diagnostics.DebuggableAttribute/DebuggingModes" preserve="all" />
     <type fullname="System.Enum" preserve="all" />
     <type fullname="System.Exception" preserve="all" />
-    <type fullname="System.FlagsAttribute" preserve="all" />
     <type fullname="System.Func`2" preserve="all" />
-    <type fullname="System.Func`3" preserve="all" />
     <type fullname="System.IDisposable" preserve="all" />
-    <type fullname="System.Int32" preserve="all" />
-    <type fullname="System.Math" preserve="all" />
+    <type fullname="System.IEquatable`1" preserve="all" />
+    <type fullname="System.IO.Directory" preserve="all" />
+    <type fullname="System.IO.MemoryStream" preserve="all" />
+    <type fullname="System.IO.Stream" preserve="all" />
+    <type fullname="System.IntPtr" preserve="all" />
     <type fullname="System.NotImplementedException" preserve="all" />
-    <type fullname="System.Nullable`1" preserve="all" />
     <type fullname="System.Object" preserve="all" />
+    <type fullname="System.ParamArrayAttribute" preserve="all" />
+    <type fullname="System.Random" preserve="all" />
     <type fullname="System.Reflection.Assembly" preserve="all" />
-    <type fullname="System.Reflection.DefaultMemberAttribute" preserve="all" />
+    <type fullname="System.Reflection.AssemblyName" preserve="all" />
     <type fullname="System.Reflection.MemberInfo" preserve="all" />
-    <type fullname="System.Reflection.MethodBase" preserve="all" />
-    <type fullname="System.Reflection.MethodInfo" preserve="all" />
     <type fullname="System.Runtime.CompilerServices.CompilationRelaxationsAttribute" preserve="all" />
     <type fullname="System.Runtime.CompilerServices.CompilerGeneratedAttribute" preserve="all" />
     <type fullname="System.Runtime.CompilerServices.RuntimeCompatibilityAttribute" preserve="all" />
+    <type fullname="System.Runtime.CompilerServices.RuntimeHelpers" preserve="all" />
+    <type fullname="System.Runtime.InteropServices.Marshal" preserve="all" />
+    <type fullname="System.RuntimeFieldHandle" preserve="all" />
     <type fullname="System.RuntimeTypeHandle" preserve="all" />
+    <type fullname="System.Security.Permissions.SecurityAction" preserve="all" />
+    <type fullname="System.Security.Permissions.SecurityPermissionAttribute" preserve="all" />
+    <type fullname="System.Security.UnverifiableCodeAttribute" preserve="all" />
     <type fullname="System.String" preserve="all" />
+    <type fullname="System.StringComparer" preserve="all" />
+    <type fullname="System.Text.Encoding" preserve="all" />
+    <type fullname="System.Text.StringBuilder" preserve="all" />
+    <type fullname="System.ThreadStaticAttribute" preserve="all" />
+    <type fullname="System.Threading.Monitor" preserve="all" />
     <type fullname="System.Type" preserve="all" />
+    <type fullname="System.UInt32" preserve="all" />
+    <type fullname="System.ValueType" preserve="all" />
   </assembly>
 </linker>

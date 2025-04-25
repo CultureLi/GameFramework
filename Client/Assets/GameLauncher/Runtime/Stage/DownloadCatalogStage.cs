@@ -1,4 +1,4 @@
-﻿using GameLauncher.Runtime;
+﻿using Launcher.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Assets.GameLauncher.Runtime.Stage
+namespace Launcher.Runtime.Stage
 {
     internal class DownloadCatalogStage : StageBase
     {

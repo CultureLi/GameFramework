@@ -1,5 +1,4 @@
 ﻿
-using GameMain.Runtime.Base.Utilitys;
 using System.Collections.Generic;
 using System.Reflection;
 
@@ -12,13 +11,13 @@ namespace GameEngine.Editor.Misc
     {
         private static readonly string[] AssemblyNames =
         {
-            "GameEngine.Runtime","GameLauncher.Runtime","GameMain.Runtime",
+            "GameEngine.Runtime","Launcher.Runtime","GameMain.Runtime",
             "Assembly-CSharp"
         };
 
         private static readonly string[] EditorAssemblyNames =
         {
-            "GameEngine.Editor","GameLauncher.Editor","GameMain.Editor",
+            "GameEngine.Editor","Launcher.Editor","GameMain.Editor",
             "Assembly-CSharp-Editor"
         };
 

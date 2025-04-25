@@ -4,10 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Assets.GameLauncher.Runtime.Stage
+namespace Launcher.Runtime.Stage
 {
     internal class LauncherStartStage : StageBase
     {
-
+        protected internal override void OnEnter()
+        {
+            ChangeStage<DownloadVersionStage>();
+        }
     }
 }

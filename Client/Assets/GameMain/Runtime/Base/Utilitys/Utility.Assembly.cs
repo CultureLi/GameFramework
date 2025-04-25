@@ -56,7 +56,7 @@ namespace GameMain.Runtime.Base.Utilitys
             {
                 if (results == null)
                 {
-                    throw new Exception("Results is invalid.");
+                    throw new Exception("Results is inval   i  d.");
                 }
 
                 results.Clear();

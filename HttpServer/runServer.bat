@@ -1,0 +1,1 @@
+python -m http.server 7888 --bind 10.23.50.187
