@@ -1,23 +1,34 @@
 {
   "Item": [
     {
-      "name": "Base.Runtime",
-      "hash": "db1e8e2ee1e8f5d18f015bda0a836dbf",
+      "name": "Base",
+      "hash": "d7708f5d0e07f735b3db8d85f6ace5a8",
       "dependencies": []
     },
     {
-      "name": "Logic.Runtime",
-      "hash": "265f75a2f56287d3fe6ec4556fed217c",
+      "name": "Entrance",
+      "hash": "989f97d3964ac29e5a426ac051b288a1",
       "dependencies": [
-        "Base.Runtime",
-        "Module.Runtime"
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "HybridCLR.Runtime"
       ]
     },
     {
-      "name": "Module.Runtime",
-      "hash": "d3cf633edf5cdaac00ee9200066406f0",
+      "name": "GameMain",
+      "hash": "86014cd59b188be1b1ec9c8a67b09cfb",
       "dependencies": [
-        "Base.Runtime"
+        "Base",
+        "Module",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
+      ]
+    },
+    {
+      "name": "Module",
+      "hash": "78672b9ef8515447a1652e901d346386",
+      "dependencies": [
+        "Base"
       ]
     }
   ]
