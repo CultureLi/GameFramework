@@ -1,64 +1,77 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class EventManager : Singleton<EventManager>
+namespace Framework
 {
-    // 多播委托存储
-    private Dictionary<Type, Delegate> eventTable = new Dictionary<Type, Delegate>();
-
-    /// <summary>
-    /// 注册普通监听器
-    /// </summary>
-    public void Subscribe<T>(Action<T> listener) where T : IEvent
+    internal class EventManager : IEventMgr, FrameworkModule
     {
-        var type = typeof(T);
-        if (eventTable.ContainsKey(type))
-            eventTable[type] = Delegate.Combine(eventTable[type], listener);
-        else
-            eventTable[type] = listener;
+        // 多播委托存储
+        private Dictionary<Type, Delegate> eventTable = new Dictionary<Type, Delegate>();
 
-        Log($"[EventManager] Subscribed to {type.Name}");
-    }
-
-
-    /// <summary>
-    /// 注销监听器
-    /// </summary>
-    public void Unsubscribe<T>(Action<T> listener) where T : IEvent
-    {
-        var type = typeof(T);
-        if (eventTable.ContainsKey(type))
+        /// <summary>
+        /// 注册普通监听器
+        /// </summary>
+        public void Subscribe<T>(Action<T> listener) where T : IEvent
         {
-            eventTable[type] = Delegate.Remove(eventTable[type], listener);
-            if (eventTable[type] == null)
-                eventTable.Remove(type);
+            var type = typeof(T);
+            if (eventTable.ContainsKey(type))
+                eventTable[type] = Delegate.Combine(eventTable[type], listener);
+            else
+                eventTable[type] = listener;
+
+            Log($"[EventManager] Subscribed to {type.Name}");
         }
 
-        Log($"[EventManager] Unsubscribed from {type.Name}");
-    }
 
-    /// <summary>
-    /// 派发事件
-    /// </summary>
-    public void Dispatch<T>(T evt) where T : IEvent
-    {
-        var type = typeof(T);
-        Log($"[EventManager] Dispatching {type.Name}");
-
-        if (eventTable.TryGetValue(type, out var del))
+        /// <summary>
+        /// 注销监听器
+        /// </summary>
+        public void Unsubscribe<T>(Action<T> listener) where T : IEvent
         {
-            if (del is Action<T> callback)
+            var type = typeof(T);
+            if (eventTable.ContainsKey(type))
             {
-                callback.Invoke(evt);
+                eventTable[type] = Delegate.Remove(eventTable[type], listener);
+                if (eventTable[type] == null)
+                    eventTable.Remove(type);
             }
+
+            Log($"[EventManager] Unsubscribed from {type.Name}");
         }
 
-    }
+        /// <summary>
+        /// 派发事件
+        /// </summary>
+        public void Dispatch<T>(T evt) where T : IEvent
+        {
+            var type = typeof(T);
+            Log($"[EventManager] Dispatching {type.Name}");
 
-    private void Log(string message)
-    {
+            if (eventTable.TryGetValue(type, out var del))
+            {
+                if (del is Action<T> callback)
+                {
+                    callback.Invoke(evt);
+                }
+            }
+
+        }
+
+        private void Log(string message)
+        {
 #if DEBUG || UNITY_EDITOR
-        Console.WriteLine(message); // 替换成 Debug.Log(message) 适配 Unity
+            Console.WriteLine(message); // 替换成 Debug.Log(message) 适配 Unity
 #endif
+        }
+
+        public void Update(float elapseSeconds, float realElapseSeconds)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Shutdown()
+        {
+            eventTable.Clear();
+        }
     }
 }
