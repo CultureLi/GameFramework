@@ -1,5 +1,4 @@
-﻿using GameMain.Runtime.Module;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,17 +34,17 @@ namespace GameMain.Runtime.Logic
         {
 
 
-            ModuleManager.Instance.Update(Time.deltaTime, Time.realtimeSinceStartup);
+            //ModuleManager.Instance.Update(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         protected void FixedUpdate()
         {
-            ModuleManager.Instance.FixUpdate(Time.deltaTime, Time.realtimeSinceStartup);
+            //ModuleManager.Instance.FixUpdate(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         protected void LateUpdate()
         {
-            ModuleManager.Instance.LateUpdate(Time.deltaTime, Time.realtimeSinceStartup);
+            //ModuleManager.Instance.LateUpdate(Time.deltaTime, Time.realtimeSinceStartup);
         }
 
         protected void OnDestroy()

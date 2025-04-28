@@ -1,5 +1,4 @@
-﻿using GameMain.Runtime.Base.Utilitys;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace GameMain
 {
@@ -8,7 +7,6 @@ namespace GameMain
         public static void Entry()
         {
             Debug.Log(" 反反复复 GameMainEntry");
-            Utility.Test();
         }
     }
 }
