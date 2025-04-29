@@ -8,7 +8,7 @@ namespace Framework
     /// </summary>
     public static class FrameworkEntry
     {
-        private static readonly LinkedList<FrameworkModule> s_GameFrameworkModules = new LinkedList<FrameworkModule>();
+        private static readonly LinkedList<IFrameworkModule> s_GameFrameworkModules = new LinkedList<IFrameworkModule>();
 
         /// <summary>
         /// 所有游戏框架模块轮询。
@@ -17,7 +17,7 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public static void Update(float elapseSeconds, float realElapseSeconds)
         {
-            foreach (FrameworkModule module in s_GameFrameworkModules)
+            foreach (IFrameworkModule module in s_GameFrameworkModules)
             {
                 module.Update(elapseSeconds, realElapseSeconds);
             }
@@ -28,7 +28,7 @@ namespace Framework
         /// </summary>
         public static void Shutdown()
         {
-            for (LinkedListNode<FrameworkModule> current = s_GameFrameworkModules.Last; current != null; current = current.Previous)
+            for (LinkedListNode<IFrameworkModule> current = s_GameFrameworkModules.Last; current != null; current = current.Previous)
             {
                 current.Value.Shutdown();
             }
@@ -71,9 +71,9 @@ namespace Framework
         /// <param name="moduleType">要获取的游戏框架模块类型。</param>
         /// <returns>要获取的游戏框架模块。</returns>
         /// <remarks>如果要获取的游戏框架模块不存在，则自动创建该游戏框架模块。</remarks>
-        private static FrameworkModule GetModule(Type moduleType)
+        private static IFrameworkModule GetModule(Type moduleType)
         {
-            foreach (FrameworkModule module in s_GameFrameworkModules)
+            foreach (IFrameworkModule module in s_GameFrameworkModules)
             {
                 if (module.GetType() == moduleType)
                 {
@@ -89,15 +89,15 @@ namespace Framework
         /// </summary>
         /// <param name="moduleType">要创建的游戏框架模块类型。</param>
         /// <returns>要创建的游戏框架模块。</returns>
-        private static FrameworkModule CreateModule(Type moduleType)
+        private static IFrameworkModule CreateModule(Type moduleType)
         {
-            FrameworkModule module = (FrameworkModule)Activator.CreateInstance(moduleType);
+            IFrameworkModule module = (IFrameworkModule)Activator.CreateInstance(moduleType);
             if (module == null)
             {
                 throw new Exception(Utility.Text.Format("Can not create module '{0}'.", moduleType.FullName));
             }
 
-            LinkedListNode<FrameworkModule> current = s_GameFrameworkModules.First;
+            LinkedListNode<IFrameworkModule> current = s_GameFrameworkModules.First;
             while (current != null)
             {
                 if (module.Priority > current.Value.Priority)

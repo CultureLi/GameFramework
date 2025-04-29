@@ -1,29 +1,32 @@
-﻿public abstract class Singleton<T> where T : class, new()
+﻿namespace Framework
 {
-    private static T instance;
-    private static readonly object locker = new();
-
-    public static T Instance
+    public abstract class Singleton<T> where T : class, new()
     {
-        get
+        private static T instance;
+        private static readonly object locker = new();
+
+        public static T Instance
         {
-            if (instance == null)
+            get
             {
-                lock (locker)
+                if (instance == null)
                 {
-                    if (instance == null)
+                    lock (locker)
                     {
-                        instance = new T();
+                        if (instance == null)
+                        {
+                            instance = new T();
+                        }
                     }
                 }
+                return instance;
             }
-            return instance;
         }
-    }
 
-    // 可选的释放方法
-    public static void Dispose()
-    {
-        instance = null;
+        // 可选的释放方法
+        public static void Dispose()
+        {
+            instance = null;
+        }
     }
 }

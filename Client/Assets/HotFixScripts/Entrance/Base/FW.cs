@@ -9,7 +9,9 @@ namespace Entrance
 {
     internal class FW : SingletonMono<FW>
     {
-        public static IResourceMgr resourceMgr;
+        public static IEventMgr EventMgr { get; private set; }
+        public static IFsmMgr FsmMgr { get; private set; }
+        public static IResourceMgr ResourceMgr { get; private set; }
 
         private void Awake()
         {
@@ -18,7 +20,9 @@ namespace Entrance
 
         void InitModules()
         {
-            resourceMgr = FrameworkEntry.GetModule<IResourceMgr>();
+            EventMgr = FrameworkEntry.GetModule<IEventMgr>();
+            FsmMgr = FrameworkEntry.GetModule<IFsmMgr>();
+            ResourceMgr = FrameworkEntry.GetModule<IResourceMgr>();
         }
     }
 }

@@ -3,7 +3,7 @@
     /// <summary>
     /// 游戏框架模块抽象类。
     /// </summary>
-    internal interface FrameworkModule
+    public interface IFrameworkModule
     {
         /// <summary>
         /// 获取游戏框架模块优先级。
