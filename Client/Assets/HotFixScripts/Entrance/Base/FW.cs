@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Entrance
 {
-    internal class Fw2 : SingletonMono<Fw2>
+    internal class FW : SingletonMono<FW>
     {
         public static IResourceMgr resourceMgr;
 

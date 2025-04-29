@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
-    internal class EventManager : IEventMgr, FrameworkModule
+    internal class EventMgr : IEventMgr, FrameworkModule
     {
         // 多播委托存储
         private Dictionary<Type, Delegate> eventTable = new Dictionary<Type, Delegate>();
@@ -11,7 +12,7 @@ namespace Framework
         /// <summary>
         /// 注册普通监听器
         /// </summary>
-        public void Subscribe<T>(Action<T> listener) where T : IEvent
+        public void Subscribe<T>(Action<T> listener) where T : EventBase
         {
             var type = typeof(T);
             if (eventTable.ContainsKey(type))
@@ -19,14 +20,14 @@ namespace Framework
             else
                 eventTable[type] = listener;
 
-            Log($"[EventManager] Subscribed to {type.Name}");
+            Debug.Log($"[EventManager] Subscribed to {type.Name}");
         }
 
 
         /// <summary>
         /// 注销监听器
         /// </summary>
-        public void Unsubscribe<T>(Action<T> listener) where T : IEvent
+        public void Unsubscribe<T>(Action<T> listener) where T : EventBase
         {
             var type = typeof(T);
             if (eventTable.ContainsKey(type))
@@ -36,16 +37,16 @@ namespace Framework
                     eventTable.Remove(type);
             }
 
-            Log($"[EventManager] Unsubscribed from {type.Name}");
+            Debug.Log($"[EventManager] Unsubscribed from {type.Name}");
         }
 
         /// <summary>
-        /// 派发事件
+        /// 触发事件
         /// </summary>
-        public void Dispatch<T>(T evt) where T : IEvent
+        public void Fire<T>(T evt = null) where T : EventBase
         {
             var type = typeof(T);
-            Log($"[EventManager] Dispatching {type.Name}");
+            Debug.Log($"[EventManager] Dispatching {type.Name}");
 
             if (eventTable.TryGetValue(type, out var del))
             {
@@ -57,16 +58,9 @@ namespace Framework
 
         }
 
-        private void Log(string message)
-        {
-#if DEBUG || UNITY_EDITOR
-            Console.WriteLine(message); // 替换成 Debug.Log(message) 适配 Unity
-#endif
-        }
-
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            throw new NotImplementedException();
+            
         }
 
         public void Shutdown()

@@ -8,9 +8,11 @@ namespace Framework
 {
     public interface IEventMgr
     {
-        public void Subscribe<T>(Action<T> listener) where T : IEvent;
+        public void Subscribe<T>(Action<T> listener) where T : EventBase;
 
-        public void Unsubscribe<T>(Action<T> listener) where T : IEvent;
+        public void Unsubscribe<T>(Action<T> listener) where T : EventBase;
+
+        public void Fire<T>(T evt = null) where T : EventBase;
 
     }
 }

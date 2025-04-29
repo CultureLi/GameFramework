@@ -1,4 +1,5 @@
-﻿public interface IEvent
+﻿public abstract class EventBase
 {
-    
+
 }
+
