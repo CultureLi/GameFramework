@@ -430,7 +430,7 @@ namespace Framework
                     return false;
                 }
 
-                if (m_Objects.TryGetValue(internalObject.Name, out var objectList))
+                if (!m_Objects.TryGetValue(internalObject.Name, out var objectList))
                 {
                     return false;
                 }

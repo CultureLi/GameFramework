@@ -10,22 +10,26 @@ namespace Assets.Scripts
 {
     internal class CustomObject : ObjectBase
     {
-        public CustomObject(string name, GameObject go)
+        public static CustomObject Create(object target)
         {
-            Initialize(name, go);
+            var obj = ReferencePool.Acquire<CustomObject>();
+            obj.Initialize("CustomObj",target);
+            return obj;
         }
         protected override void Release(bool isShutdown)
         {
+            UnityEngine.Object.Destroy(Target as GameObject);
         }
 
         protected override void OnSpawn()
         {
-            var go = (Target as GameObject);
-            go.SetActive(true);
+            base.OnSpawn();
+            (Target as GameObject).SetActive(true);
         }
 
         protected override void OnUnspawn()
         {
+            base.OnUnspawn();
             (Target as GameObject).SetActive(false);
         }
     }

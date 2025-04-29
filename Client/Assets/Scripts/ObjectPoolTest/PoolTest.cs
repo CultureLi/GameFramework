@@ -5,36 +5,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UnityEditor.UI;
 using UnityEngine;
 
 namespace Assets.Scripts.ObjectPoolTest
 {
     public class PoolTest : MonoBehaviour
     {
-        public ButtonEditor button1;
-        public GameObject targetGo;
+        public GameObject template;
         public IObjectPoolManager poolManager;
         internal IObjectPool<CustomObject> myPool;
 
-        Queue<CustomObject> nowAliveObject=new Queue<CustomObject>();
+        Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
             poolManager = FrameworkEntry.GetModule<IObjectPoolManager>();
-            myPool = poolManager.CreateSingleSpawnObjectPool<CustomObject>("Custom",10, 600);
+            myPool = poolManager.CreateSingleSpawnObjectPool<CustomObject>("Custom",10, 5,1);
 
-            var obj = new CustomObject("CustomObj", targetGo);
-            //for(int i = 0; i < 5;i++)
-            myPool.Register(obj, false);
         }
 
-        public void Spawn()
+        private void Update()
         {
-            var go = myPool.Spawn("CustomObj");
-            nowAliveObject.Enqueue(go);
+            FrameworkEntry.Update(Time.deltaTime, Time.unscaledDeltaTime);
         }
 
-        public void UnSpawn()
+        public GameObject CreateObj()
+        {
+            var obj = myPool.Spawn("CustomObj");
+            if (obj != null)
+            {
+                return obj.Target as GameObject;
+            }
+
+            var go = GameObject.Instantiate(template);
+            obj = CustomObject.Create(go);
+            myPool.Register(obj,true);
+
+            return go;
+        }
+
+        public void DestroyObj()
         {
             if (nowAliveObject.Count > 0)
             {
@@ -44,7 +53,24 @@ namespace Assets.Scripts.ObjectPoolTest
             
         }
 
-        public void Count()
+
+        public void Spawn()
+        {
+            var go = CreateObj();
+            nowAliveObject.Enqueue(go);
+            go.transform.SetParent(transform);
+        }
+
+        public void UnSpawn()
+        {
+            if (nowAliveObject.Count > 0)
+            {
+                var go = nowAliveObject.Dequeue();
+                myPool.Unspawn(go);
+            }
+        }
+
+        public void Count() 
         {
             Debug.Log($"Active: {nowAliveObject.Count}  pool: {myPool.Count}");
         }
