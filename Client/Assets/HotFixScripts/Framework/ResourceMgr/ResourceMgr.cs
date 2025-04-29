@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 
 namespace Framework
 {
-    public class ResourceMgr : IResourceMgr, IFrameworkModule
+    internal sealed class ResourceMgr : IResourceMgr, IFrameworkModule
     {
         public AsyncOperationHandle<List<string>> CheckForCatalogUpdates(bool autoReleaseHandle = true)
         {

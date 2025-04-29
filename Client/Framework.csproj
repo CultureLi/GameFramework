@@ -65,19 +65,31 @@
     <Compile Include="Assets\HotFixScripts\Framework\Event\EventMgr.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Fsm\FsmState.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Text.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectPoolBase.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Base\SingletonMono.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Compression.ICompressionHelper.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\IObjectPool.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ReferencePool\ReferencePoolInfo.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\ResourceMgr\ResourceMgr.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Assembly.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ReferencePool\ReferencePool.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Verifier.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Base\FrameworkEntry.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\IObjectPoolManager.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ReferencePool\ReferencePool.ReferenceCollection.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Verifier.Crc32.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Event\IEventMgr.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectPoolManager.Object.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ReleaseObjectFilterCallback.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectPoolManager.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ReferencePool\IReference.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Fsm\FsmMgr.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Base\Singleton.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Converter.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Fsm\IFsmMgr.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectBase.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectInfo.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Event\EventBase.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Compression.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Text.ITextHelper.cs" />
@@ -88,6 +100,8 @@
     <Compile Include="Assets\HotFixScripts\Framework\Base\IFrameworkModule.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Json.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Random.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\ObjectPool\ObjectPoolManager.ObjectPool.cs" />
+    <Compile Include="Assets\HotFixScripts\Framework\Base\TypeNamePair.cs" />
     <Compile Include="Assets\HotFixScripts\Framework\Utility\Utility.Path.cs" />
   </ItemGroup>
   <ItemGroup>

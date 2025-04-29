@@ -6,18 +6,18 @@ namespace Framework
     /// <summary>
     /// 有限状态机管理器。
     /// </summary>
-    public sealed class FsmMgr : IFrameworkModule, IFsmMgr
+    internal sealed class FsmMgr : IFrameworkModule, IFsmMgr
     {
-        private readonly Dictionary<string, Fsm> m_Fsms;
-        private readonly List<Fsm> m_TempFsms;
+        private readonly Dictionary<string, Fsm> fsms;
+        private readonly List<Fsm> tempFsms;
 
         /// <summary>
         /// 初始化有限状态机管理器的新实例。
         /// </summary>
         public FsmMgr()
         {
-            m_Fsms = new Dictionary<string, Fsm>();
-            m_TempFsms = new List<Fsm>();
+            fsms = new Dictionary<string, Fsm>();
+            tempFsms = new List<Fsm>();
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Framework
         {
             get
             {
-                return m_Fsms.Count;
+                return fsms.Count;
             }
         }
 
@@ -50,18 +50,18 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            m_TempFsms.Clear();
-            if (m_Fsms.Count <= 0)
+            tempFsms.Clear();
+            if (fsms.Count <= 0)
             {
                 return;
             }
 
-            foreach (KeyValuePair<string, Fsm> fsm in m_Fsms)
+            foreach (KeyValuePair<string, Fsm> fsm in fsms)
             {
-                m_TempFsms.Add(fsm.Value);
+                tempFsms.Add(fsm.Value);
             }
 
-            foreach (Fsm fsm in m_TempFsms)
+            foreach (Fsm fsm in tempFsms)
             {
                 if (fsm.IsDestroyed)
                 {
@@ -77,13 +77,13 @@ namespace Framework
         /// </summary>
         public void Shutdown()
         {
-            foreach (KeyValuePair<string, Fsm> fsm in m_Fsms)
+            foreach (KeyValuePair<string, Fsm> fsm in fsms)
             {
                 fsm.Value.Destroy();
             }
 
-            m_Fsms.Clear();
-            m_TempFsms.Clear();
+            fsms.Clear();
+            tempFsms.Clear();
         }
 
         /// <summary>
@@ -114,8 +114,8 @@ namespace Framework
         public Fsm[] GetAllFsms()
         {
             int index = 0;
-            Fsm[] results = new Fsm[m_Fsms.Count];
-            foreach (KeyValuePair<string, Fsm> fsm in m_Fsms)
+            Fsm[] results = new Fsm[fsms.Count];
+            foreach (KeyValuePair<string, Fsm> fsm in fsms)
             {
                 results[index++] = fsm.Value;
             }
@@ -135,7 +135,7 @@ namespace Framework
             }
 
             results.Clear();
-            foreach (KeyValuePair<string, Fsm> fsm in m_Fsms)
+            foreach (KeyValuePair<string, Fsm> fsm in fsms)
             {
                 results.Add(fsm.Value);
             }
@@ -157,7 +157,7 @@ namespace Framework
             }
 
             Fsm fsm = Fsm.Create(name, states);
-            m_Fsms.Add(name, fsm);
+            fsms.Add(name, fsm);
             return fsm;
         }
 
@@ -169,7 +169,7 @@ namespace Framework
             }
 
             Fsm fsm = Fsm.Create(name, states);
-            m_Fsms.Add(name, fsm);
+            fsms.Add(name, fsm);
             return fsm;
         }
 
@@ -201,13 +201,13 @@ namespace Framework
 
         private bool InternalHasFsm(string name)
         {
-            return m_Fsms.ContainsKey(name);
+            return fsms.ContainsKey(name);
         }
 
         private Fsm InternalGetFsm(string name)
         {
             Fsm fsm = null;
-            if (m_Fsms.TryGetValue(name, out fsm))
+            if (fsms.TryGetValue(name, out fsm))
             {
                 return fsm;
             }
@@ -218,10 +218,10 @@ namespace Framework
         private bool InternalDestroyFsm(string name)
         {
             Fsm fsm = null;
-            if (m_Fsms.TryGetValue(name, out fsm))
+            if (fsms.TryGetValue(name, out fsm))
             {
                 fsm.Destroy();
-                return m_Fsms.Remove(name);
+                return fsms.Remove(name);
             }
 
             return false;

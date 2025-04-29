@@ -9,10 +9,10 @@ namespace Framework
     /// <typeparam name="T">有限状态机持有者类型。</typeparam>
     public sealed class Fsm : IFsm
     {
-        private readonly Dictionary<Type, FsmState> m_States;
-        private FsmState m_CurrentState;
-        private float m_CurrentStateTime;
-        private bool m_IsDestroyed;
+        private readonly Dictionary<Type, FsmState> states;
+        private FsmState currentState;
+        private float currentStateTime;
+        private bool isDestroyed;
         private string name;
 
         public string Name => name;
@@ -24,7 +24,7 @@ namespace Framework
         {
             get
             {
-                return m_States.Count;
+                return states.Count;
             }
         }
 
@@ -35,7 +35,7 @@ namespace Framework
         {
             get
             {
-                return m_CurrentState != null;
+                return currentState != null;
             }
         }
 
@@ -46,7 +46,7 @@ namespace Framework
         {
             get
             {
-                return m_IsDestroyed;
+                return isDestroyed;
             }
         }
 
@@ -57,7 +57,7 @@ namespace Framework
         {
             get
             {
-                return m_CurrentState;
+                return currentState;
             }
         }
 
@@ -68,7 +68,7 @@ namespace Framework
         {
             get
             {
-                return m_CurrentState != null ? m_CurrentState.GetType().FullName : null;
+                return currentState != null ? currentState.GetType().FullName : null;
             }
         }
 
@@ -79,7 +79,7 @@ namespace Framework
         {
             get
             {
-                return m_CurrentStateTime;
+                return currentStateTime;
             }
         }
 
@@ -115,7 +115,7 @@ namespace Framework
             Fsm fsm = new()
             {
                 name = name,
-                m_IsDestroyed = false
+                isDestroyed = false
             };
             foreach (FsmState state in states)
             {
@@ -125,12 +125,12 @@ namespace Framework
                 }
 
                 Type stateType = state.GetType();
-                if (fsm.m_States.ContainsKey(stateType))
+                if (fsm.states.ContainsKey(stateType))
                 {
                     throw new Exception(Utility.Text.Format("FSM state '{1}' is already exist.", stateType.FullName));
                 }
 
-                fsm.m_States.Add(stateType, state);
+                fsm.states.Add(stateType, state);
                 state.OnInit(fsm);
             }
 
@@ -173,9 +173,9 @@ namespace Framework
                 throw new Exception(Utility.Text.Format("FSM can not start state '{1}' which is not exist.", stateType.FullName));
             }
 
-            m_CurrentStateTime = 0f;
-            m_CurrentState = state;
-            m_CurrentState.OnEnter();
+            currentStateTime = 0f;
+            currentState = state;
+            currentState.OnEnter();
         }
 
         /// <summary>
@@ -185,7 +185,7 @@ namespace Framework
         /// <returns>是否存在有限状态机状态。</returns>
         public bool HasState<TState>() where TState : FsmState
         {
-            return m_States.ContainsKey(typeof(TState));
+            return states.ContainsKey(typeof(TState));
         }
 
         /// <summary>
@@ -205,7 +205,7 @@ namespace Framework
                 throw new Exception(Utility.Text.Format("State type '{0}' is invalid.", stateType.FullName));
             }
 
-            return m_States.ContainsKey(stateType);
+            return states.ContainsKey(stateType);
         }
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace Framework
         public TState GetState<TState>() where TState : FsmState
         {
             FsmState state = null;
-            if (m_States.TryGetValue(typeof(TState), out state))
+            if (states.TryGetValue(typeof(TState), out state))
             {
                 return (TState)state;
             }
@@ -242,7 +242,7 @@ namespace Framework
             }
 
             FsmState state = null;
-            if (m_States.TryGetValue(stateType, out state))
+            if (states.TryGetValue(stateType, out state))
             {
                 return state;
             }
@@ -257,8 +257,8 @@ namespace Framework
         public FsmState[] GetAllStates()
         {
             int index = 0;
-            FsmState[] results = new FsmState[m_States.Count];
-            foreach (KeyValuePair<Type, FsmState> state in m_States)
+            FsmState[] results = new FsmState[states.Count];
+            foreach (KeyValuePair<Type, FsmState> state in states)
             {
                 results[index++] = state.Value;
             }
@@ -278,7 +278,7 @@ namespace Framework
             }
 
             results.Clear();
-            foreach (KeyValuePair<Type, FsmState> state in m_States)
+            foreach (KeyValuePair<Type, FsmState> state in states)
             {
                 results.Add(state.Value);
             }
@@ -291,13 +291,13 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         internal void Update(float elapseSeconds, float realElapseSeconds)
         {
-            if (m_CurrentState == null)
+            if (currentState == null)
             {
                 return;
             }
 
-            m_CurrentStateTime += elapseSeconds;
-            m_CurrentState.OnUpdate(elapseSeconds, realElapseSeconds);
+            currentStateTime += elapseSeconds;
+            currentState.OnUpdate(elapseSeconds, realElapseSeconds);
         }
 
         /// <summary>
@@ -313,21 +313,21 @@ namespace Framework
         /// </summary>
         public void Clear()
         {
-            if (m_CurrentState != null)
+            if (currentState != null)
             {
-                m_CurrentState.OnLeave();
+                currentState.OnLeave();
             }
 
-            foreach (KeyValuePair<Type, FsmState> state in m_States)
+            foreach (KeyValuePair<Type, FsmState> state in states)
             {
                 state.Value.OnDestroy();
             }
 
             name = null;
-            m_States.Clear();
-            m_CurrentState = null;
-            m_CurrentStateTime = 0f;
-            m_IsDestroyed = true;
+            states.Clear();
+            currentState = null;
+            currentStateTime = 0f;
+            isDestroyed = true;
         }
 
         /// <summary>
@@ -345,7 +345,7 @@ namespace Framework
         /// <param name="stateType">要切换到的有限状态机状态类型。</param>
         internal void ChangeState(Type stateType)
         {
-            if (m_CurrentState == null)
+            if (currentState == null)
             {
                 throw new Exception("Current state is invalid.");
             }
@@ -356,10 +356,10 @@ namespace Framework
                 throw new Exception(Utility.Text.Format("FSM can not change state to '{1}' which is not exist.",  stateType.FullName));
             }
 
-            m_CurrentState.OnLeave();
-            m_CurrentStateTime = 0f;
-            m_CurrentState = state;
-            m_CurrentState.OnEnter();
+            currentState.OnLeave();
+            currentStateTime = 0f;
+            currentState = state;
+            currentState.OnEnter();
         }
     }
 }

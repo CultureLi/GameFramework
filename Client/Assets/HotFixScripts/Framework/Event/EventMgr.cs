@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Framework
 {
-    public class EventMgr : IEventMgr, IFrameworkModule
+    internal sealed class EventMgr : IEventMgr, IFrameworkModule
     {
         // 多播委托存储
         private Dictionary<Type, Delegate> eventTable = new Dictionary<Type, Delegate>();
