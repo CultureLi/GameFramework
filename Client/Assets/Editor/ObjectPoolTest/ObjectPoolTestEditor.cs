@@ -5,8 +5,8 @@ using UnityEngine;
 
 namespace Assets.Editor.ObjectPoolTest
 {
-    [CustomEditor(typeof(PoolTest))]
-    public class ObjectPoolTestEditorcs : UnityEditor.Editor
+    [CustomEditor(typeof(Scripts.ObjectPoolTest.ObjectPoolTest))]
+    public class ObjectPoolTestEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
@@ -14,7 +14,7 @@ namespace Assets.Editor.ObjectPoolTest
             base.OnInspectorGUI();
 
             // 获取目标对象引用
-            PoolTest myScript = (PoolTest)target;
+            Scripts.ObjectPoolTest.ObjectPoolTest myScript = (Scripts.ObjectPoolTest.ObjectPoolTest)target;
 
             // 添加按钮
             if (GUILayout.Button("Spawn"))

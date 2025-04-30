@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace Assets.Scripts.ObjectPoolTest
 {
-    public class PoolTest : MonoBehaviour
+    public class ObjectPoolTest : MonoBehaviour
     {
         public GameObject template;
         public IObjectPoolManager poolManager;
