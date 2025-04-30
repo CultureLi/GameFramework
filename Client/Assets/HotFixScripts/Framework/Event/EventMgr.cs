@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Framework
 {
     internal sealed class EventMgr : IEventMgr, IFrameworkModule
     {
         // 多播委托存储
-        private Dictionary<Type, Delegate> eventTable = new Dictionary<Type, Delegate>();
+        private Dictionary<Type, List<Delegate>> eventTable = new Dictionary<Type, List<Delegate>>();
 
         /// <summary>
         /// 注册普通监听器
@@ -15,12 +14,14 @@ namespace Framework
         public void Subscribe<T>(Action<T> listener) where T : EventBase
         {
             var type = typeof(T);
-            if (eventTable.ContainsKey(type))
-                eventTable[type] = Delegate.Combine(eventTable[type], listener);
-            else
-                eventTable[type] = listener;
-
-            Debug.Log($"[EventManager] Subscribed to {type.Name}");
+            if (!eventTable.TryGetValue(type, out var list))
+            {
+                list = new List<Delegate>();
+                eventTable[type] = list;
+            }
+            
+            if (!list.Contains(listener))
+                list.Add(listener);
         }
 
 
@@ -30,14 +31,10 @@ namespace Framework
         public void Unsubscribe<T>(Action<T> listener) where T : EventBase
         {
             var type = typeof(T);
-            if (eventTable.ContainsKey(type))
+            if (eventTable.TryGetValue(type, out var list))
             {
-                eventTable[type] = Delegate.Remove(eventTable[type], listener);
-                if (eventTable[type] == null)
-                    eventTable.Remove(type);
+               list.Remove(listener);
             }
-
-            Debug.Log($"[EventManager] Unsubscribed from {type.Name}");
         }
 
         /// <summary>
@@ -46,16 +43,13 @@ namespace Framework
         public void Fire<T>(T evt = null) where T : EventBase
         {
             var type = typeof(T);
-            Debug.Log($"[EventManager] Dispatching {type.Name}");
-
-            if (eventTable.TryGetValue(type, out var del))
+            if (eventTable.TryGetValue(type, out var list))
             {
-                if (del is Action<T> callback)
+                foreach (var callback in list)
                 {
-                    callback.Invoke(evt);
+                    callback.DynamicInvoke(evt);
                 }
             }
-
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

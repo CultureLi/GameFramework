@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.Scripts.ObjectPoolTest
+namespace Assets.TestScripts.Runtime.ObjectPoolTest
 {
     internal class CustomObject : ObjectBase
     {
