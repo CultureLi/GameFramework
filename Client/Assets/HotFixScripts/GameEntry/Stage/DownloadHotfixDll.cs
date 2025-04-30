@@ -1,4 +1,4 @@
-﻿/*using Entrance;
+﻿/*
 using Entrance.Stage;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Reflection;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Entrance.Stage
+namespace GameEntry.Stage
 {
     // 在Hybridclr setting面板中HotUpdateAssemblyDefinitions中添加热更程序集
     // 在打包时，Hybridclr会自动将这些程序集生成的dll从主程序中剔除
@@ -70,7 +70,7 @@ namespace Entrance.Stage
         IEnumerator DownloadManifest()
         {
             Debug.Log("下载 Manifest");
-            yield return EntranceMgr.I.DownloadWithRetry(
+            yield return GameEntryMgr.I.DownloadWithRetry(
                 PathDefine.remoteHotFixDllManifest,
                 null,
                 3,

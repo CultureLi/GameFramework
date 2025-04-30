@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace Entrance
+namespace GameEntry
 {
     public partial class PathDefine
     {

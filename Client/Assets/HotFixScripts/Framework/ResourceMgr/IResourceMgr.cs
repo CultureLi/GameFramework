@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.Networking;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -14,6 +15,30 @@ namespace Framework
 {
     public interface IResourceMgr
     {
+        Action BundleDownloadStart
+        {
+            get; set;
+        }
+
+        Action BundleDownloadCompleted
+        {
+            get; set;
+        }
+
+        Action<DownloadStatus> BundleDownloadProgress
+        {
+            get; set;
+        }
+
+        IEnumerator LoadFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10);
+        IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb);
+
+        IEnumerator ReloadRemoteCatalog(string url, Action completedCb);
+
+        public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog);
+
+        IEnumerator DownloadBundles();
+
         public AsyncOperationHandle<IResourceLocator> InitializeAsync();
         public AsyncOperationHandle<IResourceLocator> LoadContentCatalogAsync(string catalogPath);
 

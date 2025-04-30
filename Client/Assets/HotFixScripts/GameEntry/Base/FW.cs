@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entrance
+namespace GameEntry
 {
     internal class FW : SingletonMono<FW>
     {

@@ -42,10 +42,10 @@ namespace Launcher
                 Debug.LogError("没有找到Entrance");
                 return;
             }
-            Type entry = entranceAssembly.GetType("Entrance.EntranceMgr");
+            Type entry = entranceAssembly.GetType("Entrance.GameEntryMgr");
             if (entry == null)
             {
-                Debug.LogError("没有找到EntranceMgr");
+                Debug.LogError("没有找到GameEntryMgr");
                 return;
             }
             var method = entry.GetMethod("Entry");

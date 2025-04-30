@@ -1,4 +1,5 @@
-﻿using Entrance;
+﻿
+using Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +8,12 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Entrance.Stage
+namespace GameEntry.Stage
 {
     /// <summary>
     /// 下载版本信息，检查是否需要热更，此版本为AppVersion
     /// </summary>
-    internal class DownloadVersionStage : StageBase
+    internal class DownloadVersionStage : FsmState
     {
         MonoBehaviour _runner;
         public DownloadVersionStage(MonoBehaviour runner)
@@ -20,13 +21,10 @@ namespace Entrance.Stage
             _runner = runner;
         }
 
-        protected internal override void OnEnter()
+        protected override void OnEnter()
         {
-            _runner.StartCoroutine(EntranceMgr.I.DownloadWithRetry(
+            _runner.StartCoroutine(FW.ResourceMgr.LoadFile(
                 PathDefine.remoteVersionUrl,
-                null,
-                3,
-                10,
                 OnDownloadCompleted));
         }
 
@@ -38,11 +36,11 @@ namespace Entrance.Stage
 
             if (!string.IsNullOrEmpty(localVersion) && localVersion.CompareTo(remoteVersion) < 0)
             {
-                ChangeStage<DownloadCatalogHashStage>();
+                ChangeState<DownloadCatalogHashStage>();
             }
             else
             {
-                ChangeStage<ReloadCatalogStage>();
+                ChangeState<ReloadCatalogStage>();
             }
         }
     }

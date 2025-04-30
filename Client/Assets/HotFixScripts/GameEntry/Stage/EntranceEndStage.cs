@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,14 +8,13 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Entrance.Stage
+namespace GameEntry.Stage
 {
-    internal class EntranceEndStage : StageBase
+    internal class EntranceEndStage : FsmState
     {
-        protected internal override void OnEnter()
+        protected override void OnEnter()
         {
             OverrideCatalogHash();
-            EntranceMgr.I.ClearUnUsedData();
 
 #if !UNITY_EDITOR
             var assembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain");
@@ -36,8 +36,8 @@ namespace Entrance.Stage
 
         void OverrideCatalogHash()
         {
-            if (EntranceMgr.I.IsCatalogHashChanged())
-                File.WriteAllText(PathDefine.persistentCatalogHashPath, EntranceMgr.I.remoteCatalogHash);
+            if (GameEntryMgr.I.IsCatalogHashChanged())
+                File.WriteAllText(PathDefine.persistentCatalogHashPath, GameEntryMgr.I.remoteCatalogHash);
         }
     }
 }

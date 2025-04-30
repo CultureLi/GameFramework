@@ -1,26 +1,26 @@
-﻿using Entrance.Stage;
+﻿using Framework;
+using GameEntry.Stage;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Entrance
+namespace GameEntry
 {
     internal class EntranceStages : MonoBehaviour
     {
-        StageMgr stageMgr;
+        Fsm stageFsm;
         void Awake()
         {
-            stageMgr = new StageMgr(new List<StageBase>()
+            stageFsm = Fsm.Create("GameEntryFsm", new List<FsmState>()
             {
                 new EntranceStartStage(),
                 new DownloadVersionStage(this),
                 new DownloadCatalogHashStage(this),
-                new DownloadCatalogStage(this),
-                new ReloadCatalogStage(),
+                new ReloadCatalogStage(this),
                 new DownloadBundleStage(this),
                 new EntranceEndStage(),
             });
 
-            stageMgr.ChangeStage<EntranceStartStage>();
+            stageFsm.Start<EntranceStartStage>();
         }
     }
 }
