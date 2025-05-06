@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Framework
 {
-    internal sealed partial class ObjectPoolManager : IFrameworkModule, IObjectPoolManager
+    internal sealed partial class ObjectPoolManager : IFramework, IObjectPoolManager
     {
         /// <summary>
         /// 对象池。
@@ -12,17 +12,17 @@ namespace Framework
         /// <typeparam name="T">对象类型。</typeparam>
         private sealed class ObjectPool<T> : ObjectPoolBase, IObjectPool<T> where T : ObjectBase
         {
-            private readonly Dictionary<string, LinkedList<Object<T>>> m_Objects;
-            private readonly Dictionary<object, Object<T>> m_ObjectMap;
-            private readonly ReleaseObjectFilterCallback<T> m_DefaultReleaseObjectFilterCallback;
-            private readonly List<T> m_CachedCanReleaseObjects;
-            private readonly List<T> m_CachedToReleaseObjects;
-            private readonly bool m_AllowMultiSpawn;
-            private float m_AutoReleaseInterval;
-            private int m_Capacity;
-            private float m_ExpireTime;
-            private int m_Priority;
-            private float m_AutoReleaseTime;
+            private readonly Dictionary<string, LinkedList<Object<T>>> _objects;
+            private readonly Dictionary<object, Object<T>> _objectMap;
+            private readonly ReleaseObjectFilterCallback<T> _defaultReleaseObjectFilterCallback;
+            private readonly List<T> _cachedCanReleaseObjects;
+            private readonly List<T> _cachedToReleaseObjects;
+            private readonly bool _allowMultiSpawn;
+            private float _autoReleaseInterval;
+            private int _capacity;
+            private float _expireTime;
+            private int _priority;
+            private float _autoReleaseTime;
 
             /// <summary>
             /// 初始化对象池的新实例。
@@ -36,17 +36,17 @@ namespace Framework
             public ObjectPool(string name, bool allowMultiSpawn, float autoReleaseInterval, int capacity, float expireTime, int priority)
                 : base(name)
             {
-                m_Objects = new Dictionary<string, LinkedList<Object<T>>>();
-                m_ObjectMap = new Dictionary<object, Object<T>>();
-                m_DefaultReleaseObjectFilterCallback = DefaultReleaseObjectFilterCallback;
-                m_CachedCanReleaseObjects = new List<T>();
-                m_CachedToReleaseObjects = new List<T>();
-                m_AllowMultiSpawn = allowMultiSpawn;
-                m_AutoReleaseInterval = autoReleaseInterval;
+                _objects = new Dictionary<string, LinkedList<Object<T>>>();
+                _objectMap = new Dictionary<object, Object<T>>();
+                _defaultReleaseObjectFilterCallback = DefaultReleaseObjectFilterCallback;
+                _cachedCanReleaseObjects = new List<T>();
+                _cachedToReleaseObjects = new List<T>();
+                _allowMultiSpawn = allowMultiSpawn;
+                _autoReleaseInterval = autoReleaseInterval;
                 Capacity = capacity;
                 ExpireTime = expireTime;
-                m_Priority = priority;
-                m_AutoReleaseTime = 0f;
+                _priority = priority;
+                _autoReleaseTime = 0f;
             }
 
             /// <summary>
@@ -67,7 +67,7 @@ namespace Framework
             {
                 get
                 {
-                    return m_ObjectMap.Count;
+                    return _objectMap.Count;
                 }
             }
 
@@ -78,8 +78,8 @@ namespace Framework
             {
                 get
                 {
-                    GetCanReleaseObjects(m_CachedCanReleaseObjects);
-                    return m_CachedCanReleaseObjects.Count;
+                    GetCanReleaseObjects(_cachedCanReleaseObjects);
+                    return _cachedCanReleaseObjects.Count;
                 }
             }
 
@@ -90,7 +90,7 @@ namespace Framework
             {
                 get
                 {
-                    return m_AllowMultiSpawn;
+                    return _allowMultiSpawn;
                 }
             }
 
@@ -101,11 +101,11 @@ namespace Framework
             {
                 get
                 {
-                    return m_AutoReleaseInterval;
+                    return _autoReleaseInterval;
                 }
                 set
                 {
-                    m_AutoReleaseInterval = value;
+                    _autoReleaseInterval = value;
                 }
             }
 
@@ -116,7 +116,7 @@ namespace Framework
             {
                 get
                 {
-                    return m_Capacity;
+                    return _capacity;
                 }
                 set
                 {
@@ -125,12 +125,12 @@ namespace Framework
                         throw new Exception("Capacity is invalid.");
                     }
 
-                    if (m_Capacity == value)
+                    if (_capacity == value)
                     {
                         return;
                     }
 
-                    m_Capacity = value;
+                    _capacity = value;
                     Release();
                 }
             }
@@ -142,7 +142,7 @@ namespace Framework
             {
                 get
                 {
-                    return m_ExpireTime;
+                    return _expireTime;
                 }
 
                 set
@@ -157,7 +157,7 @@ namespace Framework
                         return;
                     }
 
-                    m_ExpireTime = value;
+                    _expireTime = value;
                     Release();
                 }
             }
@@ -169,11 +169,11 @@ namespace Framework
             {
                 get
                 {
-                    return m_Priority;
+                    return _priority;
                 }
                 set
                 {
-                    m_Priority = value;
+                    _priority = value;
                 }
             }
 
@@ -191,16 +191,16 @@ namespace Framework
 
                 Object<T> internalObject = Object<T>.Create(obj, spawned);
 
-                if (!m_Objects.TryGetValue(obj.Name, out var objectlist))
+                if (!_objects.TryGetValue(obj.Name, out var objectlist))
                 {
                     objectlist = new LinkedList<Object<T>>();
-                    m_Objects[obj.Name] = objectlist;
+                    _objects[obj.Name] = objectlist;
                 }
 
                 objectlist.AddLast(internalObject);
-                m_ObjectMap.Add(obj.Target, internalObject);
+                _objectMap.Add(obj.Target, internalObject);
 
-                if (Count > m_Capacity)
+                if (Count > _capacity)
                 {
                     Release();
                 }
@@ -227,11 +227,11 @@ namespace Framework
                     throw new Exception("Name is invalid.");
                 }
 
-                if (m_Objects.TryGetValue(name, out var objectRange))
+                if (_objects.TryGetValue(name, out var objectRange))
                 {
                     foreach (Object<T> internalObject in objectRange)
                     {
-                        if (m_AllowMultiSpawn || !internalObject.IsInUse)
+                        if (_allowMultiSpawn || !internalObject.IsInUse)
                         {
                             return true;
                         }
@@ -262,11 +262,11 @@ namespace Framework
                     throw new Exception("Name is invalid.");
                 }
 
-                if (m_Objects.TryGetValue(name, out var objectRange))
+                if (_objects.TryGetValue(name, out var objectRange))
                 {
                     foreach (Object<T> internalObject in objectRange)
                     {
-                        if (m_AllowMultiSpawn || !internalObject.IsInUse)
+                        if (_allowMultiSpawn || !internalObject.IsInUse)
                         {
                             return internalObject.Spawn();
                         }
@@ -305,7 +305,7 @@ namespace Framework
                 if (internalObject != null)
                 {
                     internalObject.Unspawn();
-                    if (Count > m_Capacity && internalObject.SpawnCount <= 0)
+                    if (Count > _capacity && internalObject.SpawnCount <= 0)
                     {
                         Release();
                     }
@@ -430,12 +430,12 @@ namespace Framework
                     return false;
                 }
 
-                if (!m_Objects.TryGetValue(internalObject.Name, out var objectList))
+                if (!_objects.TryGetValue(internalObject.Name, out var objectList))
                 {
                     return false;
                 }
                 objectList.Remove(internalObject);
-                m_ObjectMap.Remove(internalObject.Peek().Target);
+                _objectMap.Remove(internalObject.Peek().Target);
 
                 internalObject.Release(false);
                 ReferencePool.Release(internalObject);
@@ -447,7 +447,7 @@ namespace Framework
             /// </summary>
             public override void Release()
             {
-                Release(Count - m_Capacity, m_DefaultReleaseObjectFilterCallback);
+                Release(Count - _capacity, _defaultReleaseObjectFilterCallback);
             }
 
             /// <summary>
@@ -456,7 +456,7 @@ namespace Framework
             /// <param name="toReleaseCount">尝试释放对象数量。</param>
             public override void Release(int toReleaseCount)
             {
-                Release(toReleaseCount, m_DefaultReleaseObjectFilterCallback);
+                Release(toReleaseCount, _defaultReleaseObjectFilterCallback);
             }
 
             /// <summary>
@@ -465,7 +465,7 @@ namespace Framework
             /// <param name="releaseObjectFilterCallback">释放对象筛选函数。</param>
             public void Release(ReleaseObjectFilterCallback<T> releaseObjectFilterCallback)
             {
-                Release(Count - m_Capacity, releaseObjectFilterCallback);
+                Release(Count - _capacity, releaseObjectFilterCallback);
             }
 
             /// <summary>
@@ -486,14 +486,14 @@ namespace Framework
                 }
 
                 DateTime expireTime = DateTime.MinValue;
-                if (m_ExpireTime < float.MaxValue)
+                if (_expireTime < float.MaxValue)
                 {
-                    expireTime = DateTime.UtcNow.AddSeconds(-m_ExpireTime);
+                    expireTime = DateTime.UtcNow.AddSeconds(-_expireTime);
                 }
 
-                m_AutoReleaseTime = 0f;
-                GetCanReleaseObjects(m_CachedCanReleaseObjects);
-                List<T> toReleaseObjects = releaseObjectFilterCallback(m_CachedCanReleaseObjects, toReleaseCount, expireTime);
+                _autoReleaseTime = 0f;
+                GetCanReleaseObjects(_cachedCanReleaseObjects);
+                List<T> toReleaseObjects = releaseObjectFilterCallback(_cachedCanReleaseObjects, toReleaseCount, expireTime);
                 if (toReleaseObjects == null || toReleaseObjects.Count <= 0)
                 {
                     return;
@@ -510,9 +510,9 @@ namespace Framework
             /// </summary>
             public override void ReleaseAllUnused()
             {
-                m_AutoReleaseTime = 0f;
-                GetCanReleaseObjects(m_CachedCanReleaseObjects);
-                foreach (T toReleaseObject in m_CachedCanReleaseObjects)
+                _autoReleaseTime = 0f;
+                GetCanReleaseObjects(_cachedCanReleaseObjects);
+                foreach (T toReleaseObject in _cachedCanReleaseObjects)
                 {
                     ReleaseObject(toReleaseObject);
                 }
@@ -525,7 +525,7 @@ namespace Framework
             public override ObjectInfo[] GetAllObjectInfos()
             {
                 List<ObjectInfo> results = new List<ObjectInfo>();
-                foreach (KeyValuePair<string, LinkedList<Object<T>>> objectRanges in m_Objects)
+                foreach (KeyValuePair<string, LinkedList<Object<T>>> objectRanges in _objects)
                 {
                     foreach (Object<T> internalObject in objectRanges.Value)
                     {
@@ -538,8 +538,8 @@ namespace Framework
 
             public override void Update(float elapseSeconds, float realElapseSeconds)
             {
-                m_AutoReleaseTime += realElapseSeconds;
-                if (m_AutoReleaseTime < m_AutoReleaseInterval)
+                _autoReleaseTime += realElapseSeconds;
+                if (_autoReleaseTime < _autoReleaseInterval)
                 {
                     return;
                 }
@@ -549,16 +549,16 @@ namespace Framework
 
             public override void Shutdown()
             {
-                foreach (KeyValuePair<object, Object<T>> objectInMap in m_ObjectMap)
+                foreach (KeyValuePair<object, Object<T>> objectInMap in _objectMap)
                 {
                     objectInMap.Value.Release(true);
                     ReferencePool.Release(objectInMap.Value);
                 }
 
-                m_Objects.Clear();
-                m_ObjectMap.Clear();
-                m_CachedCanReleaseObjects.Clear();
-                m_CachedToReleaseObjects.Clear();
+                _objects.Clear();
+                _objectMap.Clear();
+                _cachedCanReleaseObjects.Clear();
+                _cachedToReleaseObjects.Clear();
             }
 
             private Object<T> GetObject(object target)
@@ -569,7 +569,7 @@ namespace Framework
                 }
 
                 Object<T> internalObject = null;
-                if (m_ObjectMap.TryGetValue(target, out internalObject))
+                if (_objectMap.TryGetValue(target, out internalObject))
                 {
                     return internalObject;
                 }
@@ -585,7 +585,7 @@ namespace Framework
                 }
 
                 results.Clear();
-                foreach (KeyValuePair<object, Object<T>> objectInMap in m_ObjectMap)
+                foreach (KeyValuePair<object, Object<T>> objectInMap in _objectMap)
                 {
                     Object<T> internalObject = objectInMap.Value;
                     if (internalObject.IsInUse || internalObject.Locked || !internalObject.CustomCanReleaseFlag)
@@ -599,7 +599,7 @@ namespace Framework
 
             private List<T> DefaultReleaseObjectFilterCallback(List<T> candidateObjects, int toReleaseCount, DateTime expireTime)
             {
-                m_CachedToReleaseObjects.Clear();
+                _cachedToReleaseObjects.Clear();
 
                 if (expireTime > DateTime.MinValue)
                 {
@@ -607,13 +607,13 @@ namespace Framework
                     {
                         if (candidateObjects[i].LastUseTime <= expireTime)
                         {
-                            m_CachedToReleaseObjects.Add(candidateObjects[i]);
+                            _cachedToReleaseObjects.Add(candidateObjects[i]);
                             candidateObjects.RemoveAt(i);
                             continue;
                         }
                     }
 
-                    toReleaseCount -= m_CachedToReleaseObjects.Count;
+                    toReleaseCount -= _cachedToReleaseObjects.Count;
                 }
 
                 for (int i = 0; toReleaseCount > 0 && i < candidateObjects.Count; i++)
@@ -629,11 +629,11 @@ namespace Framework
                         }
                     }
 
-                    m_CachedToReleaseObjects.Add(candidateObjects[i]);
+                    _cachedToReleaseObjects.Add(candidateObjects[i]);
                     toReleaseCount--;
                 }
 
-                return m_CachedToReleaseObjects;
+                return _cachedToReleaseObjects;
             }
         }
     }

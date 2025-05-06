@@ -11,7 +11,7 @@ namespace Assets.TestScripts.Runtime.EventTest
     {
         public int hp;
 
-        public void Clear()
+        public void Reset()
         {
             throw new NotImplementedException();
         }
@@ -19,7 +19,7 @@ namespace Assets.TestScripts.Runtime.EventTest
 
     public class CustomEvent : EventBase, IReference
     {
-        public void Clear()
+        public void Reset()
         {
             throw new NotImplementedException();
         }
@@ -28,10 +28,11 @@ namespace Assets.TestScripts.Runtime.EventTest
     public class EventTest : MonoBehaviour
     {
         IEventMgr eventMgr;
+        public bool isSync = true;
 
         private void Awake()
         {
-            eventMgr = FrameworkEntry.GetModule<IEventMgr>();
+            eventMgr = Framework.FrameworkMgr.GetModule<IEventMgr>();
         }
 
         public void SubscribeHpChangedHandler1()
@@ -66,18 +67,32 @@ namespace Assets.TestScripts.Runtime.EventTest
 
 
         float timeInterval = 2;
+
         public void Update()
         {
             timeInterval -= Time.deltaTime;
             if (timeInterval < 0)
             {
                 var e = ReferencePool.Acquire<HpChangedEvent>();
-                e.hp = e.hp + 1;
-                eventMgr.Fire(e);
+                e.hp = UnityEngine.Random.Range(1, 100);
 
-                eventMgr.Fire<CustomEvent>();
+                if (isSync)
+                {
+                    eventMgr.Fire(e);
+
+                    eventMgr.Fire<CustomEvent>();
+                }
+                else
+                {
+                    eventMgr.FireAsync(e);
+
+                    eventMgr.FireAsync<CustomEvent>();
+                }
+
             }
-                
+            FrameworkMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
+
+
         }
 
 

@@ -10,12 +10,12 @@ namespace Framework
     [StructLayout(LayoutKind.Auto)]
     public struct ObjectInfo
     {
-        private readonly string name;
-        private readonly bool locked;
-        private readonly bool customCanReleaseFlag;
-        private readonly int priority;
-        private readonly DateTime lastUseTime;
-        private readonly int spawnCount;
+        private readonly string _name;
+        private readonly bool _locked;
+        private readonly bool _customCanReleaseFlag;
+        private readonly int _priority;
+        private readonly DateTime _lastUseTime;
+        private readonly int _spawnCount;
 
         /// <summary>
         /// 初始化对象信息的新实例。
@@ -28,12 +28,12 @@ namespace Framework
         /// <param name="spawnCount">对象的获取计数。</param>
         public ObjectInfo(string name, bool locked, bool customCanReleaseFlag, int priority, DateTime lastUseTime, int spawnCount)
         {
-            this.name = name;
-            this.locked = locked;
-            this.customCanReleaseFlag = customCanReleaseFlag;
-            this.priority = priority;
-            this.lastUseTime = lastUseTime;
-            this.spawnCount = spawnCount;
+            this._name = name;
+            this._locked = locked;
+            this._customCanReleaseFlag = customCanReleaseFlag;
+            this._priority = priority;
+            this._lastUseTime = lastUseTime;
+            this._spawnCount = spawnCount;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Framework
         {
             get
             {
-                return name;
+                return _name;
             }
         }
 
@@ -54,7 +54,7 @@ namespace Framework
         {
             get
             {
-                return locked;
+                return _locked;
             }
         }
 
@@ -65,7 +65,7 @@ namespace Framework
         {
             get
             {
-                return customCanReleaseFlag;
+                return _customCanReleaseFlag;
             }
         }
 
@@ -76,7 +76,7 @@ namespace Framework
         {
             get
             {
-                return priority;
+                return _priority;
             }
         }
 
@@ -87,7 +87,7 @@ namespace Framework
         {
             get
             {
-                return lastUseTime;
+                return _lastUseTime;
             }
         }
 
@@ -98,7 +98,7 @@ namespace Framework
         {
             get
             {
-                return spawnCount > 0;
+                return _spawnCount > 0;
             }
         }
 
@@ -109,7 +109,7 @@ namespace Framework
         {
             get
             {
-                return spawnCount;
+                return _spawnCount;
             }
         }
     }

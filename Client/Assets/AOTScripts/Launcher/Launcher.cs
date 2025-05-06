@@ -12,7 +12,6 @@ namespace Launcher
 {
     public partial class Launcher : MonoBehaviour
     {
-        Assembly entranceAssembly;
         private void Awake()
         {
             Addressables.InitializeAsync().WaitForCompletion();
@@ -35,14 +34,14 @@ namespace Launcher
         {
             Debug.Log("EnterEntrance");
 
-            entranceAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "Entrance");
+            var entranceAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameEntry");
 
             if (entranceAssembly == null)
             {
                 Debug.LogError("没有找到Entrance");
                 return;
             }
-            Type entry = entranceAssembly.GetType("Entrance.GameEntryMgr");
+            Type entry = entranceAssembly.GetType("GameEntry.GameEntryMgr");
             if (entry == null)
             {
                 Debug.LogError("没有找到GameEntryMgr");

@@ -10,12 +10,12 @@ namespace Framework
         /// </summary>
         public static class Assembly
         {
-            private static readonly System.Reflection.Assembly[] s_Assemblies = null;
-            private static readonly Dictionary<string, Type> s_CachedTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
+            private static readonly System.Reflection.Assembly[] _assemblies = null;
+            private static readonly Dictionary<string, Type> _cachedTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
 
             static Assembly()
             {
-                s_Assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                _assemblies = AppDomain.CurrentDomain.GetAssemblies();
             }
 
             /// <summary>
@@ -24,7 +24,7 @@ namespace Framework
             /// <returns>已加载的程序集。</returns>
             public static System.Reflection.Assembly[] GetAssemblies()
             {
-                return s_Assemblies;
+                return _assemblies;
             }
 
             /// <summary>
@@ -34,7 +34,7 @@ namespace Framework
             public static Type[] GetTypes()
             {
                 List<Type> results = new List<Type>();
-                foreach (System.Reflection.Assembly assembly in s_Assemblies)
+                foreach (System.Reflection.Assembly assembly in _assemblies)
                 {
                     results.AddRange(assembly.GetTypes());
                 }
@@ -54,7 +54,7 @@ namespace Framework
                 }
 
                 results.Clear();
-                foreach (System.Reflection.Assembly assembly in s_Assemblies)
+                foreach (System.Reflection.Assembly assembly in _assemblies)
                 {
                     results.AddRange(assembly.GetTypes());
                 }
@@ -73,7 +73,7 @@ namespace Framework
                 }
 
                 Type type = null;
-                if (s_CachedTypes.TryGetValue(typeName, out type))
+                if (_cachedTypes.TryGetValue(typeName, out type))
                 {
                     return type;
                 }
@@ -81,16 +81,16 @@ namespace Framework
                 type = Type.GetType(typeName);
                 if (type != null)
                 {
-                    s_CachedTypes.Add(typeName, type);
+                    _cachedTypes.Add(typeName, type);
                     return type;
                 }
 
-                foreach (System.Reflection.Assembly assembly in s_Assemblies)
+                foreach (System.Reflection.Assembly assembly in _assemblies)
                 {
                     type = Type.GetType(Text.Format("{0}, {1}", typeName, assembly.FullName));
                     if (type != null)
                     {
-                        s_CachedTypes.Add(typeName, type);
+                        _cachedTypes.Add(typeName, type);
                         return type;
                     }
                 }

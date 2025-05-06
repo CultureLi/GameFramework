@@ -14,10 +14,10 @@ namespace Launcher
 {
     public partial class Launcher : MonoBehaviour
     {
-        HotFixDllManifest localManifest;
-        List<DllInfo> needDownloadDlls;
-        HotFixDllManifest remoteManifest;
-        string remoteManifestJsonText;
+        HotFixDllManifest _localManifest;
+        List<DllInfo> _needDownloadDlls;
+        HotFixDllManifest _remoteManifest;
+        string _remoteManifestJsonText;
 
         IEnumerator DoHotFixTasks()
         {
@@ -25,11 +25,11 @@ namespace Launcher
             //下载manifest
             yield return DownloadManifest();
 
-            if (remoteManifest != null)
+            if (_remoteManifest != null)
             {
                 //收集要下载的dlls
                 CollectNeedDownloadDlls();
-                if (needDownloadDlls.Count > 0)
+                if (_needDownloadDlls.Count > 0)
                 {
                     yield return DownloadHotFixDlls();
                 }
@@ -37,7 +37,7 @@ namespace Launcher
 
             yield return LoadHotFixDlls();
 
-            if (remoteManifest != null)
+            if (_remoteManifest != null)
             {
                 OverrideLocalManifest();
             }
@@ -58,7 +58,7 @@ namespace Launcher
                 if (uwr.result == UnityWebRequest.Result.Success)
                 {
                     localManifestText = uwr.downloadHandler.text;
-                    localManifest = JsonUtility.FromJson<HotFixDllManifest>(localManifestText);
+                    _localManifest = JsonUtility.FromJson<HotFixDllManifest>(localManifestText);
                     break;
                 }
             }
@@ -81,8 +81,8 @@ namespace Launcher
                     if (uwr.result == UnityWebRequest.Result.Success)
                     {
                         Debug.Log("下载Manifest成功");
-                        remoteManifestJsonText = uwr.downloadHandler.text;
-                        remoteManifest = JsonUtility.FromJson<HotFixDllManifest>(remoteManifestJsonText);
+                        _remoteManifestJsonText = uwr.downloadHandler.text;
+                        _remoteManifest = JsonUtility.FromJson<HotFixDllManifest>(_remoteManifestJsonText);
                         break;
                     }
                     else
@@ -103,26 +103,26 @@ namespace Launcher
         void CollectNeedDownloadDlls()
         {
             Debug.Log("收集要下载的dll");
-            needDownloadDlls = new List<DllInfo>();
+            _needDownloadDlls = new List<DllInfo>();
 
-            foreach (var remoteDll in remoteManifest.Item)
+            foreach (var remoteDll in _remoteManifest.item)
             {
-                var localDll = localManifest.Item.Find(e => e.name == remoteDll.name);
+                var localDll = _localManifest.item.Find(e => e.name == remoteDll.name);
                 if (localDll != null)
                 {
                     if (remoteDll.hash != localDll.hash)
                     {
-                        needDownloadDlls.Add(remoteDll);
+                        _needDownloadDlls.Add(remoteDll);
                     }
                 }
                 else
                 {
-                    needDownloadDlls.Add(remoteDll);
+                    _needDownloadDlls.Add(remoteDll);
                 }
             }
 
-            Debug.Log($"需要下载dll数量: {needDownloadDlls.Count}");
-            foreach (var info in needDownloadDlls)
+            Debug.Log($"需要下载dll数量: {_needDownloadDlls.Count}");
+            foreach (var info in _needDownloadDlls)
             {
                 Debug.Log($"----需要下载dll: {info.name}");
             }
@@ -136,8 +136,8 @@ namespace Launcher
             {
                 Directory.CreateDirectory(dir);
             }
-            var allCnt = needDownloadDlls.Count;
-            foreach (var assembly in needDownloadDlls)
+            var allCnt = _needDownloadDlls.Count;
+            foreach (var assembly in _needDownloadDlls)
             {
                 var url = Path.Combine(LauncherPathDefine.remoteHotFixDllPath, $"{assembly.name}.dll.bytes");
                 var savePath = Path.Combine(Application.persistentDataPath, "HotFixDll", $"{assembly.name}.dll.bytes");
@@ -161,8 +161,8 @@ namespace Launcher
 
         IEnumerator LoadHotFixDlls()
         {
-            var manifest = remoteManifest ?? localManifest;
-            var sortedList = GetLoadSortedList(manifest.Item);
+            var manifest = _remoteManifest ?? _localManifest;
+            var sortedList = GetLoadSortedList(manifest.item);
             Debug.Log($"加载所有HotFixDll count:{sortedList.Count}");
             foreach (var info in sortedList)
             {
@@ -257,7 +257,7 @@ namespace Launcher
         /// </summary>
         public void OverrideLocalManifest()
         {
-            File.WriteAllText(LauncherPathDefine.persistentHotFixManifestPath, remoteManifestJsonText);
+            File.WriteAllText(LauncherPathDefine.persistentHotFixManifestPath, _remoteManifestJsonText);
         }
     }
 }

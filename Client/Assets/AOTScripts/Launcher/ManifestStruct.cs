@@ -13,7 +13,7 @@ namespace Launcher
     [System.Serializable]
     public class HotFixDllManifest
     {
-        public List<DllInfo> Item = new List<DllInfo>();
+        public List<DllInfo> item = new List<DllInfo>();
     }
 
     [System.Serializable]

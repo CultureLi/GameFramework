@@ -10,13 +10,13 @@ namespace Framework
     [StructLayout(LayoutKind.Auto)]
     public struct ReferencePoolInfo
     {
-        private readonly Type type;
-        private readonly int unusedReferenceCount;
-        private readonly int usingReferenceCount;
-        private readonly int acquireReferenceCount;
-        private readonly int releaseReferenceCount;
-        private readonly int addReferenceCount;
-        private readonly int removeReferenceCount;
+        private readonly Type _type;
+        private readonly int _unusedReferenceCount;
+        private readonly int _usingReferenceCount;
+        private readonly int _acquireReferenceCount;
+        private readonly int _releaseReferenceCount;
+        private readonly int _addReferenceCount;
+        private readonly int _removeReferenceCount;
 
         /// <summary>
         /// 初始化引用池信息的新实例。
@@ -30,13 +30,13 @@ namespace Framework
         /// <param name="removeReferenceCount">移除引用数量。</param>
         public ReferencePoolInfo(Type type, int unusedReferenceCount, int usingReferenceCount, int acquireReferenceCount, int releaseReferenceCount, int addReferenceCount, int removeReferenceCount)
         {
-            this.type = type;
-            this.unusedReferenceCount = unusedReferenceCount;
-            this.usingReferenceCount = usingReferenceCount;
-            this.acquireReferenceCount = acquireReferenceCount;
-            this.releaseReferenceCount = releaseReferenceCount;
-            this.addReferenceCount = addReferenceCount;
-            this.removeReferenceCount = removeReferenceCount;
+            this._type = type;
+            this._unusedReferenceCount = unusedReferenceCount;
+            this._usingReferenceCount = usingReferenceCount;
+            this._acquireReferenceCount = acquireReferenceCount;
+            this._releaseReferenceCount = releaseReferenceCount;
+            this._addReferenceCount = addReferenceCount;
+            this._removeReferenceCount = removeReferenceCount;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Framework
         {
             get
             {
-                return type;
+                return _type;
             }
         }
 
@@ -57,7 +57,7 @@ namespace Framework
         {
             get
             {
-                return unusedReferenceCount;
+                return _unusedReferenceCount;
             }
         }
 
@@ -68,7 +68,7 @@ namespace Framework
         {
             get
             {
-                return usingReferenceCount;
+                return _usingReferenceCount;
             }
         }
 
@@ -79,7 +79,7 @@ namespace Framework
         {
             get
             {
-                return acquireReferenceCount;
+                return _acquireReferenceCount;
             }
         }
 
@@ -90,7 +90,7 @@ namespace Framework
         {
             get
             {
-                return releaseReferenceCount;
+                return _releaseReferenceCount;
             }
         }
 
@@ -101,7 +101,7 @@ namespace Framework
         {
             get
             {
-                return addReferenceCount;
+                return _addReferenceCount;
             }
         }
 
@@ -112,7 +112,7 @@ namespace Framework
         {
             get
             {
-                return removeReferenceCount;
+                return _removeReferenceCount;
             }
         }
     }

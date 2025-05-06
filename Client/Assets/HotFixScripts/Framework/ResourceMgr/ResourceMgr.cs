@@ -15,14 +15,14 @@ using UnityEngine.SceneManagement;
 
 namespace Framework
 {
-    internal sealed class ResourceMgr : IResourceMgr, IFrameworkModule
+    internal sealed class ResourceMgr : IResourceMgr, IFramework
     {
         string remoteBundleUrl;
         //和本地安装时catalog相比下，远端bundle的location,用来做资源location重定向、资源下载大小计算
-        Dictionary<string, string> remoteBundlesLocationMap = new Dictionary<string, string>();
+        Dictionary<string, string> _remoteBundlesLocationMap = new Dictionary<string, string>();
         // 记录所有（非Bundle）的location, 因为Addressables.DownloadDependenciesAsync()
         // 并不支持直接用 bundle 的 URL 当 key 来下载依赖资源
-        public HashSet<IResourceLocation> allLocations = new HashSet<IResourceLocation>();
+        HashSet<IResourceLocation> _allLocations = new HashSet<IResourceLocation>();
 
         public Action BundleDownloadStart
         {
@@ -101,7 +101,7 @@ namespace Framework
         /// <param name="location"></param>
         private void ModifyBundleLocation(IResourceLocation location)
         {
-            remoteBundlesLocationMap[location.InternalId] = Path.Combine(remoteBundleUrl,
+            _remoteBundlesLocationMap[location.InternalId] = Path.Combine(remoteBundleUrl,
                 Path.GetFileName(location.InternalId));
         }
 
@@ -112,7 +112,7 @@ namespace Framework
         /// <returns></returns>
         private string InternalIdTransform(IResourceLocation location)
         {
-            if (remoteBundlesLocationMap.TryGetValue(location.InternalId, out var internalId))
+            if (_remoteBundlesLocationMap.TryGetValue(location.InternalId, out var internalId))
             {
                 return internalId;
             }
@@ -148,7 +148,7 @@ namespace Framework
 
         public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog)
         {
-            allLocations.Clear();
+            _allLocations.Clear();
             foreach (var key in remoteCatalog.Keys)
             {
                 if (!remoteCatalog.Locate(key, typeof(object), out var remoteLocations))
@@ -158,7 +158,7 @@ namespace Framework
                     // 筛选出 AssetBundle 类型
                     if (remoteLoc.ResourceType != typeof(IAssetBundleResource))
                     {
-                        allLocations.Add(remoteLoc);
+                        _allLocations.Add(remoteLoc);
                         continue;
                     }
                     // 查看 local 是否也有
@@ -191,7 +191,7 @@ namespace Framework
         {
             long totalSize = 0;
             var bundleLocations = new HashSet<IResourceLocation>();
-            foreach (var loc in allLocations)
+            foreach (var loc in _allLocations)
             {
                 if (loc.HasDependencies)
                 {

@@ -9,7 +9,7 @@ namespace Framework
     /// <typeparam name="T">有限状态机持有者类型。</typeparam>
     public abstract class FsmState
     {
-        IFsm fsm;
+        IFsm _fsm;
         /// <summary>
         /// 初始化有限状态机状态基类的新实例。
         /// </summary>
@@ -23,7 +23,7 @@ namespace Framework
         /// <param name="fsm">有限状态机引用。</param>
         protected internal virtual void OnInit(IFsm fsm)
         {
-            this.fsm = fsm;
+            this._fsm = fsm;
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Framework
         /// <param name="fsm">有限状态机引用。</param>
         protected void ChangeState<TState>() where TState : FsmState
         {
-            var fsmImplement = (Fsm)fsm;
+            var fsmImplement = (Fsm)_fsm;
             if (fsmImplement == null)
             {
                 throw new Exception("FSM is invalid.");
@@ -84,7 +84,7 @@ namespace Framework
         /// <param name="stateType">要切换到的有限状态机状态类型。</param>
         protected void ChangeState(Type stateType)
         {
-            var fsmImplement = (Fsm)fsm;
+            var fsmImplement = (Fsm)_fsm;
             if (fsmImplement == null)
             {
                 throw new Exception("FSM is invalid.");

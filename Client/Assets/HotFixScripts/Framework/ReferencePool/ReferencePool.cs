@@ -9,8 +9,8 @@ namespace Framework
     /// </summary>
     public static partial class ReferencePool
     {
-        private static readonly Dictionary<Type, ReferenceCollection> referenceCollections = new Dictionary<Type, ReferenceCollection>();
-        private static bool enableStrictCheck = false;
+        private static readonly Dictionary<Type, ReferenceCollection> _referenceCollections = new Dictionary<Type, ReferenceCollection>();
+        private static bool _enableStrictCheck = false;
 
         /// <summary>
         /// 获取或设置是否开启强制检查。
@@ -19,11 +19,11 @@ namespace Framework
         {
             get
             {
-                return enableStrictCheck;
+                return _enableStrictCheck;
             }
             set
             {
-                enableStrictCheck = value;
+                _enableStrictCheck = value;
             }
         }
 
@@ -34,7 +34,7 @@ namespace Framework
         {
             get
             {
-                return referenceCollections.Count;
+                return _referenceCollections.Count;
             }
         }
 
@@ -47,10 +47,10 @@ namespace Framework
             int index = 0;
             ReferencePoolInfo[] results = null;
 
-            lock (referenceCollections)
+            lock (_referenceCollections)
             {
-                results = new ReferencePoolInfo[referenceCollections.Count];
-                foreach (KeyValuePair<Type, ReferenceCollection> referenceCollection in referenceCollections)
+                results = new ReferencePoolInfo[_referenceCollections.Count];
+                foreach (KeyValuePair<Type, ReferenceCollection> referenceCollection in _referenceCollections)
                 {
                     results[index++] = new ReferencePoolInfo(referenceCollection.Key, referenceCollection.Value.UnusedReferenceCount, referenceCollection.Value.UsingReferenceCount, referenceCollection.Value.AcquireReferenceCount, referenceCollection.Value.ReleaseReferenceCount, referenceCollection.Value.AddReferenceCount, referenceCollection.Value.RemoveReferenceCount);
                 }
@@ -64,14 +64,14 @@ namespace Framework
         /// </summary>
         public static void ClearAll()
         {
-            lock (referenceCollections)
+            lock (_referenceCollections)
             {
-                foreach (KeyValuePair<Type, ReferenceCollection> referenceCollection in referenceCollections)
+                foreach (KeyValuePair<Type, ReferenceCollection> referenceCollection in _referenceCollections)
                 {
                     referenceCollection.Value.RemoveAll();
                 }
 
-                referenceCollections.Clear();
+                _referenceCollections.Clear();
             }
         }
 
@@ -175,7 +175,7 @@ namespace Framework
 
         private static void InternalCheckReferenceType(Type referenceType)
         {
-            if (!enableStrictCheck)
+            if (!_enableStrictCheck)
             {
                 return;
             }
@@ -204,12 +204,12 @@ namespace Framework
             }
 
             ReferenceCollection referenceCollection = null;
-            lock (referenceCollections)
+            lock (_referenceCollections)
             {
-                if (!referenceCollections.TryGetValue(referenceType, out referenceCollection))
+                if (!_referenceCollections.TryGetValue(referenceType, out referenceCollection))
                 {
                     referenceCollection = new ReferenceCollection(referenceType);
-                    referenceCollections.Add(referenceType, referenceCollection);
+                    _referenceCollections.Add(referenceType, referenceCollection);
                 }
             }
 

@@ -5,12 +5,12 @@ using UnityEngine;
 
 namespace GameEntry
 {
-    internal class EntranceStages : MonoBehaviour
+    internal class GameEntryStages : MonoBehaviour
     {
-        Fsm stageFsm;
+        Fsm _stageFsm;
         void Awake()
         {
-            stageFsm = Fsm.Create("GameEntryFsm", new List<FsmState>()
+            _stageFsm = Fsm.Create("GameEntryFsm", new List<FsmState>()
             {
                 new EntranceStartStage(),
                 new DownloadVersionStage(this),
@@ -20,7 +20,7 @@ namespace GameEntry
                 new EntranceEndStage(),
             });
 
-            stageFsm.Start<EntranceStartStage>();
+            _stageFsm.Start<EntranceStartStage>();
         }
     }
 }

@@ -9,6 +9,6 @@ namespace Framework
         /// <summary>
         /// 清理引用。
         /// </summary>
-        void Clear();
+        void Reset();
     }
 }

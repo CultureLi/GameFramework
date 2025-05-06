@@ -9,22 +9,22 @@ namespace Framework
     /// </summary>
     public abstract class ObjectBase : IReference
     {
-        private string name;
-        private object target;
-        private bool locked;
-        private int priority;
-        private DateTime lastUseTime;
+        private string _name;
+        private object _target;
+        private bool _locked;
+        private int _priority;
+        private DateTime _lastUseTime;
 
         /// <summary>
         /// 初始化对象基类的新实例。
         /// </summary>
         public ObjectBase()
         {
-            name = null;
-            target = null;
-            locked = false;
-            priority = 0;
-            lastUseTime = default(DateTime);
+            _name = null;
+            _target = null;
+            _locked = false;
+            _priority = 0;
+            _lastUseTime = default(DateTime);
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Framework
         {
             get
             {
-                return name;
+                return _name;
             }
         }
 
@@ -45,7 +45,7 @@ namespace Framework
         {
             get
             {
-                return target;
+                return _target;
             }
         }
 
@@ -56,11 +56,11 @@ namespace Framework
         {
             get
             {
-                return locked;
+                return _locked;
             }
             set
             {
-                locked = value;
+                _locked = value;
             }
         }
 
@@ -71,11 +71,11 @@ namespace Framework
         {
             get
             {
-                return priority;
+                return _priority;
             }
             set
             {
-                priority = value;
+                _priority = value;
             }
         }
 
@@ -97,11 +97,11 @@ namespace Framework
         {
             get
             {
-                return lastUseTime;
+                return _lastUseTime;
             }
             internal set
             {
-                lastUseTime = value;
+                _lastUseTime = value;
             }
         }
 
@@ -160,23 +160,23 @@ namespace Framework
                 throw new Exception(Utility.Text.Format("Target '{0}' is invalid.", name));
             }
 
-            this.name = name ?? string.Empty;
-            this.target = target;
-            this.locked = locked;
-            this.priority = priority;
-            lastUseTime = DateTime.UtcNow;
+            this._name = name ?? string.Empty;
+            this._target = target;
+            this._locked = locked;
+            this._priority = priority;
+            _lastUseTime = DateTime.UtcNow;
         }
 
         /// <summary>
         /// 清理对象基类。
         /// </summary>
-        public virtual void Clear()
+        public virtual void Reset()
         {
-            name = null;
-            target = null;
-            locked = false;
-            priority = 0;
-            lastUseTime = default(DateTime);
+            _name = null;
+            _target = null;
+            _locked = false;
+            _priority = 0;
+            _lastUseTime = default(DateTime);
         }
 
         /// <summary>

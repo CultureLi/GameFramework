@@ -11,7 +11,6 @@ using UnityEngine.Networking;
 
 namespace Launcher
 {
-
     public partial class Launcher : MonoBehaviour
     {
         IEnumerator LoadMetaData()

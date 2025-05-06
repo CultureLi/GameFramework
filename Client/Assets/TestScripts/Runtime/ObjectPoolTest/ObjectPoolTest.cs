@@ -17,14 +17,14 @@ namespace Assets.TestScripts.Runtime.ObjectPoolTest
         Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
-            poolManager = FrameworkEntry.GetModule<IObjectPoolManager>();
+            poolManager = Framework.FrameworkMgr.GetModule<IObjectPoolManager>();
             myPool = poolManager.CreateSingleSpawnObjectPool<CustomObject>("Custom",10, 5,1);
 
         }
 
         private void Update()
         {
-            FrameworkEntry.Update(Time.deltaTime, Time.unscaledDeltaTime);
+            Framework.FrameworkMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
         }
 
         public GameObject CreateObj()

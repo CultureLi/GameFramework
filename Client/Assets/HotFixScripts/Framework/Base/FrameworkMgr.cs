@@ -6,9 +6,9 @@ namespace Framework
     /// <summary>
     /// 游戏框架入口。
     /// </summary>
-    public static class FrameworkEntry
+    public static class FrameworkMgr
     {
-        private static readonly LinkedList<IFrameworkModule> s_GameFrameworkModules = new LinkedList<IFrameworkModule>();
+        private static readonly LinkedList<IFramework> _gameFrameworkModules = new LinkedList<IFramework>();
 
         /// <summary>
         /// 所有游戏框架模块轮询。
@@ -17,7 +17,7 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public static void Update(float elapseSeconds, float realElapseSeconds)
         {
-            foreach (IFrameworkModule module in s_GameFrameworkModules)
+            foreach (IFramework module in _gameFrameworkModules)
             {
                 module.Update(elapseSeconds, realElapseSeconds);
             }
@@ -28,12 +28,12 @@ namespace Framework
         /// </summary>
         public static void Shutdown()
         {
-            for (LinkedListNode<IFrameworkModule> current = s_GameFrameworkModules.Last; current != null; current = current.Previous)
+            for (LinkedListNode<IFramework> current = _gameFrameworkModules.Last; current != null; current = current.Previous)
             {
                 current.Value.Shutdown();
             }
 
-            s_GameFrameworkModules.Clear();
+            _gameFrameworkModules.Clear();
         }
 
         /// <summary>
@@ -71,9 +71,9 @@ namespace Framework
         /// <param name="moduleType">要获取的游戏框架模块类型。</param>
         /// <returns>要获取的游戏框架模块。</returns>
         /// <remarks>如果要获取的游戏框架模块不存在，则自动创建该游戏框架模块。</remarks>
-        private static IFrameworkModule GetModule(Type moduleType)
+        private static IFramework GetModule(Type moduleType)
         {
-            foreach (IFrameworkModule module in s_GameFrameworkModules)
+            foreach (IFramework module in _gameFrameworkModules)
             {
                 if (module.GetType() == moduleType)
                 {
@@ -89,15 +89,15 @@ namespace Framework
         /// </summary>
         /// <param name="moduleType">要创建的游戏框架模块类型。</param>
         /// <returns>要创建的游戏框架模块。</returns>
-        private static IFrameworkModule CreateModule(Type moduleType)
+        private static IFramework CreateModule(Type moduleType)
         {
-            IFrameworkModule module = (IFrameworkModule)Activator.CreateInstance(moduleType);
+            IFramework module = (IFramework)Activator.CreateInstance(moduleType);
             if (module == null)
             {
                 throw new Exception(Utility.Text.Format("Can not create module '{0}'.", moduleType.FullName));
             }
 
-            LinkedListNode<IFrameworkModule> current = s_GameFrameworkModules.First;
+            LinkedListNode<IFramework> current = _gameFrameworkModules.First;
             while (current != null)
             {
                 if (module.Priority > current.Value.Priority)
@@ -110,11 +110,11 @@ namespace Framework
 
             if (current != null)
             {
-                s_GameFrameworkModules.AddBefore(current, module);
+                _gameFrameworkModules.AddBefore(current, module);
             }
             else
             {
-                s_GameFrameworkModules.AddLast(module);
+                _gameFrameworkModules.AddLast(module);
             }
 
             return module;

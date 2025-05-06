@@ -1,6 +1,4 @@
-﻿using Entrance;
-using Entrance.Stage;
-using HybridCLR.Editor.Commands;
+﻿using HybridCLR.Editor.Commands;
 using HybridCLR.Editor.Settings;
 using Launcher;
 using System;
@@ -148,7 +146,7 @@ namespace Assets.GameMain.Editor.Build
                     dependencies = dependencies
                 };
 
-                manifest.Item.Add(info);
+                manifest.item.Add(info);
             }
 
             File.WriteAllText(hotFixDllManifestSavePath, JsonConvert.SerializeObject(manifest, Formatting.Indented));

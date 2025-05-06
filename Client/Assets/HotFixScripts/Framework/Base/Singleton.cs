@@ -5,7 +5,7 @@
         private static T instance;
         private static readonly object locker = new();
 
-        public static T Instance
+        public static T I
         {
             get
             {
