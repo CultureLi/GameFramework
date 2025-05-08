@@ -10,8 +10,12 @@ namespace Framework
     /// <summary>
     /// 网络消息包基类。
     /// </summary>
-    public abstract class Packet
+    public abstract class Packet : IReference
     {
         public virtual int Id { get; set; }
+
+        public virtual void Clear()
+        {
+        }
     }
 }
