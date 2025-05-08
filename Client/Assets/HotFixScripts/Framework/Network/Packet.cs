@@ -1,9 +1,5 @@
-﻿//------------------------------------------------------------
-// Game Framework
-// Copyright © 2013-2021 Jiang Yin. All rights reserved.
-// Homepage: https://gameframework.cn/
-// Feedback: mailto:ellan@gameframework.cn
-//------------------------------------------------------------
+﻿using Google.Protobuf;
+using System.IO;
 
 namespace Framework
 {
@@ -16,6 +12,34 @@ namespace Framework
 
         public virtual void Clear()
         {
+        }
+    }
+
+    /// <summary>
+    /// 客户端发向服务器的包
+    /// </summary>
+    public class CSPacket : Packet
+    {
+        public uint msgId;
+        public uint length;
+        public byte[] buff = new byte[TcpDefine.CSMaxMsgLen];
+
+        public void Init(IMessage msg)
+        {
+            msgId = TcpUtility.GetMsgId(msg.GetType());
+            length = (uint)msg.CalculateSize();
+
+            using (var memStream = new MemoryStream(buff, TcpDefine.CSHeaderLen, TcpDefine.CSMaxMsgLen - TcpDefine.CSHeaderLen))
+            {
+                using (var codedStream = new CodedOutputStream(memStream))
+                {
+                    codedStream.WriteUInt32(length);
+                    codedStream.WriteUInt32(msgId);
+                    msg.WriteTo(codedStream);
+                    
+                    codedStream.Flush();
+                }
+            } 
         }
     }
 }

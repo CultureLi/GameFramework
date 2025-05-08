@@ -11,5 +11,6 @@ namespace Framework
         Failed = 0,     //失败
         Succeed = 1,    //成功
         Connected = 2,  //已连接
+        Disconnect = 3, //断开连接
     }
 }

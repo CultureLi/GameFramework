@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -15,36 +16,14 @@ namespace Framework
         private sealed class Sender
         {
             private Thread _thread;
-            private TcpClient _tcpClient;
+            private Connecter _connecter;
             private bool _disposed;
 
-            private class CSPacket : Packet
+            private Queue<CSPacket> _packets = new Queue<CSPacket>();
+
+            public Sender(Connecter connecter)
             {
-                public int msgId;
-                public int size;
-                public byte[] buff = new byte[TcpDefine.CSMaxMsgLen];
-
-                public int ToBytes(IMessage msg)
-                {
-                    int len = 0;
-                    using (var ms = new MemoryStream(buff, TcpDefine.CSHeaderLen, TcpDefine.CSMaxMsgLen - TcpDefine.CSHeaderLen))
-                    {
-                        using (var cos = new CodedOutputStream(ms))
-                        {
-                            msg.Encode(cos);
-                            cos.Flush();
-                            len = (int)cos.Position;
-                        }
-                    }
-                    return len;
-                }
-            }
-
-            private Queue<CSPacket> _cSPackets = new Queue<CSPacket>();
-
-            public Sender(TcpClient client)
-            {
-                _tcpClient = client;
+                _connecter = connecter;
                 _thread = new Thread(() => SendLoop())
                 {
                     IsBackground = true
@@ -65,36 +44,35 @@ namespace Framework
                 }
             }
 
-            public void SetCryptKey(byte[] key)
-            {
-                //_cryptor = new AESCryptor(key);
-            }
-
             private void SendLoop()
             {
                 while (!_disposed)
                 {
                     try
                     {
-                        if (_tcpClient.Connected)
-                        {
-                            var packet = ReferencePool.Acquire<CSPacket>();
-                            if (packet != null)
-                            {
-                                try
-                                {
-                                    NetworkStream networkStream = _tcpClient.GetStream();
-                                    networkStream.Write(packet.Buff, 0, packet.Length);
-                                }
-                                catch (Exception msg)
-                                {
-                                    Debug.LogError($"Error send msg to server, msgID: {packet.MsgID} MsgName {ProtoBuf.PType.MsgID2Name(packet.MsgID)} . Error: {msg.Message}");
-                                    _tcpClient.Close();
-                                }
+                        if (!_connecter.IsConnected)
+                            continue;
 
-                                _packetPool.GivebackFreePacket(packet);
+                        if (_packets.Count <= 0)
+                            continue;
+
+                        var packet = _packets.Dequeue();
+                        if (packet != null)
+                        {
+                            try
+                            {
+                                NetworkStream networkStream = _connecter.TCPClient.GetStream();
+                                networkStream.Write(packet.buff, 0, packet.length);
                             }
+                            catch (Exception msg)
+                            {
+                                Debug.LogError($"Send Error msgID: {packet.msgId}");
+                                _connecter.TCPClient.Close();
+                            }
+
+                            ReferencePool.Release(packet);
                         }
+
                     }
                     catch (Exception e)
                     {
@@ -102,48 +80,22 @@ namespace Framework
                         {
                             Debug.LogError("Network sender run error:" + e.Message);
                         }
-                        _tcpClient.Close();
+                        _connecter.TCPClient.Close();
                     }
                     Thread.Sleep(1);
                 }
             }
 
 
-            /// <summary>
-            /// 将消息打包并放入发送队列
-            /// </summary>
-            public void SendMsg(IMessage msg, bool crypted)
+            public void SendMsg(IMessage msg)
             {
-                //必须有要发送的消息
                 if (null == msg)
-                {
                     return;
-                }
-                if (crypted && _cryptor == null)
-                {
-                    crypted = false;
-                    Debug.LogError("crypt key not set, can not send crypted msg.");
-                }
-                CSPacket packet = _packetPool.TakeFreePacket();
-                packet.Init(msg, crypted);
-                _packetPool.PushSendPacket(packet);
-            }
+                
+                var packet = ReferencePool.Acquire<CSPacket>();
+                packet.Init(msg);
 
-            public void SendMsg(uint msgID, byte[] buffer, int buffLen, bool crypted)
-            {
-                //必须有要发送的消息
-                if (null == buffer)
-                {
-                    return;
-                }
-                if (crypted && _cryptor == null)
-                {
-                    crypted = false;
-                    Debug.LogError("crypt key not set, can not send crypted msg.");
-                }
-                CSPacket packet = _packetPool.TakeFreePacket();
-                packet.Init(msgID, buffer, buffLen, crypted);
-                _packetPool.PushSendPacket(packet);
+                _packets.Enqueue(packet);
             }
         }
     }

@@ -16,8 +16,9 @@ namespace Framework
             private Connecter _connecter;
             private bool _disposed;
             private Thread _thread;
-            public Receiver()
+            public Receiver(Connecter connecter)
             {
+                _connecter = connecter;
                 _thread = new Thread(() => ReceiveLoop())
                 {
                     IsBackground = true

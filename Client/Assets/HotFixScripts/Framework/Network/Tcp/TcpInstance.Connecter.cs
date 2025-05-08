@@ -11,7 +11,6 @@ namespace Framework
         private sealed class Connecter
         {
             // Actions
-            public Action onDisconnect;
             public Action<NetworkConnectState> onConnectResult;
 
             public TcpClient TCPClient => _TcpClient;
@@ -107,7 +106,7 @@ namespace Framework
                     Debug.LogError($"网络错误 Disconnect : {e}");
                 }
 
-                onDisconnect?.Invoke();
+                BroadcastConnectResult(NetworkConnectState.Disconnect);
             }
 
             /// <summary>

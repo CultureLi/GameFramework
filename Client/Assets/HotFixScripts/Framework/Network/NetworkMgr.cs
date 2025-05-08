@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Google.Protobuf;
+using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using UnityEngine;
 
 namespace Framework
 {
@@ -9,23 +11,28 @@ namespace Framework
     /// </summary>
     internal sealed partial class NetworkManager : IFramework, INetworkMgr
     {
-    
+        Dictionary<Type, uint> _typeToIdMap = new Dictionary<Type, uint>();
+
         /// <summary>
         /// 初始化网络管理器的新实例。
         /// </summary>
         public NetworkManager()
         {
-           
+            TcpUtility.CollectMsgTypeId();
         }
+
+
+
+
 
         public void Shutdown()
         {
-            throw new NotImplementedException();
+            TcpUtility.Clear();
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            throw new NotImplementedException();
+
         }
     }
 }
