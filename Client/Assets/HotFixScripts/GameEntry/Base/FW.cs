@@ -3,11 +3,13 @@ using UnityEngine;
 
 namespace GameEntry
 {
-    internal class FW : MonoBehaviour
+    public class FW : MonoBehaviour
     {
         public static IEventMgr EventMgr { get; private set; }
         public static IFsmMgr FsmMgr { get; private set; }
         public static IResourceMgr ResourceMgr { get; private set; }
+        public static ITimerMgr TimerMgr { get; private set; }
+        public static INetworkMgr NetworkMgr { get; private set; }
 
         void Awake()
         {
@@ -19,6 +21,8 @@ namespace GameEntry
             EventMgr = FrameworkMgr.GetModule<IEventMgr>();
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();
             ResourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
+            TimerMgr = FrameworkMgr.GetModule<ITimerMgr>();
+            NetworkMgr = FrameworkMgr.GetModule<INetworkMgr>();
         }
 
         void Update()

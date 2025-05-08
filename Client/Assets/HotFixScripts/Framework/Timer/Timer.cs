@@ -9,13 +9,15 @@ namespace Framework
         public float totalDuration;
         public float curDuration;
 
-        public void Reset()
+        public void Clear()
         {
             triggeredCnt = 0;
             totalDuration = 0;
             curDuration = 0;
         }
     }
+
+    //timer
     public class Timer : IReference
     {
         public int id;
@@ -48,7 +50,7 @@ namespace Framework
             {
                 _interval = 0;
                 var context = ReferencePool.Acquire<TimerContext>();
-                context.Reset();
+                context.Clear();
                 _triggeredCnt++;
                 context.triggeredCnt = _triggeredCnt;
                 context.totalDuration = duration;
@@ -67,7 +69,7 @@ namespace Framework
             return false;
         }
 
-        public void Reset()
+        public void Clear()
         {
             id = 0;
             interval = 0;

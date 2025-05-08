@@ -1,24 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Framework
 {
     internal sealed class EventMgr : IEventMgr, IFramework
     {
-        private readonly Dictionary<Type, List<Delegate>> _listeners = new();
+        private EventPool _eventPool;
 
-        class EventData : IReference
+        public EventMgr()
         {
-            public Type type;
-            public EventBase data;
-
-            public void Reset()
-            {
-                type = null;
-                data = null;
-            }
+            _eventPool = new EventPool();
         }
-        private readonly Queue<EventData> _eventQueue = new();
 
         /// <summary>
         /// 订阅事件
@@ -27,11 +18,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Subscribe<T>(Action<T> listener) where T : EventBase
         {
-            var eventType = typeof(T);
-            if (!_listeners.ContainsKey(eventType))
-                _listeners[eventType] = new List<Delegate>();
-
-            _listeners[eventType].Add(listener);
+            _eventPool.Subscribe(listener);
         }
 
         /// <summary>
@@ -41,11 +28,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Unsubscribe<T>(Action<T> listener) where T : EventBase
         {
-            var eventType = typeof(T);
-            if (_listeners.ContainsKey(eventType))
-            {
-                _listeners[eventType].Remove(listener);
-            }
+            _eventPool.Unsubscribe(listener);
         }
 
         /// <summary>
@@ -53,16 +36,9 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void Fire<T>(T ev = null) where T : EventBase
+        public void Broadcast<T>(T ev = null) where T : EventBase
         {
-            var eventType = typeof(T);
-            if (_listeners.TryGetValue(eventType, out var list))
-            {
-                foreach (var listener in list)
-                {
-                    (listener as Action<T>)?.Invoke(ev);
-                }
-            }
+            _eventPool.Broadcast(ev);
         }
 
         /// <summary>
@@ -70,39 +46,19 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void FireAsync<T>(T ev = null) where T : EventBase
+        public void BroadcastAsync<T>(T ev = null) where T : EventBase
         {
-            var data = ReferencePool.Acquire<EventData>();
-            data.Reset();
-            data.type = typeof(T);
-            data.data = ev;
-            _eventQueue.Enqueue(data);
+            _eventPool.BroadcastAsync(ev);
         }
-
 
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            while (_eventQueue.Count > 0)
-            {
-                var ev = _eventQueue.Dequeue();
-                var eventType = ev.type;
-
-                if (_listeners.TryGetValue(eventType, out var list))
-                {
-                    foreach (var listener in list)
-                    {
-                        listener.DynamicInvoke(ev.data);
-                        ReferencePool.Release(ev);
-                    }
-                }
-            }
+            _eventPool.Update(elapseSeconds, realElapseSeconds);
         }
 
         public void Shutdown()
         {
-            _listeners.Clear();
-            ReferencePool.RemoveAll<EventData>();
+            _eventPool?.Shutdown();
         }
-
     }
 }

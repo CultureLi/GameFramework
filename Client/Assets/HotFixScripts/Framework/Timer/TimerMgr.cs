@@ -6,7 +6,7 @@ namespace Framework
 {
     internal class TimerMgr : ITimerMgr, IFramework
     {
-        //所有timer
+        //timer map
         private Dictionary<int, Timer> _timers = new Dictionary<int, Timer>();
         //预添加和预删除，防止直接在_timers上操作,造成迭代器失效
         private List<Timer> _preAdd = new List<Timer>();
@@ -17,12 +17,12 @@ namespace Framework
         /// </summary>
         /// <param name="interval">触发间隔单位（秒）</param>
         /// <param name="callback">回调函数</param>
-        /// <param name="duration">持续时长：小于0无限，等于0只触发一次，N持续N秒</param>
+        /// <param name="duration">持续时长：小于0无限时长，等于0只触发一次，大于0持续N秒</param>
         /// <returns></returns>
         public int AddTimer(float interval, Action<TimerContext> callback, float duration = 0f)
         {
             var timer = ReferencePool.Acquire<Timer>();
-            timer.Reset();
+            timer.Clear();
             timer.id = GenUid();
             timer.interval = interval;
             timer.callback = callback;

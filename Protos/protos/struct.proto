@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package google.protobuf;
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/protobuf/types/known/structpb";
+option objc_class_prefix = "GPB";
+option csharp_namespace = "Google.Protobuf.WellKnownTypes";
+
+
+message MonsterData {
+  int32 Id = 1;
+  repeated BuffData buffs = 2;
+}
+
+message BuffData{
+  int32 Id = 1;
+}
+

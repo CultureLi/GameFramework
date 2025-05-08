@@ -12,8 +12,8 @@ namespace Framework
 
         public void Unsubscribe<T>(Action<T> listener) where T : EventBase;
 
-        public void Fire<T>(T evt = null) where T : EventBase;
-        public void FireAsync<T>(T evt = null) where T : EventBase;
+        public void Broadcast<T>(T evt = null) where T : EventBase;
+        public void BroadcastAsync<T>(T evt = null) where T : EventBase;
 
     }
 }

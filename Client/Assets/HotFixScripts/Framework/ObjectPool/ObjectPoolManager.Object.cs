@@ -135,7 +135,7 @@ namespace Framework
             /// <summary>
             /// 清理内部对象。
             /// </summary>
-            public void Reset()
+            public void Clear()
             {
                 _object = null;
                 _spawnCount = 0;

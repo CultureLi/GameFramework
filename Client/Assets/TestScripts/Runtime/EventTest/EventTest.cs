@@ -27,12 +27,12 @@ namespace Assets.TestScripts.Runtime.EventTest
 
     public class EventTest : MonoBehaviour
     {
-        IEventMgr eventMgr;
+        EventPool eventMgr;
         public bool isSync = true;
 
         private void Awake()
         {
-            eventMgr = Framework.FrameworkMgr.GetModule<IEventMgr>();
+            eventMgr = new EventPool();
         }
 
         public void SubscribeHpChangedHandler1()
@@ -78,19 +78,19 @@ namespace Assets.TestScripts.Runtime.EventTest
 
                 if (isSync)
                 {
-                    eventMgr.Fire(e);
+                    eventMgr.Broadcast(e);
 
-                    eventMgr.Fire<CustomEvent>();
+                    eventMgr.Broadcast<CustomEvent>();
                 }
                 else
                 {
-                    eventMgr.FireAsync(e);
+                    eventMgr.BroadcastAsync(e);
 
-                    eventMgr.FireAsync<CustomEvent>();
+                    eventMgr.BroadcastAsync<CustomEvent>();
                 }
 
             }
-            FrameworkMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
+            eventMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
 
 
         }

@@ -170,7 +170,7 @@ namespace Framework
         /// <summary>
         /// 清理对象基类。
         /// </summary>
-        public virtual void Reset()
+        public virtual void Clear()
         {
             _name = null;
             _target = null;

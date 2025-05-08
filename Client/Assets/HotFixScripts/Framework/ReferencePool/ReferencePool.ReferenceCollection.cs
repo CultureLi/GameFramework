@@ -122,7 +122,7 @@ namespace Framework
 
             public void Release(IReference reference)
             {
-                reference.Reset();
+                reference.Clear();
                 lock (_references)
                 {
                     if (_enableStrictCheck && _references.Contains(reference))

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package google.protobuf;
+
+import "enum.proto";
+import "struct.proto";
+
+option objc_class_prefix = "GPB";
+option csharp_namespace = "Google.Protobuf.WellKnownTypes";
+option go_package = "google.golang.org/protobuf/types/known/apipb";
+
+
+message MonsterInfoReq {
+  int32 id = 1;
+}
+
+
+message MonsterInfoAck{
+  MonsterData data = 1;
+}
