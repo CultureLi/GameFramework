@@ -15,7 +15,7 @@ namespace Framework
     public class CSPacket : Packet
     {
         public int length;
-        public byte[] buff = new byte[TcpDefine.CSMaxMsgLen];
+        public byte[] buff = new byte[NetDefine.CSMaxMsgLen];
 
         public static CSPacket Create(IMessage msg)
         {
@@ -23,7 +23,7 @@ namespace Framework
             packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
             packet.length = msg.CalculateSize();
 
-            using (var memStream = new MemoryStream(packet.buff, TcpDefine.CSHeaderLen, TcpDefine.CSMaxMsgLen - TcpDefine.CSHeaderLen))
+            using (var memStream = new MemoryStream(packet.buff, NetDefine.CSHeaderLen, NetDefine.CSMaxMsgLen - NetDefine.CSHeaderLen))
             {
                 using (var codedStream = new CodedOutputStream(memStream))
                 {

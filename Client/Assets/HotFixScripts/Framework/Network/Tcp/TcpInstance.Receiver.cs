@@ -38,7 +38,7 @@ namespace Framework
             {
                 var stream = _instance.TCPClient.GetStream();
 
-                byte[] buffer = new byte[TcpDefine.SCMaxMsgLen];
+                byte[] buffer = new byte[NetDefine.SCMaxMsgLen];
 
                 while (!_disposed)
                 {
@@ -76,7 +76,7 @@ namespace Framework
                 netVal = BitConverter.ToInt32(tempBuff, 0);
                 msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
 
-                if (length > 0 && length <= TcpDefine.SCMaxMsgLen)
+                if (length > 0 && length <= NetDefine.SCMaxMsgLen)
                 {
                     return stream.ReadExactly(buffer, length);
                 }

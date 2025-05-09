@@ -6,6 +6,16 @@ using System.Threading.Tasks;
 
 namespace Framework
 {
+    public static class NetDefine
+    {
+        public static readonly int CSHeaderLen = 8;
+        public static readonly int SCHeaderLen = 8;
+        public static readonly int CSMaxMsgLen = 20000;
+        public static readonly int SCMaxMsgLen = 200000;
+        
+    }
+
+
     public enum NetworkConnectState
     {
         Failed = 0,     //失败

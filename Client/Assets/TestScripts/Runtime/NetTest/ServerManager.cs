@@ -112,7 +112,7 @@ namespace Assets.TestScripts.Runtime.NetTest
 
         private void HandleClient(Connection conn)
         {
-            byte[] receiveBuffer = new byte[TcpDefine.SCMaxMsgLen];
+            byte[] receiveBuffer = new byte[NetDefine.SCMaxMsgLen];
             try
             {
                 while (conn.isConnected)
@@ -169,7 +169,7 @@ namespace Assets.TestScripts.Runtime.NetTest
             netVal = BitConverter.ToInt32(tempBuff, 0);
             msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
 
-            if (length > 0 && length <= TcpDefine.SCMaxMsgLen)
+            if (length > 0 && length <= NetDefine.SCMaxMsgLen)
             {
                 return stream.ReadExactly(buffer, length);
             }
@@ -250,7 +250,7 @@ namespace Assets.TestScripts.Runtime.NetTest
                         var packet = conn.sendPackets.Dequeue();
                         try
                         {
-                            conn.stream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
+                            conn.stream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
                         }
                         catch (Exception e)
                         {

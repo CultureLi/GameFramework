@@ -58,7 +58,7 @@ namespace Framework
                                 try
                                 {
                                     NetworkStream networkStream = _instance.TCPClient.GetStream();
-                                    networkStream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
+                                    networkStream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
                                 }
                                 catch (Exception e)
                                 {
