@@ -1,5 +1,7 @@
 ﻿using Google.Protobuf;
+using System;
 using System.IO;
+using System.Net;
 
 namespace Framework
 {
@@ -21,25 +23,41 @@ namespace Framework
     public class CSPacket : Packet
     {
         public uint msgId;
-        public uint length;
+        public int length;
         public byte[] buff = new byte[TcpDefine.CSMaxMsgLen];
 
         public void Init(IMessage msg)
         {
             msgId = TcpUtility.GetMsgId(msg.GetType());
-            length = (uint)msg.CalculateSize();
+            length = msg.CalculateSize();
 
-            using (var memStream = new MemoryStream(buff, TcpDefine.CSHeaderLen, TcpDefine.CSMaxMsgLen - TcpDefine.CSHeaderLen))
+            using (var memStream = new MemoryStream(buff, TcpDefine.CSHeaderLen, TcpDefine.CSMaxMsgLen-TcpDefine.CSHeaderLen))
             {
                 using (var codedStream = new CodedOutputStream(memStream))
                 {
-                    codedStream.WriteUInt32(length);
-                    codedStream.WriteUInt32(msgId);
                     msg.WriteTo(codedStream);
-                    
                     codedStream.Flush();
                 }
-            } 
+            }
+
+            PackInt(length, buff, 0);
+            PackInt((int)msgId, buff, 4);
         }
+
+        public static void PackInt(int val, byte[] buf, int offset = 0)
+        {
+            int netVal = IPAddress.HostToNetworkOrder(val);
+            byte[] intBuf = BitConverter.GetBytes(netVal);
+            for (int i = 0; i < intBuf.GetLength(0); i++)
+            {
+                buf[offset + i] = intBuf[i];
+            }
+        }
+    }
+
+    public class SCPacket : Packet
+    {
+        public uint msgId;
+        public IMessage msg;
     }
 }

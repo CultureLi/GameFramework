@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Google.Protobuf;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEditor.Search;
 using UnityEngine;
 
 namespace Framework
@@ -14,11 +17,16 @@ namespace Framework
         private sealed class Receiver
         {
             private Connecter _connecter;
+            private Dispatcher _dispatcher;
             private bool _disposed;
             private Thread _thread;
-            public Receiver(Connecter connecter)
+
+            Queue<SCPacket> _packets = new Queue<SCPacket>();
+
+            public Receiver(Connecter connecter, Dispatcher dispatcher)
             {
                 _connecter = connecter;
+                _dispatcher = dispatcher;
                 _thread = new Thread(() => ReceiveLoop())
                 {
                     IsBackground = true
@@ -26,13 +34,16 @@ namespace Framework
                 _thread.Start();
             }
 
+            public void Dispose()
+            {
+                _disposed = true;
+            }
+
             private void ReceiveLoop()
             {
                 var stream = _connecter.TCPClient.GetStream();
 
-                var maxMsgSize = 200000;
-                byte[] receiveBuffer = new byte[maxMsgSize + 4];
-                byte[] headerBuffer = new byte[4];
+                byte[] receiveBuffer = new byte[TcpDefine.SCMaxMsgLen];
 
                 while (true)
                 {
@@ -41,12 +52,24 @@ namespace Framework
 
                     try
                     {
-                        if (_connecter == null && _connecter.IsConnected)
+                        if (_connecter != null && _connecter.IsConnected && stream.DataAvailable)
                         {
-                            if (!ReadMessageBlocking(stream, maxMsgSize, headerBuffer, receiveBuffer, out int size))
+                            if (!ReadMessageBlocking(stream, receiveBuffer, out var length, out var msgId))
                                 break;
 
-                            ArraySegment<byte> message = new ArraySegment<byte>(receiveBuffer, 0, size);
+                            var packet = ReferencePool.Acquire<SCPacket>();
+                            packet.msgId = msgId;
+
+                            var type = TcpUtility.GetMsgType(msgId);
+                            packet.msg = Activator.CreateInstance(type) as IMessage;
+
+                            using (var codeStream = new CodedInputStream(receiveBuffer, 0, length))
+                            {
+                                packet.msg.MergeFrom(codeStream);
+                            }
+
+                            _packets.Enqueue(packet);
+
                         }
                     }
                     catch (Exception e)
@@ -56,44 +79,36 @@ namespace Framework
 
                 }
             }
-            public static bool ReadMessageBlocking(NetworkStream stream, int MaxMessageSize, byte[] headerBuffer, byte[] payloadBuffer, out int size)
+            public bool ReadMessageBlocking(NetworkStream stream, byte[] buffer, out int length, out uint msgId)
             {
-                size = 0;
+                byte[] tempBuff = new byte[4];
 
-                // buffer needs to be of Header + MaxMessageSize
-                if (payloadBuffer.Length != 4 + MaxMessageSize)
+                stream.ReadExactly(tempBuff, 4);
+                int netVal = BitConverter.ToInt32(tempBuff, 0);
+                length = IPAddress.NetworkToHostOrder(netVal);
+
+                stream.ReadExactly(tempBuff, 4);
+                netVal = BitConverter.ToInt32(tempBuff, 0);
+                msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
+
+                if (length > 0 && length <= TcpDefine.SCMaxMsgLen)
                 {
-                    Debug.LogError($"[Telepathy] ReadMessageBlocking: payloadBuffer needs to be of size 4 + MaxMessageSize = {4 + MaxMessageSize} instead of {payloadBuffer.Length}");
-                    return false;
+                    return stream.ReadExactly(buffer, length);
                 }
-
-                // read exactly 4 bytes for header (blocking)
-                if (!stream.ReadExactly(headerBuffer, 4))
-                    return false;
-
-                // convert to int
-                size = BytesToIntBigEndian(headerBuffer);
-
-                // protect against allocation attacks. an attacker might send
-                // multiple fake '2GB header' packets in a row, causing the server
-                // to allocate multiple 2GB byte arrays and run out of memory.
-                //
-                // also protect against size <= 0 which would cause issues
-                if (size > 0 && size <= MaxMessageSize)
-                {
-                    // read exactly 'size' bytes for content (blocking)
-                    return stream.ReadExactly(payloadBuffer, size);
-                }
-                Debug.LogWarning("[Telepathy] ReadMessageBlocking: possible header attack with a header of: " + size + " bytes.");
+                Debug.LogWarning("[Telepathy] ReadMessageBlocking: possible header attack with a header of: " + length + " bytes.");
                 return false;
             }
 
-            public static int BytesToIntBigEndian(byte[] bytes)
+            private readonly int _maxMessagesPerFrame = 100;
+            public void Update(float elapseSeconds, float realElapseSeconds)
             {
-                return (bytes[0] << 24) |
-                       (bytes[1] << 16) |
-                       (bytes[2] << 8) |
-                        bytes[3];
+                int msgCount = 0;
+                while (_packets.Count > 0 && msgCount < _maxMessagesPerFrame)
+                {
+                    var packet = _packets.Dequeue();
+                    _dispatcher.DispatchMsg(packet);
+                    ReferencePool.Release(packet);
+                }
             }
         }
     }

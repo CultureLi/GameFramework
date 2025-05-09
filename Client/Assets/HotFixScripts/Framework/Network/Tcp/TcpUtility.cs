@@ -24,26 +24,26 @@ namespace Framework
         }
 
         /// <summary>
-        /// Fnv1aHash算法, 通过消息类型计算出消息id, server要和client保持算法一致
+        /// BKDRHash, 通过消息名字计算出消息id, server要和client保持算法一致
+        /// seed 一般取个质数 31、131、1313、13131
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        private static uint TypeToId (Type type)
+        static uint BKDRHash(string s)
         {
-            const uint fnvPrime = 0x01000193; //   16777619
-            const uint offsetBasis = 0x811C9DC5; // 2166136261
+            uint seed = 131;
+            uint hash = 0;
 
-            uint hash = offsetBasis;
-            var name = type.Name;
-            foreach (char c in name)
+            for (int i = 0; i < s.Length; i++)
             {
-                hash ^= c;
-                hash *= fnvPrime;
+                hash = hash * seed + s[i];
             }
-
             return hash;
         }
 
+        /// <summary>
+        /// 收集所有消息，做Type和id的双向映射
+        /// </summary>
         public static void CollectMsgTypeId()
         {
             Clear();
@@ -58,7 +58,7 @@ namespace Framework
                     if (!typeof(IMessage).IsAssignableFrom(type))
                         continue;
 
-                    uint msgId = TypeToId(type);
+                    uint msgId = BKDRHash(type.Name);
                     if (_typeToIdMap.ContainsValue(msgId))
                     {
                         Debug.LogError($"[碰撞] 消息 {type} 的 msgId 与其他消息重复: {msgId}");

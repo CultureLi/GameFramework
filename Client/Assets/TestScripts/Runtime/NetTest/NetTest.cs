@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace Assets.TestScripts.Runtime.NetTest
 {
-    internal class NetTest : MonoBehaviour
+    public class NetTest : MonoBehaviour
     {
         TcpInstance tcpInstance;
         private void Awake()
@@ -33,9 +33,24 @@ namespace Assets.TestScripts.Runtime.NetTest
             tcpInstance.SendMsg(msg);
         }
 
-        private void OnMonsterInfoAck(MonsterInfoAck obj)
+        private void OnMonsterInfoAck(MonsterInfoAck ack)
         {
-            throw new NotImplementedException();
+            Debug.Log("客户端收到了 MonsterInfoAck");
+
+            foreach (var data in ack.Data.Buffs)
+            {
+                Debug.Log($"{data.Id}");
+            }
+        }
+
+        public void Update()
+        {
+            tcpInstance.Update(Time.deltaTime, Time.fixedDeltaTime);
+        }
+
+        private void OnDestroy()
+        {
+            tcpInstance.Dispose();
         }
     }
 }

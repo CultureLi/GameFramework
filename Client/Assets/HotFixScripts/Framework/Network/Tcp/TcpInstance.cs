@@ -13,8 +13,16 @@ namespace Framework
         Connecter _connecter;
         Sender _sender;
         Receiver _receiver;
+        Dispatcher _dispatcher;
 
         Dictionary<Type, List<Delegate>> handlerMap = new Dictionary<Type, List<Delegate>>();
+
+        public bool IsDisposed;
+
+        public TcpInstance()
+        {
+            _dispatcher = new Dispatcher();
+        }
 
         public void Connect(string host, int port)
         {
@@ -33,7 +41,7 @@ namespace Framework
             if (state == NetworkConnectState.Succeed)
             {
                 _sender = new Sender(_connecter);
-                _receiver = new Receiver(_connecter);
+                _receiver = new Receiver(_connecter, _dispatcher);
             }
         }
 
@@ -44,18 +52,24 @@ namespace Framework
 
         public void RegisterMsg<T>(Action<T> handler) where T : IMessage
         {
-            var msgType = typeof(T);
-            if (!handlerMap.TryGetValue(msgType, out var list))
-            {
-                list = new List<Delegate>();
-                handlerMap[msgType] = list;
-            }
-            if (list.Contains(handler))
-                list.Add(handler);
+            _dispatcher?.RegisterMsg(handler);
         }
 
-        public void UnregisterMsg(Type msgType, Action<IMessage> handler)
+        public void UnregisterMsg<T>(Action<T> handler) where T : IMessage
         {
+            _dispatcher?.UnregisterMsg(handler);
+        }
+
+        public void Update(float elapseSeconds, float realElapseSeconds)
+        {
+            _receiver?.Update(elapseSeconds, realElapseSeconds);
+        }
+        public void Dispose()
+        {
+            _connecter?.Dispose();
+            _sender?.Dispose();
+            _receiver?.Dispose();
+            _dispatcher?.Dispose();
         }
 
     }

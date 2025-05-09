@@ -29,6 +29,8 @@ namespace Framework
                     IsBackground = true
                 };
                 _thread.Start();
+
+                
             }
 
             public void Dispose()
@@ -62,11 +64,11 @@ namespace Framework
                             try
                             {
                                 NetworkStream networkStream = _connecter.TCPClient.GetStream();
-                                networkStream.Write(packet.buff, 0, packet.length);
+                                networkStream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
                             }
-                            catch (Exception msg)
+                            catch (Exception e)
                             {
-                                Debug.LogError($"Send Error msgID: {packet.msgId}");
+                                Debug.LogError($"Send Error msgID: {TcpUtility.GetMsgType(packet.msgId).Name} {e}");
                                 _connecter.TCPClient.Close();
                             }
 
