@@ -36,7 +36,7 @@ namespace Framework
 
             public void DispatchMsg(SCPacket packet)
             {
-                var type = TcpUtility.GetMsgType(packet.msgId);
+                var type = MsgTypeIdUtility.GetMsgType(packet.id);
                 if (_handlers.TryGetValue(type, out var list))
                 {
                     foreach (var handler in list)

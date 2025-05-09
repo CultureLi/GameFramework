@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Framework
 {
-    public static class TcpUtility
+    public static class MsgTypeIdUtility
     {
         private static Dictionary<Type, uint> _typeToIdMap = new Dictionary<Type, uint>();
         private static Dictionary<uint, Type> _IdToTypeMap = new Dictionary<uint, Type>();
@@ -42,9 +42,9 @@ namespace Framework
         }
 
         /// <summary>
-        /// 收集所有消息，做Type和id的双向映射
+        /// 初始化，收集所有消息，做Type和id的双向映射
         /// </summary>
-        public static void CollectMsgTypeId()
+        public static void Init()
         {
             Clear();
 

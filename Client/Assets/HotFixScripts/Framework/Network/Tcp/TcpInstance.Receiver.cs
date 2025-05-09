@@ -13,17 +13,15 @@ namespace Framework
     {
         private sealed class Receiver
         {
-            private Connecter _connecter;
-            private Dispatcher _dispatcher;
+            private TcpInstance _instance;
             private bool _disposed;
             private Thread _thread;
 
             Queue<SCPacket> _packets = new Queue<SCPacket>();
 
-            public Receiver(Connecter connecter, Dispatcher dispatcher)
+            public Receiver(TcpInstance instance)
             {
-                _connecter = connecter;
-                _dispatcher = dispatcher;
+                _instance = instance;
                 _thread = new Thread(() => ReceiveLoop())
                 {
                     IsBackground = true
@@ -38,29 +36,20 @@ namespace Framework
 
             private void ReceiveLoop()
             {
-                var stream = _connecter.TCPClient.GetStream();
+                var stream = _instance.TCPClient.GetStream();
 
-                byte[] receiveBuffer = new byte[TcpDefine.SCMaxMsgLen];
+                byte[] buffer = new byte[TcpDefine.SCMaxMsgLen];
 
                 while (!_disposed)
                 {
                     try
                     {
-                        if (_connecter != null && _connecter.IsConnected && stream.DataAvailable)
+                        if (_instance.IsConnected && stream.DataAvailable)
                         {
-                            if (!ReadMessageBlocking(stream, receiveBuffer, out var length, out var msgId))
+                            if (!ReadMessageBlocking(stream, buffer, out var length, out var msgId))
                                 break;
 
-                            var packet = ReferencePool.Acquire<SCPacket>();
-                            packet.msgId = msgId;
-
-                            var type = TcpUtility.GetMsgType(msgId);
-                            packet.msg = Activator.CreateInstance(type) as IMessage;
-
-                            using (var codeStream = new CodedInputStream(receiveBuffer, 0, length))
-                            {
-                                packet.msg.MergeFrom(codeStream);
-                            }
+                            var packet = SCPacket.Create(msgId, buffer, length);
 
                             _packets.Enqueue(packet);
 
@@ -74,6 +63,7 @@ namespace Framework
                     Thread.Sleep(1);
                 }
             }
+
             public bool ReadMessageBlocking(NetworkStream stream, byte[] buffer, out int length, out uint msgId)
             {
                 byte[] tempBuff = new byte[4];
@@ -90,7 +80,7 @@ namespace Framework
                 {
                     return stream.ReadExactly(buffer, length);
                 }
-                Debug.LogWarning("[Telepathy] ReadMessageBlocking: possible header attack with a header of: " + length + " bytes.");
+                Debug.LogWarning($"读取消息失败-type: {MsgTypeIdUtility.GetMsgType(msgId)} length: {length}");
                 return false;
             }
 
@@ -101,7 +91,7 @@ namespace Framework
                 while (_packets.Count > 0 && msgCount < _maxCntPerFrame)
                 {
                     var packet = _packets.Dequeue();
-                    _dispatcher.DispatchMsg(packet);
+                    _instance.DispatchMsg(packet);
                     ReferencePool.Release(packet);
                 }
             }

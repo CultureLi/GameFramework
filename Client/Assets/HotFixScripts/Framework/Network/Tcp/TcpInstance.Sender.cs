@@ -14,14 +14,14 @@ namespace Framework
         private sealed class Sender
         {
             private Thread _thread;
-            private Connecter _connecter;
+            TcpInstance _instance;
             private bool _disposed;
 
             private Queue<CSPacket> _packets = new Queue<CSPacket>();
 
-            public Sender(Connecter connecter)
+            public Sender(TcpInstance instance)
             {
-                _connecter = connecter;
+                _instance = instance;
                 _thread = new Thread(() => SendLoop())
                 {
                     IsBackground = true
@@ -50,20 +50,20 @@ namespace Framework
                 {
                     try
                     {
-                        if (_connecter.IsConnected && _packets.Count > 0)
+                        if (_instance.IsConnected && _packets.Count > 0)
                         {
                             var packet = _packets.Dequeue();
                             if (packet != null)
                             {
                                 try
                                 {
-                                    NetworkStream networkStream = _connecter.TCPClient.GetStream();
+                                    NetworkStream networkStream = _instance.TCPClient.GetStream();
                                     networkStream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
                                 }
                                 catch (Exception e)
                                 {
-                                    Debug.LogError($"Send Error msgID: {TcpUtility.GetMsgType(packet.msgId).Name} {e}");
-                                    _connecter.TCPClient.Close();
+                                    Debug.LogError($"Send Error msgID: {MsgTypeIdUtility.GetMsgType(packet.id).Name} {e}");
+                                    _instance.TCPClient.Close();
                                 }
 
                                 ReferencePool.Release(packet);
@@ -77,7 +77,7 @@ namespace Framework
                         {
                             Debug.LogError("Network sender run error:" + e.Message);
                         }
-                        _connecter.TCPClient.Close();
+                        _instance.TCPClient.Close();
                     }
 
                     Thread.Sleep(1);
@@ -90,9 +90,7 @@ namespace Framework
                 if (null == msg)
                     return;
                 
-                var packet = ReferencePool.Acquire<CSPacket>();
-                packet.Init(msg);
-
+                var packet =CSPacket.Create(msg);
                 _packets.Enqueue(packet);
             }
         }

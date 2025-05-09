@@ -18,7 +18,7 @@ namespace Framework
         /// </summary>
         public NetworkManager()
         {
-            TcpUtility.CollectMsgTypeId();
+            MsgTypeIdUtility.Init();
         }
 
 
@@ -27,7 +27,7 @@ namespace Framework
 
         public void Shutdown()
         {
-            TcpUtility.Clear();
+            MsgTypeIdUtility.Clear();
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

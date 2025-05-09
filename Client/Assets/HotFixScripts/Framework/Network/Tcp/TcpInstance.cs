@@ -17,7 +17,14 @@ namespace Framework
 
         Dictionary<Type, List<Delegate>> handlerMap = new Dictionary<Type, List<Delegate>>();
 
-        public bool IsDisposed;
+        public bool IsDisposed
+        {
+            private set; get;
+        }
+
+        public bool IsConnected => _connecter?.IsConnected ?? false;
+
+        public TcpClient TCPClient => _connecter?.TCPClient ?? null;
 
         public TcpInstance()
         {
@@ -36,12 +43,17 @@ namespace Framework
             
         }
 
+        public void DisConnect()
+        {
+            _connecter.Disconnect();
+        }
+
         private void OnConnectResult(NetworkConnectState state)
         {
             if (state == NetworkConnectState.Succeed)
             {
-                _sender = new Sender(_connecter);
-                _receiver = new Receiver(_connecter, _dispatcher);
+                _sender = new Sender(this);
+                _receiver = new Receiver(this);
             }
         }
 
@@ -58,6 +70,11 @@ namespace Framework
         public void UnregisterMsg<T>(Action<T> handler) where T : IMessage
         {
             _dispatcher?.UnregisterMsg(handler);
+        }
+
+        internal void DispatchMsg(SCPacket packet)
+        {
+            _dispatcher.DispatchMsg(packet);
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

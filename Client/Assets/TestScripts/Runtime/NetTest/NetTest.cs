@@ -15,7 +15,7 @@ namespace Assets.TestScripts.Runtime.NetTest
         TcpInstance tcpInstance;
         private void Awake()
         {
-            TcpUtility.CollectMsgTypeId();
+            MsgTypeIdUtility.Init();
 
             tcpInstance = new TcpInstance();
             tcpInstance.Connect("10.23.50.187", 8888);

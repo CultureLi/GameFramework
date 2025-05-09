@@ -123,10 +123,10 @@ namespace Assets.TestScripts.Runtime.NetTest
                             break;
 
                         var packet = ReferencePool.Acquire<SCPacketEx>();
-                        packet.msgId = msgId;
+                        packet.id = msgId;
                         packet.connectId = conn.connectionId;
 
-                        var type = TcpUtility.GetMsgType(msgId);
+                        var type = MsgTypeIdUtility.GetMsgType(msgId);
                         packet.msg = Activator.CreateInstance(type) as IMessage;
                         using (var codeStream = new CodedInputStream(receiveBuffer, 0, length))
                         {
@@ -210,8 +210,7 @@ namespace Assets.TestScripts.Runtime.NetTest
                 return;
             }
 
-            var packet = ReferencePool.Acquire<CSPacket>();
-            packet.Init(msg);
+            var packet = CSPacket.Create(msg);
 
             lock (conn.sendPackets)
             {
@@ -231,7 +230,7 @@ namespace Assets.TestScripts.Runtime.NetTest
                     while (conn.receivePackets.Count > 0)
                     {
                         var packet = conn.receivePackets.Dequeue();
-                        var type = TcpUtility.GetMsgType(packet.msgId);
+                        var type = MsgTypeIdUtility.GetMsgType(packet.id);
                         if (handlerMap.TryGetValue(type, out var handlerList))
                         {
                             foreach (var handler in handlerList)
