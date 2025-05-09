@@ -1,4 +1,5 @@
-﻿using Framework;
+﻿using Assets.Test.TestScripts.Runtime.NetTest;
+using Framework;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using System;
@@ -31,6 +32,8 @@ namespace Assets.TestScripts.Runtime.NetTest
         private TcpListener listener;
         private Thread listenThread;
         private bool isRunning = false;
+
+        RsaKeyMgr _rsaKeyMgr = new RsaKeyMgr();
 
         Dictionary<uint, Connection> connections = new Dictionary<uint, Connection>();
 
@@ -96,6 +99,9 @@ namespace Assets.TestScripts.Runtime.NetTest
 
                         conn.receiveThread = new Thread(() => HandleClient(conn));
                         conn.receiveThread.Start();
+
+                        //发送公钥
+                        SendMsg(conn.connectionId, new ServerPublicKey() { Key = _rsaKeyMgr.PublicKey });
                     }
                     else
                     {

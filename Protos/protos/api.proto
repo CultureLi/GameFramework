@@ -18,3 +18,12 @@ message MonsterInfoReq {
 message MonsterInfoAck{
   MonsterData data = 1;
 }
+
+
+message ServerPublicKey{
+  string key = 1;
+}
+
+message ClientAesKey{
+  string key = 1;
+}

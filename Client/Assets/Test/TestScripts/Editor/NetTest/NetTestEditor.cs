@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Assets.TestScripts.Editor.NetTest
 {
-    [CustomEditor(typeof(Runtime.NetTest.NetTest))]
+    [CustomEditor(typeof(Runtime.NetTest.ClientNet))]
     public class NetTestEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
@@ -17,7 +17,7 @@ namespace Assets.TestScripts.Editor.NetTest
             base.OnInspectorGUI();
 
             // 获取目标对象引用
-            var myScript = (Runtime.NetTest.NetTest)target;
+            var myScript = (Runtime.NetTest.ClientNet)target;
 
             // 添加按钮
             if (GUILayout.Button("Send"))

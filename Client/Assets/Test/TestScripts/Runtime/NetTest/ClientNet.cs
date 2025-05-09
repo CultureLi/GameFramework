@@ -11,15 +11,22 @@ using UnityEngine;
 
 namespace Assets.TestScripts.Runtime.NetTest
 {
-    public class NetTest : MonoBehaviour
+    public class ClientNet : MonoBehaviour
     {
-        
+        private string publicKey;
         private void Awake()
         {
             FW.NetMgr.Create("10.23.50.187", 8888);
             FW.NetMgr.Connect();
 
             FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
+            FW.NetMgr.RegisterMsg<ServerPublicKey>(OnServerPublicKey);
+        }
+
+        private void OnServerPublicKey(ServerPublicKey msg)
+        {
+            publicKey = msg.Key;
+            Debug.Log($"收到公钥 {msg}");
         }
 
         public void Send()
