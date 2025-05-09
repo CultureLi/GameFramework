@@ -1,11 +1,9 @@
 ﻿using Google.Protobuf;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using UnityEngine;
 
@@ -52,27 +50,24 @@ namespace Framework
                 {
                     try
                     {
-                        if (!_connecter.IsConnected)
-                            continue;
-
-                        if (_packets.Count <= 0)
-                            continue;
-
-                        var packet = _packets.Dequeue();
-                        if (packet != null)
+                        if (_connecter.IsConnected && _packets.Count > 0)
                         {
-                            try
+                            var packet = _packets.Dequeue();
+                            if (packet != null)
                             {
-                                NetworkStream networkStream = _connecter.TCPClient.GetStream();
-                                networkStream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.LogError($"Send Error msgID: {TcpUtility.GetMsgType(packet.msgId).Name} {e}");
-                                _connecter.TCPClient.Close();
-                            }
+                                try
+                                {
+                                    NetworkStream networkStream = _connecter.TCPClient.GetStream();
+                                    networkStream.Write(packet.buff, 0, packet.length + TcpDefine.CSHeaderLen);
+                                }
+                                catch (Exception e)
+                                {
+                                    Debug.LogError($"Send Error msgID: {TcpUtility.GetMsgType(packet.msgId).Name} {e}");
+                                    _connecter.TCPClient.Close();
+                                }
 
-                            ReferencePool.Release(packet);
+                                ReferencePool.Release(packet);
+                            }
                         }
 
                     }
@@ -84,6 +79,7 @@ namespace Framework
                         }
                         _connecter.TCPClient.Close();
                     }
+
                     Thread.Sleep(1);
                 }
             }

@@ -44,14 +44,9 @@ namespace Assets.TestScripts.Runtime.NetTest
 
         private void OnDestroy()
         {
-            listener.Stop();
-            listenThread.Join();
-        }
-
-        void OnApplicationQuit()
-        {
             StopServer();
         }
+
 
         public void StartServer(int port)
         {

@@ -4,10 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using UnityEditor.Search;
 using UnityEngine;
 
 namespace Framework
@@ -45,11 +42,8 @@ namespace Framework
 
                 byte[] receiveBuffer = new byte[TcpDefine.SCMaxMsgLen];
 
-                while (true)
+                while (!_disposed)
                 {
-                    if (_disposed)
-                        break;
-
                     try
                     {
                         if (_connecter != null && _connecter.IsConnected && stream.DataAvailable)
@@ -77,6 +71,7 @@ namespace Framework
                         Debug.LogError($"网络错误 ReceiveLoop {e}");
                     }
 
+                    Thread.Sleep(1);
                 }
             }
             public bool ReadMessageBlocking(NetworkStream stream, byte[] buffer, out int length, out uint msgId)
@@ -99,11 +94,11 @@ namespace Framework
                 return false;
             }
 
-            private readonly int _maxMessagesPerFrame = 100;
+            private readonly int _maxCntPerFrame = 100;
             public void Update(float elapseSeconds, float realElapseSeconds)
             {
                 int msgCount = 0;
-                while (_packets.Count > 0 && msgCount < _maxMessagesPerFrame)
+                while (_packets.Count > 0 && msgCount < _maxCntPerFrame)
                 {
                     var packet = _packets.Dequeue();
                     _dispatcher.DispatchMsg(packet);
