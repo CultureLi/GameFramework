@@ -157,7 +157,7 @@ namespace Framework
         {
             if (target == null)
             {
-                throw new Exception(Utility.Text.Format("Target '{0}' is invalid.", name));
+                throw new Exception($"Target '{name}' is invalid.");
             }
 
             this._name = name ?? string.Empty;

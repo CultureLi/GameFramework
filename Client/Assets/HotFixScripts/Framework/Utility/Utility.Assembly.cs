@@ -87,7 +87,7 @@ namespace Framework
 
                 foreach (System.Reflection.Assembly assembly in _assemblies)
                 {
-                    type = Type.GetType(Text.Format("{0}, {1}", typeName, assembly.FullName));
+                    type = Type.GetType($"{typeName}, {assembly.FullName}");
                     if (type != null)
                     {
                         _cachedTypes.Add(typeName, type);

@@ -127,7 +127,7 @@ namespace Framework
                 Type stateType = state.GetType();
                 if (fsm._states.ContainsKey(stateType))
                 {
-                    throw new Exception(Utility.Text.Format("FSM state '{1}' is already exist.", stateType.FullName));
+                    throw new Exception($"FSM state '{stateType.FullName}' is already exist.");
                 }
 
                 fsm._states.Add(stateType, state);
@@ -164,13 +164,13 @@ namespace Framework
 
             if (!typeof(FsmState).IsAssignableFrom(stateType))
             {
-                throw new Exception(Utility.Text.Format("State type '{0}' is invalid.", stateType.FullName));
+                throw new Exception($"State type '{stateType.FullName}' is invalid.");
             }
 
             FsmState state = GetState(stateType);
             if (state == null)
             {
-                throw new Exception(Utility.Text.Format("FSM can not start state '{1}' which is not exist.", stateType.FullName));
+                throw new Exception($"FSM can not start state '{stateType.FullName}' which is not exist.");
             }
 
             _currentStateTime = 0f;
@@ -202,7 +202,7 @@ namespace Framework
 
             if (!typeof(FsmState).IsAssignableFrom(stateType))
             {
-                throw new Exception(Utility.Text.Format("State type '{0}' is invalid.", stateType.FullName));
+                throw new Exception($"State type '{stateType.FullName}' is invalid.");
             }
 
             return _states.ContainsKey(stateType);
@@ -238,7 +238,7 @@ namespace Framework
 
             if (!typeof(FsmState).IsAssignableFrom(stateType))
             {
-                throw new Exception(Utility.Text.Format("State type '{0}' is invalid.", stateType.FullName));
+                throw new Exception($"State type '{stateType.FullName}' is invalid.");
             }
 
             FsmState state = null;
@@ -353,7 +353,7 @@ namespace Framework
             FsmState state = GetState(stateType);
             if (state == null)
             {
-                throw new Exception(Utility.Text.Format("FSM can not change state to '{1}' which is not exist.",  stateType.FullName));
+                throw new Exception($"FSM can not change state to '{stateType.FullName}' which is not exist.");
             }
 
             _currentState.OnLeave();

@@ -192,7 +192,7 @@ namespace Framework
 
             if (!typeof(IReference).IsAssignableFrom(referenceType))
             {
-                throw new Exception(Utility.Text.Format("Reference type '{0}' is invalid.", referenceType.FullName));
+                throw new Exception($"Reference type '{referenceType.FullName}' is invalid.");
             }
         }
 

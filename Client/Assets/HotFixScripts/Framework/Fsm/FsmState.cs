@@ -97,7 +97,7 @@ namespace Framework
 
             if (!typeof(FsmState).IsAssignableFrom(stateType))
             {
-                throw new Exception(Utility.Text.Format("State type '{0}' is invalid.", stateType.FullName));
+                throw new Exception($"State type '{stateType.FullName}' is invalid.");
             }
 
             fsmImplement.ChangeState(stateType);

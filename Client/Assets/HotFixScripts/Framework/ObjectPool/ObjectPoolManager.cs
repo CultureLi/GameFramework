@@ -101,7 +101,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalHasObjectPool(new TypeNamePair(objectType));
@@ -133,7 +133,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalHasObjectPool(new TypeNamePair(objectType, name));
@@ -186,7 +186,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalGetObjectPool(new TypeNamePair(objectType));
@@ -218,7 +218,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalGetObjectPool(new TypeNamePair(objectType, name));
@@ -1131,7 +1131,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalDestroyObjectPool(new TypeNamePair(objectType));
@@ -1163,7 +1163,7 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             return InternalDestroyObjectPool(new TypeNamePair(objectType, name));
@@ -1245,7 +1245,7 @@ namespace Framework
             TypeNamePair typeNamePair = new TypeNamePair(typeof(T), name);
             if (HasObjectPool<T>(name))
             {
-                throw new Exception(Utility.Text.Format("Already exist object pool '{0}'.", typeNamePair));
+                throw new Exception($"Already exist object pool '{typeNamePair}'.");
             }
 
             ObjectPool<T> objectPool = new ObjectPool<T>(name, allowMultiSpawn, autoReleaseInterval, capacity, expireTime, priority);
@@ -1262,13 +1262,13 @@ namespace Framework
 
             if (!typeof(ObjectBase).IsAssignableFrom(objectType))
             {
-                throw new Exception(Utility.Text.Format("Object type '{0}' is invalid.", objectType.FullName));
+                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
             }
 
             TypeNamePair typeNamePair = new TypeNamePair(objectType, name);
             if (HasObjectPool(objectType, name))
             {
-                throw new Exception(Utility.Text.Format("Already exist object pool '{0}'.", typeNamePair));
+                throw new Exception($"Already exist object pool '{typeNamePair}'.");
             }
 
             Type objectPoolType = typeof(ObjectPool<>).MakeGenericType(objectType);

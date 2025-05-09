@@ -312,7 +312,7 @@ namespace Framework
                 }
                 else
                 {
-                    throw new Exception(Utility.Text.Format("Can not find target in object pool '{0}', target type is '{1}', target value is '{2}'.", new TypeNamePair(typeof(T), Name), target.GetType().FullName, target));
+                    throw new Exception($"Can not find target in object pool '{new TypeNamePair(typeof(T), Name)}', target type is '{target.GetType().FullName}', target value is '{target}'.");
                 }
             }
 
@@ -350,7 +350,7 @@ namespace Framework
                 }
                 else
                 {
-                    throw new Exception(Utility.Text.Format("Can not find target in object pool '{0}', target type is '{1}', target value is '{2}'.", new TypeNamePair(typeof(T), Name), target.GetType().FullName, target));
+                    throw new Exception($"Can not find target in object pool '{new TypeNamePair(typeof(T), Name)}', target type is '{target.GetType().FullName}', target value is '{target}'.");
                 }
             }
 
@@ -388,7 +388,7 @@ namespace Framework
                 }
                 else
                 {
-                    throw new Exception(Utility.Text.Format("Can not find target in object pool '{0}', target type is '{1}', target value is '{2}'.", new TypeNamePair(typeof(T), Name), target.GetType().FullName, target));
+                    throw new Exception($"Can not find target in object pool '{new TypeNamePair(typeof(T), Name)}', target type is '{target.GetType().FullName}', target value is '{target}'.");
                 }
             }
 

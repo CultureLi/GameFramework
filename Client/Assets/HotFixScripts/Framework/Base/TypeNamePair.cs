@@ -72,7 +72,7 @@ namespace Framework
             }
 
             string typeName = type.FullName;
-            return string.IsNullOrEmpty(name) ? typeName : Utility.Text.Format("{0}.{1}", typeName, name);
+            return string.IsNullOrEmpty(name) ? typeName : $"{typeName}.{name}";
         }
 
         /// <summary>

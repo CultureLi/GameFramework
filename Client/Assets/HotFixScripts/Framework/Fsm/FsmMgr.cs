@@ -153,7 +153,7 @@ namespace Framework
         {
             if (HasFsm(name))
             {
-                throw new Exception(Utility.Text.Format("Already exist FSM '{0}'.", name));
+                throw new Exception($"Already exist FSM '{name}'.");
             }
 
             Fsm fsm = Fsm.Create(name, states);
@@ -165,7 +165,7 @@ namespace Framework
         {
             if (HasFsm(name))
             {
-                throw new Exception(Utility.Text.Format("Already exist FSM '{0}'.", name));
+                throw new Exception($"Already exist FSM '{name}'.");
             }
 
             Fsm fsm = Fsm.Create(name, states);

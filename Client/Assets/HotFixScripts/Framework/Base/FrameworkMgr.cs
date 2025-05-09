@@ -47,19 +47,19 @@ namespace Framework
             Type interfaceType = typeof(T);
             if (!interfaceType.IsInterface)
             {
-                throw new Exception(Utility.Text.Format("You must get module by interface, but '{0}' is not.", interfaceType.FullName));
+                throw new Exception($"You must get module by interface, but '{interfaceType.FullName}' is not.");
             }
 
             if (!interfaceType.FullName.StartsWith("Framework.", StringComparison.Ordinal))
             {
-                throw new Exception(Utility.Text.Format("You must get a Game Framework module, but '{0}' is not.", interfaceType.FullName));
+                throw new Exception($"You must get module by interface, but '{interfaceType.FullName}' is not.");
             }
 
-            string moduleName = Utility.Text.Format("{0}.{1}", interfaceType.Namespace, interfaceType.Name.Substring(1));
+            string moduleName = $"{interfaceType.Namespace}.{interfaceType.Name.Substring(1)}";
             Type moduleType = Type.GetType(moduleName);
             if (moduleType == null)
             {
-                throw new Exception(Utility.Text.Format("Can not find Game Framework module type '{0}'.", moduleName));
+                throw new Exception($"Can not find Game Framework module type '{moduleName}'.");
             }
 
             return GetModule(moduleType) as T;
@@ -94,7 +94,7 @@ namespace Framework
             IFramework module = (IFramework)Activator.CreateInstance(moduleType);
             if (module == null)
             {
-                throw new Exception(Utility.Text.Format("Can not create module '{0}'.", moduleType.FullName));
+                throw new Exception($"Can not create module '{moduleType.FullName}'.");
             }
 
             LinkedListNode<IFramework> current = _gameFrameworkModules.First;

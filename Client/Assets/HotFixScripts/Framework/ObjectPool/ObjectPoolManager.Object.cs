@@ -172,7 +172,7 @@ namespace Framework
                 _spawnCount--;
                 if (_spawnCount < 0)
                 {
-                    throw new Exception(Utility.Text.Format("Object '{0}' spawn count is less than 0.", Name));
+                    throw new Exception($"Object '{Name}' spawn count is less than 0.");
                 }
             }
 
