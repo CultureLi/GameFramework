@@ -1,4 +1,5 @@
 ﻿using Framework;
+using GameEntry;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using System;
@@ -12,15 +13,13 @@ namespace Assets.TestScripts.Runtime.NetTest
 {
     public class NetTest : MonoBehaviour
     {
-        TcpInstance tcpInstance;
+        
         private void Awake()
         {
-            MsgTypeIdUtility.Init();
+            FW.NetMgr.Create("10.23.50.187", 8888);
+            FW.NetMgr.Connect();
 
-            tcpInstance = new TcpInstance();
-            tcpInstance.Connect("10.23.50.187", 8888);
-
-            tcpInstance.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
+            FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
         }
 
         public void Send()
@@ -30,7 +29,7 @@ namespace Assets.TestScripts.Runtime.NetTest
                 Id = 5,
             };
 
-            tcpInstance.SendMsg(msg);
+            FW.NetMgr.SendMsg(msg);
         }
 
         private void OnMonsterInfoAck(MonsterInfoAck ack)
@@ -41,16 +40,6 @@ namespace Assets.TestScripts.Runtime.NetTest
             {
                 Debug.Log($"{data.Id}");
             }
-        }
-
-        public void Update()
-        {
-            tcpInstance.Update(Time.deltaTime, Time.fixedDeltaTime);
-        }
-
-        private void OnDestroy()
-        {
-            tcpInstance.Dispose();
         }
     }
 }

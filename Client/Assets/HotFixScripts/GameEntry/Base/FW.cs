@@ -9,7 +9,7 @@ namespace GameEntry
         public static IFsmMgr FsmMgr { get; private set; }
         public static IResourceMgr ResourceMgr { get; private set; }
         public static ITimerMgr TimerMgr { get; private set; }
-        public static INetworkMgr NetworkMgr { get; private set; }
+        public static INetworkMgr NetMgr { get; private set; }
 
         void Awake()
         {
@@ -22,7 +22,7 @@ namespace GameEntry
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();
             ResourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
             TimerMgr = FrameworkMgr.GetModule<ITimerMgr>();
-            NetworkMgr = FrameworkMgr.GetModule<INetworkMgr>();
+            NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
         }
 
         void Update()

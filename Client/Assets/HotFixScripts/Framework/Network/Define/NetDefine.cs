@@ -23,4 +23,10 @@ namespace Framework
         Connected = 2,  //已连接
         Disconnect = 3, //断开连接
     }
+
+    public enum NetChannelType
+    {
+        Main,
+        Chat,
+    }
 }

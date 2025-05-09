@@ -26,12 +26,17 @@ namespace Framework
 
         public TcpClient TCPClient => _connecter?.TCPClient ?? null;
 
-        public TcpInstance()
+
+        string _host;
+        int _port;
+        public TcpInstance(string host, int port)
         {
+            _host = host;
+            _port = port;
             _dispatcher = new Dispatcher();
         }
 
-        public void Connect(string host, int port)
+        public void Connect()
         {
             if (_connecter != null && _connecter.IsConnected)
             {
@@ -39,7 +44,7 @@ namespace Framework
             }
             _connecter = new Connecter();
             _connecter.onConnectResult = OnConnectResult;
-            _connecter.ConnectAsync(host, port);
+            _connecter.ConnectAsync(_host, _port);
             
         }
 

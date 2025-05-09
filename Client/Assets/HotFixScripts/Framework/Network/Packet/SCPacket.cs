@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Network
+namespace Framework
 {
     public class SCPacket : Packet
     {
