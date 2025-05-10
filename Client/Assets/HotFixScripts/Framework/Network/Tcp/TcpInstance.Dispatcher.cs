@@ -9,10 +9,18 @@ namespace Framework
 {
     public partial class TcpInstance
     {
+        /// <summary>
+        /// 消息回调函数派发器
+        /// </summary>
         private sealed class Dispatcher
         {
             Dictionary<Type, List<Delegate>> _handlers = new Dictionary<Type, List<Delegate>>();
 
+            /// <summary>
+            /// 注册回调函数
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="handler"></param>
             public void RegisterMsg<T>(Action<T> handler) where T : IMessage
             {
                 var msgType = typeof(T);
@@ -25,6 +33,11 @@ namespace Framework
                     list.Add(handler);
             }
 
+            /// <summary>
+            /// 反注册回调函数
+            /// </summary>
+            /// <typeparam name="T"></typeparam>
+            /// <param name="handler"></param>
             public void UnregisterMsg<T>(Action<T> handler) where T : IMessage
             {
                 var msgType = typeof(T);
@@ -34,6 +47,10 @@ namespace Framework
                 }
             }
 
+            /// <summary>
+            /// 派发给消息回调函数
+            /// </summary>
+            /// <param name="packet"></param>
             public void DispatchMsg(SCPacket packet)
             {
                 var type = MsgTypeIdUtility.GetMsgType(packet.id);

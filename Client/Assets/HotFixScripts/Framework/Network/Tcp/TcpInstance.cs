@@ -10,11 +10,22 @@ namespace Framework
 {
     public partial class TcpInstance
     {
-        Connecter _connecter;
-        Sender _sender;
-        Receiver _receiver;
-        Dispatcher _dispatcher;
-        Cryptor _cryptor;
+
+        public TcpInstance(string host, int port)
+        {
+            _host = host;
+            _port = port;
+            _dispatcher = new Dispatcher();
+        }
+
+        private string _host;
+        private int _port;
+
+        private Connecter _connecter;
+        private Sender _sender;
+        private Receiver _receiver;
+        private Dispatcher _dispatcher;
+        private Cryptor _cryptor;
 
 
         public bool IsDisposed
@@ -27,42 +38,32 @@ namespace Framework
         public TcpClient TCPClient => _connecter?.TCPClient ?? null;
 
 
-        string _host;
-        int _port;
-        public TcpInstance(string host, int port)
-        {
-            _host = host;
-            _port = port;
-            _dispatcher = new Dispatcher();
-        }
-
-        public void Connect()
+        public void ConnectAsync(Action<NetworkConnectState> cb = null)
         {
             if (_connecter != null && _connecter.IsConnected)
             {
                 return;
             }
             _connecter = new Connecter();
-            _connecter.onConnectResult = OnConnectResult;
-            _connecter.ConnectAsync(_host, _port);
+            _connecter.ConnectAsync(_host, _port, (state) =>
+            {
+                if (state == NetworkConnectState.Succeed)
+                {
+                    _cryptor = new Cryptor(this, () =>
+                    {
+                        _sender = new Sender(_connecter, _cryptor);
+                        _receiver = new Receiver(_connecter, _cryptor, _dispatcher);
+                    });
+                }
+
+                cb?.Invoke(state);
+            });
             
         }
 
         public void DisConnect()
         {
             _connecter.Disconnect();
-        }
-
-        private void OnConnectResult(NetworkConnectState state)
-        {
-            if (state == NetworkConnectState.Succeed)
-            {
-                _cryptor = new Cryptor(this, () =>
-                {
-                    _sender = new Sender(_connecter, _cryptor);
-                    _receiver = new Receiver(_connecter, _cryptor, _dispatcher);
-                });
-            }
         }
 
         public void SendMsg(IMessage msg)

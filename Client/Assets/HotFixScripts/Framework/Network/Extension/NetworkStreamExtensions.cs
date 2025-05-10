@@ -37,5 +37,29 @@ namespace Framework
 
             return true;
         }
+
+        /// <summary>
+        /// 完整读取amout个字节，会多次读取
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <param name="amount"></param>
+        /// <returns></returns>
+        public static bool ReadCompletely(this NetworkStream stream, byte[] buffer, int amount)
+        {
+            int totalRead = 0;
+
+            while (totalRead < amount)
+            {
+                int read = stream.Read(buffer, totalRead, amount - totalRead);
+                if (read == 0)
+                    return false;
+                totalRead += read;
+            }
+
+            return true;
+        }
+
     }
 }

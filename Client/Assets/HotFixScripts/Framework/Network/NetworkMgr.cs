@@ -33,7 +33,7 @@ namespace Framework
         {
             if (_tcpInstances.TryGetValue(type, out var instance))
             {
-                instance.Connect();
+                instance.ConnectAsync();
             }
         }
 

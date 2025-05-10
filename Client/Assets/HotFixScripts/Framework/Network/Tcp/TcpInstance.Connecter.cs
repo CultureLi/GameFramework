@@ -11,7 +11,7 @@ namespace Framework
         private sealed class Connecter
         {
             // Actions
-            public Action<NetworkConnectState> onConnectResult;
+            private Action<NetworkConnectState> _onConnectResult;
 
             public TcpClient TCPClient => _TcpClient;
             private TcpClient _TcpClient;
@@ -36,8 +36,9 @@ namespace Framework
             /// </summary>
             /// <param name="host"></param>
             /// <param name="port"></param>
-            public async Task ConnectAsync(string host, int port)
+            public async Task ConnectAsync(string host, int port, Action<NetworkConnectState> cb)
             {
+                _onConnectResult = cb;
                 if (_TcpClient == null || _TcpClient.Client == null)
                     return;
 
@@ -84,7 +85,7 @@ namespace Framework
                 catch (Exception e)
                 {
                     BroadcastConnectResult(NetworkConnectState.Failed);
-                    Debug.LogError($"网络连接错误 Connect : {e}");
+                    Debug.LogError($"网络连接错误 ConnectAsync : {e}");
                 }
             }
 
@@ -119,7 +120,7 @@ namespace Framework
 
             public void BroadcastConnectResult(NetworkConnectState result)
             {
-                onConnectResult?.Invoke(result);
+                _onConnectResult?.Invoke(result);
             }
         }
     }

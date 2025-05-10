@@ -12,6 +12,9 @@ namespace Framework
 {
     public partial class TcpInstance
     {
+        /// <summary>
+        /// 消息发送器
+        /// </summary>
         private sealed class Sender
         {
             private Thread _thread;
@@ -30,21 +33,11 @@ namespace Framework
                     IsBackground = true
                 };
                 _thread.Start();
-
-                
             }
 
             public void Dispose()
             {
                 _disposed = true;
-            }
-
-            public bool Disposed
-            {
-                get
-                {
-                    return _disposed;
-                }
             }
 
             private void SendLoop()
@@ -58,21 +51,12 @@ namespace Framework
                             var packet = _packets.Dequeue();
                             if (packet != null)
                             {
-                                try
-                                {
-                                    NetworkStream networkStream = _connecter.TCPClient.GetStream();
-                                    networkStream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
-                                }
-                                catch (Exception e)
-                                {
-                                    Debug.LogError($"Send Error msgID: {MsgTypeIdUtility.GetMsgType(packet.id).Name} {e}");
-                                    _connecter.TCPClient.Close();
-                                }
-
+                                NetworkStream networkStream = _connecter.TCPClient.GetStream();
+                                networkStream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
+                                
                                 ReferencePool.Release(packet);
                             }
                         }
-
                     }
                     catch (Exception e)
                     {
@@ -87,38 +71,40 @@ namespace Framework
                 }
             }
 
-
             public void SendMsg(IMessage msg)
             {
                 if (null == msg)
                     return;
                 
-                var packet = PackMsg(msg);
+                var packet = Pack(msg);
                 _packets.Enqueue(packet);
             }
 
-            private CSPacket PackMsg(IMessage msg)
+            /// <summary>
+            /// 压包
+            /// </summary>
+            /// <param name="msg"></param>
+            /// <returns></returns>
+            private CSPacket Pack(IMessage msg)
             {
                 var packet = ReferencePool.Acquire<CSPacket>();
                 packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
                 packet.flag = 0;
-
+                packet.length = msg.CalculateSize();
                 // 先序列化 msg 成为原始字节数组
-                byte[] plainBytes;
-                using (var memStream = new MemoryStream())
+                using (var memStream = new MemoryStream(packet.buff, NetDefine.CSHeaderLen, NetDefine.CSMaxMsgLen - NetDefine.CSHeaderLen))
                 {
                     using (var codedStream = new CodedOutputStream(memStream))
                     {
                         msg.WriteTo(codedStream);
                         codedStream.Flush();
                     }
-                    plainBytes = memStream.ToArray();
                 }
-
 
                 // AES 加密
                 packet.flag |= NetDefine.FlagCrypt;
-                byte[] encryptedBytes = _cryptor.Encrypt(plainBytes, 0, plainBytes.Length);
+                byte[] encryptedBytes = _cryptor.Encrypt(packet.buff, NetDefine.CSHeaderLen, packet.length);
+                //加密后字节数会变化
                 packet.length = encryptedBytes.Length;
 
                 // 填写包头
@@ -128,7 +114,7 @@ namespace Framework
                 PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
 
                 // 写入
-                Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, encryptedBytes.Length);
+                Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, packet.length);
 
                 return packet;
             }
