@@ -4,36 +4,73 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using UnityEditor.Sprites;
 using UnityEngine;
+using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
-namespace Assets.TestScripts.Runtime.NetTest
+namespace Assets.Test.TestScripts.Runtime.NetTest
 {
-    public class SCPacketEx : SCPacket
+    public class AESCrypto
+    {
+        private Aes _aes;
+
+        public AESCrypto(byte[] key, byte[] iv)
+        {
+            _aes = Aes.Create();
+            _aes.Key = key;
+            _aes.IV = iv;
+        }
+
+        public byte[] Encrypt(byte[] plain)
+        {
+            using var encryptor = _aes.CreateEncryptor();
+            return encryptor.TransformFinalBlock(plain, 0, plain.Length);
+        }
+
+        public byte[] Decrypt(byte[] cipher)
+        {
+            using var decryptor = _aes.CreateDecryptor();
+            return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+        }
+    }
+
+    public class ClientPacket : SCPacket
     {
         public uint connectId;
     }
+
+    public class ServerPacket : CSPacket
+    {
+    }
+
+
     public class Connection
     {
         public TcpClient client;
         public NetworkStream stream;
         public Thread receiveThread;
-        public Queue<SCPacketEx> receivePackets = new Queue<SCPacketEx>();
-        public Queue<CSPacket> sendPackets = new Queue<CSPacket>();
+        public Queue<ClientPacket> receivePackets = new Queue<ClientPacket>();
+        public Queue<ServerPacket> sendPackets = new Queue<ServerPacket>();
         public bool isConnected;
         public uint connectionId;
+        public AESCrypto _aesCrypto;
     }
 
-    public class ServerManager : MonoBehaviour
+    public class ServerNet : MonoBehaviour
     {
         private TcpListener listener;
         private Thread listenThread;
         private bool isRunning = false;
 
         RsaKeyMgr _rsaKeyMgr = new RsaKeyMgr();
+        
+
 
         Dictionary<uint, Connection> connections = new Dictionary<uint, Connection>();
 
@@ -101,7 +138,8 @@ namespace Assets.TestScripts.Runtime.NetTest
                         conn.receiveThread.Start();
 
                         //发送公钥
-                        SendMsg(conn.connectionId, new ServerPublicKey() { Key = _rsaKeyMgr.PublicKey });
+                        //SendMsg(conn.connectionId, new ServerPublicKey() { Key = _rsaKeyMgr.PublicKey });
+                        SendPublicKey(conn);
                     }
                     else
                     {
@@ -125,24 +163,49 @@ namespace Assets.TestScripts.Runtime.NetTest
                 {
                     if (conn.stream.DataAvailable)
                     {
-                        if (!ReadMessageBlocking(conn.stream, receiveBuffer, out var length, out var msgId))
-                            break;
-
-                        var packet = ReferencePool.Acquire<SCPacketEx>();
-                        packet.id = msgId;
-                        packet.connectId = conn.connectionId;
-
-                        var type = MsgTypeIdUtility.GetMsgType(msgId);
-                        packet.msg = Activator.CreateInstance(type) as IMessage;
-                        using (var codeStream = new CodedInputStream(receiveBuffer, 0, length))
+                        try
                         {
-                            packet.msg.MergeFrom(codeStream);
-                        }
+                            if (conn._aesCrypto == null)
+                            {
+                                Debug.Log("收到Client AES key");
+                                byte[] tempBuff = new byte[4];
 
-                        lock (conn.receivePackets)
-                        {
-                            conn.receivePackets.Enqueue(packet);
+                                conn.stream.ReadExactly(tempBuff, 4);
+                                int netVal = BitConverter.ToInt32(tempBuff, 0);
+                                var len = IPAddress.NetworkToHostOrder(netVal);
+
+                                var buff = new byte[len];
+                                conn.stream.ReadExactly(buff, len);
+                                byte[] decrypted = _rsaKeyMgr.Decrypt(buff);
+                                // 解析出 AES Key + IV
+                                int keySize = 32; // AES-256
+                                int ivSize = 16;  // AES 默认 IV 大小
+
+                                if (decrypted.Length < keySize + ivSize)
+                                    throw new Exception("解密数据长度不足");
+
+                                byte[] aesKey = new byte[keySize];
+                                byte[] aesIV = new byte[ivSize];
+                                Buffer.BlockCopy(decrypted, 0, aesKey, 0, keySize);
+                                Buffer.BlockCopy(decrypted, keySize, aesIV, 0, ivSize);
+
+                                conn._aesCrypto = new AESCrypto(aesKey, aesIV);
+                            }
+                            else
+                            {
+                                var packet = UnPack(receiveBuffer, conn);
+
+                                lock (conn.receivePackets)
+                                {
+                                    conn.receivePackets.Enqueue(packet);
+                                }
+                            }
                         }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                        
                     }
                     else
                     {
@@ -208,7 +271,7 @@ namespace Assets.TestScripts.Runtime.NetTest
             SendMsg(connectId, ack);
         }
 
-        public void SendMsg(uint connId, IMessage msg)
+        public void SendMsg(uint connId, IMessage msg, byte flag = 0)
         {
             if (!connections.TryGetValue(connId, out var conn))
             {
@@ -216,12 +279,114 @@ namespace Assets.TestScripts.Runtime.NetTest
                 return;
             }
 
-            var packet = CSPacket.Create(msg);
+            var packet = PackMsg(msg, conn._aesCrypto);
 
             lock (conn.sendPackets)
             {
                 conn.sendPackets.Enqueue(packet);
             }
+        }
+        private ServerPacket PackMsg(IMessage msg, AESCrypto crypto)
+        {
+            var packet = ReferencePool.Acquire<ServerPacket>();
+            packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
+            packet.flag = 0;
+
+            // 先序列化 msg 成为原始字节数组
+            byte[] plainBytes;
+            using (var memStream = new MemoryStream())
+            {
+                using (var codedStream = new CodedOutputStream(memStream))
+                {
+                    msg.WriteTo(codedStream);
+                    codedStream.Flush();
+                }
+                plainBytes = memStream.ToArray();
+            }
+
+            // AES 加密
+            packet.flag |= NetDefine.FlagCrypt;
+            byte[] encryptedBytes = crypto.Encrypt(plainBytes);
+            packet.length = encryptedBytes.Length;
+
+            // 填写包头
+            var offset = 0;
+            PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
+            PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
+            PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位
+
+            // 写入
+            Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, encryptedBytes.Length);
+
+            return packet;
+        }
+
+        private ClientPacket UnPack(byte[] buffer, Connection conn)
+        {
+            var stream = conn.stream;
+            byte[] tempBuff = new byte[4];
+
+            stream.ReadExactly(tempBuff, 4);
+            int netVal = BitConverter.ToInt32(tempBuff, 0);
+            var length = IPAddress.NetworkToHostOrder(netVal);
+
+            stream.ReadExactly(tempBuff, 4);
+            netVal = BitConverter.ToInt32(tempBuff, 0);
+            var msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
+
+            stream.ReadExactly(tempBuff, 1);
+            var flag = tempBuff[0];
+
+            buffer = new byte[length];
+            if (length > 0 && length <= NetDefine.SCMaxMsgLen)
+            {
+                stream.ReadExactly(buffer, length);
+            }
+
+            var packet = ReferencePool.Acquire<ClientPacket>();
+            packet.id = msgId;
+
+            packet.connectId = conn.connectionId;
+
+            var type = MsgTypeIdUtility.GetMsgType(msgId);
+            packet.msg = Activator.CreateInstance(type) as IMessage;
+
+
+            if ((flag & NetDefine.FlagCrypt) != 0)
+            {
+                buffer = conn._aesCrypto.Decrypt(buffer);
+            }
+            length = buffer.Length;
+            if ((flag & NetDefine.FlagCompress) != 0)
+            {
+
+            }
+
+
+            using (var codeStream = new CodedInputStream(buffer, 0, length))
+            {
+                packet.msg.MergeFrom(codeStream);
+            }
+            return packet;
+        }
+
+        public void SendPublicKey(Connection conn)
+        {
+            var buff = new byte[NetDefine.SCMaxMsgLen];
+
+            byte[] publicKeyBytes = Encoding.UTF8.GetBytes(_rsaKeyMgr.PublicKey);
+            
+            var length = publicKeyBytes.Length;
+
+            var offset = 0;
+            PackUtility.PackInt(length, buff, ref offset);
+
+            // 3. 将公钥数据写入 buff（紧跟包头之后）
+            Buffer.BlockCopy(publicKeyBytes, 0, buff, offset, length);
+
+            conn.stream.Write(buff, 0, length + 4);
+            Debug.Log($"服务端发送 public Key{_rsaKeyMgr.PublicKey}");
+
         }
 
         public void Update()

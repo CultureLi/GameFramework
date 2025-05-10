@@ -14,8 +14,8 @@ namespace Framework
         Sender _sender;
         Receiver _receiver;
         Dispatcher _dispatcher;
+        Cryptor _cryptor;
 
-        Dictionary<Type, List<Delegate>> handlerMap = new Dictionary<Type, List<Delegate>>();
 
         public bool IsDisposed
         {
@@ -57,8 +57,11 @@ namespace Framework
         {
             if (state == NetworkConnectState.Succeed)
             {
-                _sender = new Sender(this);
-                _receiver = new Receiver(this);
+                _cryptor = new Cryptor(this, () =>
+                {
+                    _sender = new Sender(_connecter, _cryptor);
+                    _receiver = new Receiver(_connecter, _cryptor, _dispatcher);
+                });
             }
         }
 
@@ -77,14 +80,11 @@ namespace Framework
             _dispatcher?.UnregisterMsg(handler);
         }
 
-        internal void DispatchMsg(SCPacket packet)
-        {
-            _dispatcher.DispatchMsg(packet);
-        }
 
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
             _receiver?.Update(elapseSeconds, realElapseSeconds);
+            _cryptor?.Update(elapseSeconds, realElapseSeconds);
         }
         public void Dispose()
         {
@@ -92,6 +92,7 @@ namespace Framework
             _sender?.Dispose();
             _receiver?.Dispose();
             _dispatcher?.Dispose();
+            _cryptor?.Dispose();
         }
 
     }

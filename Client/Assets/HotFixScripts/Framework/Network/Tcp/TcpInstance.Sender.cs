@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
+using UnityEditor.Sprites;
 using UnityEngine;
 
 namespace Framework
@@ -14,14 +15,16 @@ namespace Framework
         private sealed class Sender
         {
             private Thread _thread;
-            TcpInstance _instance;
+            Connecter _connecter;
+            Cryptor _cryptor;
             private bool _disposed;
 
             private Queue<CSPacket> _packets = new Queue<CSPacket>();
 
-            public Sender(TcpInstance instance)
+            public Sender(Connecter connecter, Cryptor cryptor)
             {
-                _instance = instance;
+                _connecter = connecter;
+                _cryptor = cryptor;
                 _thread = new Thread(() => SendLoop())
                 {
                     IsBackground = true
@@ -50,20 +53,20 @@ namespace Framework
                 {
                     try
                     {
-                        if (_instance.IsConnected && _packets.Count > 0)
+                        if (_connecter.IsConnected && _packets.Count > 0)
                         {
                             var packet = _packets.Dequeue();
                             if (packet != null)
                             {
                                 try
                                 {
-                                    NetworkStream networkStream = _instance.TCPClient.GetStream();
+                                    NetworkStream networkStream = _connecter.TCPClient.GetStream();
                                     networkStream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
                                 }
                                 catch (Exception e)
                                 {
                                     Debug.LogError($"Send Error msgID: {MsgTypeIdUtility.GetMsgType(packet.id).Name} {e}");
-                                    _instance.TCPClient.Close();
+                                    _connecter.TCPClient.Close();
                                 }
 
                                 ReferencePool.Release(packet);
@@ -77,7 +80,7 @@ namespace Framework
                         {
                             Debug.LogError("Network sender run error:" + e.Message);
                         }
-                        _instance.TCPClient.Close();
+                        _connecter.TCPClient.Close();
                     }
 
                     Thread.Sleep(1);
@@ -90,9 +93,46 @@ namespace Framework
                 if (null == msg)
                     return;
                 
-                var packet =CSPacket.Create(msg);
+                var packet = PackMsg(msg);
                 _packets.Enqueue(packet);
             }
+
+            private CSPacket PackMsg(IMessage msg)
+            {
+                var packet = ReferencePool.Acquire<CSPacket>();
+                packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
+                packet.flag = 0;
+
+                // 先序列化 msg 成为原始字节数组
+                byte[] plainBytes;
+                using (var memStream = new MemoryStream())
+                {
+                    using (var codedStream = new CodedOutputStream(memStream))
+                    {
+                        msg.WriteTo(codedStream);
+                        codedStream.Flush();
+                    }
+                    plainBytes = memStream.ToArray();
+                }
+
+
+                // AES 加密
+                packet.flag |= NetDefine.FlagCrypt;
+                byte[] encryptedBytes = _cryptor.Encrypt(plainBytes, 0, plainBytes.Length);
+                packet.length = encryptedBytes.Length;
+
+                // 填写包头
+                var offset = 0;
+                PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
+                PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
+                PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
+
+                // 写入
+                Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, encryptedBytes.Length);
+
+                return packet;
+            }
+
         }
     }
 }

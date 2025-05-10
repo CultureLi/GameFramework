@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Framework
 {
-    internal static class PackUtility
+    public static class PackUtility
     {
         public static void PackByte(byte val, byte[] buf, ref int offset)
         {

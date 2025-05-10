@@ -9,14 +9,22 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.TestScripts.Runtime.NetTest
+namespace Assets.Test.TestScripts.Runtime.NetTest
 {
     public class ClientNet : MonoBehaviour
     {
+        private RsaKeyMgr _rsaKeyMgr;
         private string publicKey;
         private void Awake()
         {
-            FW.NetMgr.Create("10.23.50.187", 8888);
+            _rsaKeyMgr= new RsaKeyMgr();
+
+        }
+
+        private void Start()
+        {
+            //FW.NetMgr.Create("10.23.50.187", 8888);
+            FW.NetMgr.Create("10.1.2.144", 8888);
             FW.NetMgr.Connect();
 
             FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
@@ -27,6 +35,8 @@ namespace Assets.TestScripts.Runtime.NetTest
         {
             publicKey = msg.Key;
             Debug.Log($"收到公钥 {msg}");
+
+
         }
 
         public void Send()
