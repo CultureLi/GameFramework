@@ -22,6 +22,7 @@ namespace Framework
             Cryptor _cryptor;
             private bool _disposed;
 
+            private readonly int _compressThreshold = 1024;
             private Queue<CSPacket> _packets = new Queue<CSPacket>();
 
             public Sender(Connecter connecter, Cryptor cryptor)
@@ -94,10 +95,6 @@ namespace Framework
                     packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
                     packet.flag = 0;
                     var length = msg.CalculateSize();
-                    if (length < 0 || length > NetDefine.CSMaxMsgLen)
-                    {
-                        throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {length}");
-                    }
 
                     // 先序列化 msg 成为原始字节数组
                     using (var memStream = new MemoryStream(tempBuffer))
@@ -109,26 +106,25 @@ namespace Framework
                         }
                     }
 
-                    // AES 加密
+                    // 加密
                     packet.flag |= NetDefine.FlagCrypt;
                     //加密后字节数会变化, 因为会填充补齐数据
-                    var encryptedBytes = _cryptor.Encrypt(tempBuffer, 0, length);
-                    length = encryptedBytes.Length;
-                    var originLength = length;
-                    if (length <= 0 || length > NetDefine.CSMaxMsgLen)
-                    {
-                        throw new Exception($"PackMsg - Encrypted Msg Size Exception, type: {msg.GetType()} size: {length}");
-                    }
+                    var buffer = _cryptor.Encrypt(tempBuffer, 0, length);
+                    var originLength = buffer.Length;
 
                     // 压缩
-                    packet.flag |= NetDefine.FlagCompress;
-                    /*length = LZ4.LZ4Codec.Encode(encryptedBytes, 0, length,
-                        packet.buff, NetDefine.CSHeaderLen, NetDefine.CSMaxMsgLen - NetDefine.CSHeaderLen);
-*/
+                    if ( originLength > _compressThreshold)
+                    {
+                        packet.flag |= NetDefine.FlagCompress;
+                        buffer = LZ4.LZ4Codec.Encode(buffer, 0, buffer.Length);
+                    }
 
-                    var compressedBytes = LZ4.LZ4Codec.Encode(encryptedBytes, 0, length);
-                    length = compressedBytes.Length;
-                    packet.length = length;
+                    packet.length = buffer.Length;
+                    if (length < 0 || length > NetDefine.CSMaxMsgLen)
+                    {
+                        throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {length}");
+                    }
+
                     // 填写包头
                     var offset = 0;
                     PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度
@@ -137,7 +133,7 @@ namespace Framework
                     PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
 
                     // 写入
-                    Buffer.BlockCopy(compressedBytes, 0, packet.buff, offset, length);
+                    Buffer.BlockCopy(buffer, 0, packet.buff, offset, packet.length);
 
                     return packet;
                 }

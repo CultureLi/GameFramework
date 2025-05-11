@@ -76,7 +76,7 @@ namespace Framework
             /// <param name="stream"></param>
             /// <param name="buffer"></param>
             /// <returns></returns>
-            private SCPacket UnPack(NetworkStream stream, byte[] headerBuffer, byte[] buffer)
+            private SCPacket UnPack(NetworkStream stream, in byte[] headerBuffer, in byte[] bodyBuffer)
             {
                 try
                 {
@@ -95,28 +95,27 @@ namespace Framework
                         throw new Exception($"PackMsg - type:{type} Size:{length}");
                     }
 
-                    if (!stream.ReadCompletely(buffer, length))
+                    if (!stream.ReadCompletely(bodyBuffer, length))
                         return null;
 
                     var packet = ReferencePool.Acquire<SCPacket>();
                     packet.id = msgId;
                     packet.msg = Activator.CreateInstance(type) as IMessage;
 
+                    var buffer = bodyBuffer;
                     //解压
                     if ((flag & NetDefine.FlagCompress) != 0)
                     {
                         buffer = LZ4.LZ4Codec.Decode(buffer, 0, length, originLength);
-                        length = buffer.Length;
                     }
 
                     //解密
                     if ((flag & NetDefine.FlagCrypt) != 0)
                     {
-                        buffer = _cryptor.Decrypt(buffer, 0, length);
-                        length = buffer.Length;
+                        buffer = _cryptor.Decrypt(buffer, 0, buffer.Length);
                     }
 
-                    using (var codeStream = new CodedInputStream(buffer, 0, length))
+                    using (var codeStream = new CodedInputStream(buffer, 0, buffer.Length))
                     {
                         packet.msg.MergeFrom(codeStream);
                     }
