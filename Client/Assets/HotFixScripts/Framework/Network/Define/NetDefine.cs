@@ -10,11 +10,12 @@ namespace Framework
     {
         public static readonly int CSHeaderLen = 9; //字节[length 4字节] [msgId 4字节] [flag 1字节（表示加密、压缩等）]
         public static readonly int SCHeaderLen = 9;
-        public static readonly int CSMaxMsgLen = 20000;
-        public static readonly int SCMaxMsgLen = 200000;
+        public static readonly int CSMaxMsgLen = 1024*4;
+        public static readonly int SCMaxMsgLen = 1024*10;
 
-
+        //加密
         public static readonly byte FlagCrypt = 1;
+        //压缩
         public static readonly byte FlagCompress = 1 << 1;
         
     }
@@ -32,10 +33,5 @@ namespace Framework
     {
         Main,
         Chat,
-    }
-
-    public enum NetFlag
-    {
-        
     }
 }

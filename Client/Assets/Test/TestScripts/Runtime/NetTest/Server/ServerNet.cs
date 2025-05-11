@@ -1,5 +1,4 @@
-﻿using Assets.Test.TestScripts.Runtime.NetTest;
-using Framework;
+﻿using Framework;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using System;
@@ -7,38 +6,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using UnityEditor.Sprites;
 using UnityEngine;
-using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
-namespace Assets.Test.TestScripts.Runtime.NetTest
+namespace Runtime.NetTest
 {
-    public class AESCrypto
-    {
-        private Aes _aes;
-
-        public AESCrypto(byte[] key, byte[] iv)
-        {
-            _aes = Aes.Create();
-            _aes.Key = key;
-            _aes.IV = iv;
-        }
-
-        public byte[] Encrypt(byte[] plain)
-        {
-            using var encryptor = _aes.CreateEncryptor();
-            return encryptor.TransformFinalBlock(plain, 0, plain.Length);
-        }
-
-        public byte[] Decrypt(byte[] cipher)
-        {
-            using var decryptor = _aes.CreateDecryptor();
-            return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
-        }
-    }
+    
 
     public class ClientPacket : SCPacket
     {
@@ -68,10 +42,8 @@ namespace Assets.Test.TestScripts.Runtime.NetTest
         private Thread listenThread;
         private bool isRunning = false;
 
-        RsaKeyMgr _rsaKeyMgr = new RsaKeyMgr();
-        
-
-
+        RSACrypto _rsaKeyMgr = new RSACrypto();
+       
         Dictionary<uint, Connection> connections = new Dictionary<uint, Connection>();
 
         Dictionary<System.Type, List<Delegate>> handlerMap = new Dictionary<System.Type, List<Delegate>>();
@@ -176,7 +148,7 @@ namespace Assets.Test.TestScripts.Runtime.NetTest
 
                                 var buff = new byte[len];
                                 conn.stream.ReadExactly(buff, len);
-                                byte[] decrypted = _rsaKeyMgr.Decrypt(buff);
+                                byte[] decrypted = _rsaKeyMgr.RSADecrypt(buff);
                                 // 解析出 AES Key + IV
                                 int keySize = 32; // AES-256
                                 int ivSize = 16;  // AES 默认 IV 大小
@@ -223,27 +195,6 @@ namespace Assets.Test.TestScripts.Runtime.NetTest
                 connections.Remove(conn.connectionId);
                 Debug.Log($"客户端断开: {conn.client.Client.RemoteEndPoint}");
             }
-        }
-
-
-        public bool ReadMessageBlocking(NetworkStream stream, byte[] buffer, out int length, out uint msgId)
-        {
-            byte[] tempBuff = new byte[4];
-
-            stream.ReadExactly(tempBuff, 4);
-            int netVal = BitConverter.ToInt32(tempBuff, 0);
-            length = IPAddress.NetworkToHostOrder(netVal);
-
-            stream.ReadExactly(tempBuff, 4);
-            netVal = BitConverter.ToInt32(tempBuff, 0);
-            msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
-
-            if (length > 0 && length <= NetDefine.SCMaxMsgLen)
-            {
-                return stream.ReadExactly(buffer, length);
-            }
-            Debug.LogWarning("[Telepathy] ReadMessageBlocking: possible header attack with a header of: " + length + " bytes.");
-            return false;
         }
 
         public void RegisterMsg<T>(Action<uint,T> handler) where T : IMessage

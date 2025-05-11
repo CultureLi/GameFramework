@@ -87,36 +87,53 @@ namespace Framework
             /// <returns></returns>
             private CSPacket Pack(IMessage msg)
             {
-                var packet = ReferencePool.Acquire<CSPacket>();
-                packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
-                packet.flag = 0;
-                packet.length = msg.CalculateSize();
-                // 先序列化 msg 成为原始字节数组
-                using (var memStream = new MemoryStream(packet.buff, NetDefine.CSHeaderLen, NetDefine.CSMaxMsgLen - NetDefine.CSHeaderLen))
+                try
                 {
-                    using (var codedStream = new CodedOutputStream(memStream))
+                    var packet = ReferencePool.Acquire<CSPacket>();
+                    packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
+                    packet.flag = 0;
+                    packet.length = msg.CalculateSize();
+                    if (packet.length < 0 || packet.length > NetDefine.CSMaxMsgLen)
                     {
-                        msg.WriteTo(codedStream);
-                        codedStream.Flush();
+                        throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {packet.length}");
                     }
+
+                    // 先序列化 msg 成为原始字节数组
+                    using (var memStream = new MemoryStream(packet.buff, NetDefine.CSHeaderLen, NetDefine.CSMaxMsgLen - NetDefine.CSHeaderLen))
+                    {
+                        using (var codedStream = new CodedOutputStream(memStream))
+                        {
+                            msg.WriteTo(codedStream);
+                            codedStream.Flush();
+                        }
+                    }
+
+                    // AES 加密
+                    packet.flag |= NetDefine.FlagCrypt;
+                    byte[] encryptedBytes = _cryptor.Encrypt(packet.buff, NetDefine.CSHeaderLen, packet.length);
+                    //加密后字节数会变化
+                    packet.length = encryptedBytes.Length;
+                    if (packet.length < 0 || packet.length > NetDefine.CSMaxMsgLen)
+                    {
+                        throw new Exception($"PackMsg - Encrypted Msg Size Exception, type: {msg.GetType()} size: {packet.length}");
+                    }
+
+                    // 填写包头
+                    var offset = 0;
+                    PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
+                    PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
+                    PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
+
+                    // 写入
+                    Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, packet.length);
+
+                    return packet;
                 }
-
-                // AES 加密
-                packet.flag |= NetDefine.FlagCrypt;
-                byte[] encryptedBytes = _cryptor.Encrypt(packet.buff, NetDefine.CSHeaderLen, packet.length);
-                //加密后字节数会变化
-                packet.length = encryptedBytes.Length;
-
-                // 填写包头
-                var offset = 0;
-                PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
-                PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
-                PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
-
-                // 写入
-                Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, packet.length);
-
-                return packet;
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return null;
+                }
             }
 
         }

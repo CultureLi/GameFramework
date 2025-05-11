@@ -87,17 +87,18 @@ namespace Framework
                     var length = PackUtility.UnPackInt(headerBuffer, ref offset);
                     var msgId = (uint)PackUtility.UnPackInt(headerBuffer, ref offset);
                     var flag = PackUtility.UnPackByte(headerBuffer, ref offset);
+                    var type = MsgTypeIdUtility.GetMsgType(msgId);
 
                     if (length < 0 || length >= NetDefine.SCMaxMsgLen)
-                        return null;
+                    {
+                        throw new Exception($"PackMsg - type:{type} Size:{length}");
+                    }
 
                     if (!stream.ReadCompletely(buffer, length))
                         return null;
 
                     var packet = ReferencePool.Acquire<SCPacket>();
                     packet.id = msgId;
-
-                    var type = MsgTypeIdUtility.GetMsgType(msgId);
                     packet.msg = Activator.CreateInstance(type) as IMessage;
 
                     var decryptBytes = buffer;
@@ -121,7 +122,7 @@ namespace Framework
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"UnPack Error: {e}");
+                    Debug.LogException(e);
                     return null;
                 }
             }

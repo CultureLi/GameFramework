@@ -9,15 +9,15 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.Test.TestScripts.Runtime.NetTest
+namespace Runtime.NetTest
 {
     public class ClientNet : MonoBehaviour
     {
-        private RsaKeyMgr _rsaKeyMgr;
+        private RSACrypto _rsaKeyMgr;
         private string publicKey;
         private void Awake()
         {
-            _rsaKeyMgr= new RsaKeyMgr();
+            _rsaKeyMgr= new RSACrypto();
 
         }
 

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-namespace Assets.Test.TestScripts.Editor.NetTest
+namespace Editor.NetTest
 {
     [CustomEditor(typeof(Runtime.NetTest.ClientNet))]
     public class NetClientEditor : UnityEditor.Editor
