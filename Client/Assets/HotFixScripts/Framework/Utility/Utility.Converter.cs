@@ -120,7 +120,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的布尔值。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static void GetBytes(bool value, byte[] buffer, int startIndex)
             {
                 if (buffer == null)
@@ -184,7 +184,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的字符。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static void GetBytes(char value, byte[] buffer, int startIndex)
             {
                 GetBytes((short)value, buffer, startIndex);
@@ -238,7 +238,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static unsafe void GetBytes(short value, byte[] buffer, int startIndex)
             {
                 if (buffer == null)
@@ -305,7 +305,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static void GetBytes(ushort value, byte[] buffer, int startIndex)
             {
                 GetBytes((short)value, buffer, startIndex);
@@ -359,7 +359,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static unsafe void GetBytes(int value, byte[] buffer, int startIndex)
             {
                 if (buffer == null)
@@ -426,7 +426,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static void GetBytes(uint value, byte[] buffer, int startIndex)
             {
                 GetBytes((int)value, buffer, startIndex);
@@ -480,7 +480,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static unsafe void GetBytes(long value, byte[] buffer, int startIndex)
             {
                 if (buffer == null)
@@ -547,7 +547,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static void GetBytes(ulong value, byte[] buffer, int startIndex)
             {
                 GetBytes((long)value, buffer, startIndex);
@@ -601,7 +601,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static unsafe void GetBytes(float value, byte[] buffer, int startIndex)
             {
                 GetBytes(*(int*)&value, buffer, startIndex);
@@ -655,7 +655,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的数字。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
             public static unsafe void GetBytes(double value, byte[] buffer, int startIndex)
             {
                 GetBytes(*(long*)&value, buffer, startIndex);
@@ -697,7 +697,7 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的字符串。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <returns>buffer 内实际填充了多少字节。</returns>
+            /// <returns>bodyBuffer 内实际填充了多少字节。</returns>
             public static int GetBytes(string value, byte[] buffer)
             {
                 return GetBytes(value, Encoding.UTF8, buffer, 0);
@@ -708,8 +708,8 @@ namespace Framework
             /// </summary>
             /// <param name="value">要转换的字符串。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
-            /// <returns>buffer 内实际填充了多少字节。</returns>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
+            /// <returns>bodyBuffer 内实际填充了多少字节。</returns>
             public static int GetBytes(string value, byte[] buffer, int startIndex)
             {
                 return GetBytes(value, Encoding.UTF8, buffer, startIndex);
@@ -742,7 +742,7 @@ namespace Framework
             /// <param name="value">要转换的字符串。</param>
             /// <param name="encoding">要使用的编码。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <returns>buffer 内实际填充了多少字节。</returns>
+            /// <returns>bodyBuffer 内实际填充了多少字节。</returns>
             public static int GetBytes(string value, Encoding encoding, byte[] buffer)
             {
                 return GetBytes(value, encoding, buffer, 0);
@@ -754,8 +754,8 @@ namespace Framework
             /// <param name="value">要转换的字符串。</param>
             /// <param name="encoding">要使用的编码。</param>
             /// <param name="buffer">用于存放结果的字节数组。</param>
-            /// <param name="startIndex">buffer 内的起始位置。</param>
-            /// <returns>buffer 内实际填充了多少字节。</returns>
+            /// <param name="startIndex">bodyBuffer 内的起始位置。</param>
+            /// <returns>bodyBuffer 内实际填充了多少字节。</returns>
             public static int GetBytes(string value, Encoding encoding, byte[] buffer, int startIndex)
             {
                 if (value == null)

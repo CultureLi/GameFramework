@@ -86,7 +86,8 @@ namespace Framework
             /// </summary>
             /// <param name="msg"></param>
             /// <returns></returns>
-            byte[] tempBuffer = new byte[NetDefine.CSMaxMsgLen];
+            byte[] bodyBuffer = new byte[NetDefine.CSMaxMsgLen];
+            byte[] encodeBuffer = new byte[NetDefine.CSMaxMsgLen];
             private CSPacket Pack(IMessage msg)
             {
                 try
@@ -97,7 +98,7 @@ namespace Framework
                     var length = msg.CalculateSize();
 
                     // 先序列化 msg 成为原始字节数组
-                    using (var memStream = new MemoryStream(tempBuffer))
+                    using (var memStream = new MemoryStream(bodyBuffer))
                     {
                         using (var codedStream = new CodedOutputStream(memStream))
                         {
@@ -109,14 +110,15 @@ namespace Framework
                     // 加密
                     packet.flag |= NetDefine.FlagCrypt;
                     //加密后字节数会变化, 因为会填充补齐数据
-                    var buffer = _cryptor.Encrypt(tempBuffer, 0, length);
+                    var buffer = _cryptor.Encrypt(bodyBuffer, 0, length);
                     var originLength = buffer.Length;
 
                     // 压缩
                     if ( originLength > _compressThreshold)
                     {
                         packet.flag |= NetDefine.FlagCompress;
-                        buffer = LZ4.LZ4Codec.Encode(buffer, 0, buffer.Length);
+                        length = LZ4.LZ4Codec.Encode(buffer, 0, buffer.Length, encodeBuffer, 0, encodeBuffer.Length);
+                        buffer = encodeBuffer;
                     }
 
                     packet.length = buffer.Length;

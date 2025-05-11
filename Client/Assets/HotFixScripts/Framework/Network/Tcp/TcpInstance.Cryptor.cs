@@ -38,6 +38,7 @@ namespace Framework
 
             private void GenerateAESKey()
             {
+                Debug.Log("Generate AES Key");
                 _aes = Aes.Create();
                 _aes.GenerateKey();
                 _aes.GenerateIV();
@@ -67,16 +68,15 @@ namespace Framework
                 {
                     byte[] headerBuff = new byte[4];
                     if (!stream.ReadCompletely(headerBuff, 4))
-                        throw new Exception("length read failed !!!");
+                        throw new Exception("ReceivePublicKey length read failed !!!");
 
                     var length = PackUtility.UnPackInt(headerBuff);
 
                     byte[] keyBytes = new byte[length];
                     if (!stream.ReadCompletely(keyBytes, length))
-                        throw new Exception("key read failed !!!");
+                        throw new Exception("ReceivePublicKey key read failed !!!");
 
                     var publicKey = Encoding.UTF8.GetString(keyBytes);
-                    Console.WriteLine("收到 RSA 公钥");
 
                     SendEncryptedAESKey(stream, publicKey);
 
@@ -85,7 +85,7 @@ namespace Framework
                 }
                 catch(Exception e)
                 {
-                    Debug.LogError($"ReceivePublicKey: {e}");
+                    Debug.LogException(e);
                 }
             }
 
@@ -108,10 +108,11 @@ namespace Framework
                 using (var rsa = new RSACryptoServiceProvider())
                 {
                     rsa.FromXmlString(publicKey);
-                    encryptedBytes = rsa.Encrypt(combined, RSAEncryptionPadding.Pkcs1); // 注意 padding 设置一致
+                    // 用公钥加密，注意 padding 跟Server设置一致
+                    encryptedBytes = rsa.Encrypt(combined, RSAEncryptionPadding.Pkcs1); 
                 }
 
-                // 构造完整发送 buffer
+                // 构造完整发送 bodyBuffer
                 int offset = 0;
                 byte[] buffer = new byte[encryptedBytes.Length + 4];
                 PackUtility.PackInt(encryptedBytes.Length, buffer, ref offset);  // 长度
@@ -120,7 +121,7 @@ namespace Framework
 
                 // 发送
                 stream.Write(buffer, 0, buffer.Length);
-                Console.WriteLine("已发送加密的 AES 密钥");
+                Debug.Log("Send AES key to server");
             }
 
             /// <summary>

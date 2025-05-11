@@ -31,6 +31,8 @@ namespace Framework
                 _cryptor = cryptor;
                 _dispatcher = dispatcher;
 
+               
+
                 _thread = new Thread(() => ReceiveLoop())
                 {
                     IsBackground = true
@@ -46,17 +48,13 @@ namespace Framework
             private void ReceiveLoop()
             {
                 var stream = _connecter.TCPClient.GetStream();
-
-                byte[] buffer = new byte[NetDefine.SCMaxMsgLen];
-                byte[] headerBuffer = new byte[NetDefine.SCHeaderLen];
-
                 while (!_disposed)
                 {
                     try
                     {
                         if (_connecter.IsConnected && stream.DataAvailable)
                         {
-                            var packet = UnPack(stream, headerBuffer, buffer);
+                            var packet = UnPack(stream, headerBuffer, bodyBuffer);
                             if(packet != null)
                                 _packets.Enqueue(packet);
                         }
@@ -76,6 +74,9 @@ namespace Framework
             /// <param name="stream"></param>
             /// <param name="buffer"></param>
             /// <returns></returns>
+            byte[] bodyBuffer = new byte[NetDefine.SCMaxMsgLen];
+            byte[] headerBuffer = new byte[NetDefine.SCHeaderLen];
+            byte[] deCodeBuffer = new byte[NetDefine.SCMaxMsgLen];
             private SCPacket UnPack(NetworkStream stream, in byte[] headerBuffer, in byte[] bodyBuffer)
             {
                 try
@@ -103,22 +104,23 @@ namespace Framework
                     packet.msg = Activator.CreateInstance(type) as IMessage;
 
                     var buffer = bodyBuffer;
+                    var size = length;
+
                     //解压
                     if ((flag & NetDefine.FlagCompress) != 0)
                     {
-                        buffer = LZ4.LZ4Codec.Decode(buffer, 0, length, originLength);
+                        size = LZ4.LZ4Codec.Decode(buffer, 0, length, deCodeBuffer, 0, originLength);
+                        buffer = deCodeBuffer;
                     }
 
                     //解密
                     if ((flag & NetDefine.FlagCrypt) != 0)
                     {
-                        buffer = _cryptor.Decrypt(buffer, 0, buffer.Length);
+                        buffer = _cryptor.Decrypt(buffer, 0, size);
+                        size = buffer.Length;
                     }
+                    packet.msg = packet.msg.Descriptor.Parser.ParseFrom(buffer, 0, size);
 
-                    using (var codeStream = new CodedInputStream(buffer, 0, buffer.Length))
-                    {
-                        packet.msg.MergeFrom(codeStream);
-                    }
                     return packet;
                 }
                 catch (Exception e)
