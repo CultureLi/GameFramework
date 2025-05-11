@@ -259,15 +259,22 @@ namespace Runtime.NetTest
             packet.flag |= NetDefine.FlagCrypt;
             byte[] encryptedBytes = crypto.Encrypt(plainBytes);
             packet.length = encryptedBytes.Length;
+            var originLength = packet.length;
+
+            //压缩
+            packet.flag |= NetDefine.FlagCompress;
+            var compressdBytes = LZ4.LZ4Codec.Encode(encryptedBytes, 0, packet.length);
+            packet.length = compressdBytes.Length;
 
             // 填写包头
             var offset = 0;
             PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
+            PackUtility.PackInt(originLength, packet.buff, ref offset); // 消息体长度（已加密）
             PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
             PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位
 
             // 写入
-            Buffer.BlockCopy(encryptedBytes, 0, packet.buff, offset, encryptedBytes.Length);
+            Buffer.BlockCopy(compressdBytes, 0, packet.buff, offset, compressdBytes.Length);
 
             return packet;
         }
@@ -275,43 +282,46 @@ namespace Runtime.NetTest
         private ClientPacket UnPack(byte[] buffer, Connection conn)
         {
             var stream = conn.stream;
-            byte[] tempBuff = new byte[4];
+            byte[] headerBuffer = new byte[NetDefine.CSHeaderLen];
+            if (!stream.ReadCompletely(headerBuffer, NetDefine.SCHeaderLen))
+                return null;
 
-            stream.ReadExactly(tempBuff, 4);
-            int netVal = BitConverter.ToInt32(tempBuff, 0);
-            var length = IPAddress.NetworkToHostOrder(netVal);
-
-            stream.ReadExactly(tempBuff, 4);
-            netVal = BitConverter.ToInt32(tempBuff, 0);
-            var msgId = (uint)IPAddress.NetworkToHostOrder(netVal);
-
-            stream.ReadExactly(tempBuff, 1);
-            var flag = tempBuff[0];
+            var offset = 0;
+            var length = PackUtility.UnPackInt(headerBuffer, ref offset);
+            var originLength = PackUtility.UnPackInt(headerBuffer, ref offset);
+            var msgId = (uint)PackUtility.UnPackInt(headerBuffer, ref offset);
+            var flag = PackUtility.UnPackByte(headerBuffer, ref offset);
+            var type = MsgTypeIdUtility.GetMsgType(msgId);
 
             buffer = new byte[length];
-            if (length > 0 && length <= NetDefine.SCMaxMsgLen)
+            if (length < 0 || length >= NetDefine.SCMaxMsgLen)
             {
-                stream.ReadExactly(buffer, length);
+                throw new Exception($"PackMsg - type:{type} Size:{length}");
             }
+
+            if (!stream.ReadCompletely(buffer, length))
+                return null;
 
             var packet = ReferencePool.Acquire<ClientPacket>();
             packet.id = msgId;
 
             packet.connectId = conn.connectionId;
 
-            var type = MsgTypeIdUtility.GetMsgType(msgId);
             packet.msg = Activator.CreateInstance(type) as IMessage;
 
+            //解压
+            if ((flag & NetDefine.FlagCompress) != 0)
+            {
+                buffer = LZ4.LZ4Codec.Decode(buffer, 0, length, originLength);
+            }
 
+            //解密
             if ((flag & NetDefine.FlagCrypt) != 0)
             {
                 buffer = conn._aesCrypto.Decrypt(buffer);
             }
-            length = buffer.Length;
-            if ((flag & NetDefine.FlagCompress) != 0)
-            {
 
-            }
+            length = buffer.Length;
 
 
             using (var codeStream = new CodedInputStream(buffer, 0, length))

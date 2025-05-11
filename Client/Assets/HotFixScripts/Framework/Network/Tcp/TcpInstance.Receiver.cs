@@ -85,6 +85,7 @@ namespace Framework
 
                     var offset = 0;
                     var length = PackUtility.UnPackInt(headerBuffer, ref offset);
+                    var originLength = PackUtility.UnPackInt(headerBuffer, ref offset);
                     var msgId = (uint)PackUtility.UnPackInt(headerBuffer, ref offset);
                     var flag = PackUtility.UnPackByte(headerBuffer, ref offset);
                     var type = MsgTypeIdUtility.GetMsgType(msgId);
@@ -101,20 +102,21 @@ namespace Framework
                     packet.id = msgId;
                     packet.msg = Activator.CreateInstance(type) as IMessage;
 
-                    var decryptBytes = buffer;
-                    if ((flag & NetDefine.FlagCrypt) != 0)
-                    {
-                        decryptBytes = _cryptor.Decrypt(buffer, 0, length);
-                        length = decryptBytes.Length;
-                    }
-
+                    //解压
                     if ((flag & NetDefine.FlagCompress) != 0)
                     {
-
+                        buffer = LZ4.LZ4Codec.Decode(buffer, 0, length, originLength);
+                        length = buffer.Length;
                     }
 
+                    //解密
+                    if ((flag & NetDefine.FlagCrypt) != 0)
+                    {
+                        buffer = _cryptor.Decrypt(buffer, 0, length);
+                        length = buffer.Length;
+                    }
 
-                    using (var codeStream = new CodedInputStream(decryptBytes, 0, length))
+                    using (var codeStream = new CodedInputStream(buffer, 0, length))
                     {
                         packet.msg.MergeFrom(codeStream);
                     }
