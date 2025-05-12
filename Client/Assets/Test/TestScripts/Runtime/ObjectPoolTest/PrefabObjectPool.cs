@@ -21,13 +21,15 @@ namespace Test.Runtime.ObjectPoolTest
             var obj = _pool.Spawn(location);
             if (obj != null)
             {
+                Debug.Log($"Reuse {location}");
                 return obj.Target as GameObject;
             }
 
+            Debug.Log($"New Obj {location}");
             var handler = FW.ResourceMgr.InstantiateAsync(location);
             handler.WaitForCompletion();
 
-            obj = PrefabObject.Create(handler.Result);
+            obj = PrefabObject.Create(location, handler.Result);
             _pool.Register(obj, true);
 
             return handler.Result;
@@ -36,7 +38,7 @@ namespace Test.Runtime.ObjectPoolTest
         public void SpawnAsync(string location, Action<GameObject> cb)
         {
             var obj = _pool.Spawn(location);
-            if (obj == null)
+            if (obj != null)
             {
                 cb?.Invoke(obj.Target as GameObject);
                 return;
@@ -45,7 +47,7 @@ namespace Test.Runtime.ObjectPoolTest
             var handler = FW.ResourceMgr.InstantiateAsync(location);
             handler.Completed += (handler) =>
             {
-                obj = PrefabObject.Create(handler.Result);
+                obj = PrefabObject.Create(location, handler.Result);
                 _pool.Register(obj, true);
                 cb?.Invoke(obj.Target as GameObject);
             };

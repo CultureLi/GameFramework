@@ -26,7 +26,22 @@ namespace Test.Runtime.ObjectPoolTest
             go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
 
             nowAliveObject.Enqueue(go);
+            go.SetActive(true);
             go.transform.SetParent(transform);
+        }
+
+        public void SpawnAsync()
+        {
+            _pool.SpawnAsync("Assets/BundleRes/Prefab/Sphere.prefab", (go) =>
+            {
+                go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
+
+                nowAliveObject.Enqueue(go);
+                go.SetActive(true);
+                go.transform.SetParent(transform);
+            });
+
+           
         }
 
         public void UnSpawn()

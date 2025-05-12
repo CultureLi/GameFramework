@@ -227,9 +227,9 @@ namespace Framework
                     throw new Exception("Name is invalid.");
                 }
 
-                if (_objects.TryGetValue(name, out var objectRange))
+                if (_objects.TryGetValue(name, out var objectList))
                 {
-                    foreach (Object<T> internalObject in objectRange)
+                    foreach (Object<T> internalObject in objectList)
                     {
                         if (_allowMultiSpawn || !internalObject.IsInUse)
                         {
@@ -262,9 +262,9 @@ namespace Framework
                     throw new Exception("Name is invalid.");
                 }
 
-                if (_objects.TryGetValue(name, out var objectRange))
+                if (_objects.TryGetValue(name, out var objectList))
                 {
-                    foreach (Object<T> internalObject in objectRange)
+                    foreach (Object<T> internalObject in objectList)
                     {
                         if (_allowMultiSpawn || !internalObject.IsInUse)
                         {
@@ -525,9 +525,9 @@ namespace Framework
             public override ObjectInfo[] GetAllObjectInfos()
             {
                 List<ObjectInfo> results = new List<ObjectInfo>();
-                foreach (KeyValuePair<string, LinkedList<Object<T>>> objectRanges in _objects)
+                foreach ((var key, var objectList) in _objects)
                 {
-                    foreach (Object<T> internalObject in objectRanges.Value)
+                    foreach (var internalObject in objectList)
                     {
                         results.Add(new ObjectInfo(internalObject.Name, internalObject.Locked, internalObject.CustomCanReleaseFlag, internalObject.Priority, internalObject.LastUseTime, internalObject.SpawnCount));
                     }

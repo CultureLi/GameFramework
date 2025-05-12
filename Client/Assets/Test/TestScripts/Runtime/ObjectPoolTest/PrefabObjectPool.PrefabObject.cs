@@ -10,10 +10,10 @@ namespace Test.Runtime.ObjectPoolTest
     {
         private class PrefabObject : ObjectBase
         {
-            public static PrefabObject Create(GameObject target)
+            public static PrefabObject Create(string name, GameObject target)
             {
                 var obj = ReferencePool.Acquire<PrefabObject>();
-                obj.Initialize("PrefabObject", target);
+                obj.Initialize(name, target);
                 return obj;
             }
             protected override void Release(bool isShutdown)
