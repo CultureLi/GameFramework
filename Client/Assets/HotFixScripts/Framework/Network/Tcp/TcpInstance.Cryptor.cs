@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Framework
@@ -70,7 +68,7 @@ namespace Framework
                     if (!stream.ReadCompletely(headerBuff, 4))
                         throw new Exception("ReceivePublicKey length read failed !!!");
 
-                    var length = PackUtility.UnPackInt(headerBuff);
+                    var length = PackHelper.UnPackInt(headerBuff);
 
                     byte[] keyBytes = new byte[length];
                     if (!stream.ReadCompletely(keyBytes, length))
@@ -115,7 +113,7 @@ namespace Framework
                 // 构造完整发送 bodyBuffer
                 int offset = 0;
                 byte[] buffer = new byte[encryptedBytes.Length + 4];
-                PackUtility.PackInt(encryptedBytes.Length, buffer, ref offset);  // 长度
+                PackHelper.PackInt(encryptedBytes.Length, buffer, ref offset);  // 长度
 
                 Buffer.BlockCopy(encryptedBytes, 0, buffer, offset, encryptedBytes.Length);
 

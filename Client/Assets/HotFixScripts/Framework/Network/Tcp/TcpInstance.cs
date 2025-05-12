@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Framework
 {
@@ -58,7 +57,7 @@ namespace Framework
 
                 cb?.Invoke(state);
             });
-            
+
         }
 
         public void DisConnect()

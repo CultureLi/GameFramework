@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Runtime.NetTest
 {
@@ -18,16 +19,46 @@ namespace Runtime.NetTest
             _aes.IV = iv;
         }
 
-        public byte[] Encrypt(byte[] plain)
+        /// <summary>
+        /// 加密
+        /// </summary>
+        /// <param name="buff"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public byte[] Encrypt(byte[] buff, int offset, int length)
         {
-            using var encryptor = _aes.CreateEncryptor();
-            return encryptor.TransformFinalBlock(plain, 0, plain.Length);
+            try
+            {
+                using var encryptor = _aes.CreateEncryptor();
+                return encryptor.TransformFinalBlock(buff, offset, length);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Encrypt Error: {e}");
+                return null;
+            }
         }
 
-        public byte[] Decrypt(byte[] cipher)
+        /// <summary>
+        /// 解密
+        /// </summary>
+        /// <param name="buff"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
+        public byte[] Decrypt(byte[] buff, int offset, int length)
         {
-            using var decryptor = _aes.CreateDecryptor();
-            return decryptor.TransformFinalBlock(cipher, 0, cipher.Length);
+            try
+            {
+                using var decryptor = _aes.CreateDecryptor();
+                return decryptor.TransformFinalBlock(buff, offset, length);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Decrypt Error: {e}");
+                return null;
+            }
         }
     }
 

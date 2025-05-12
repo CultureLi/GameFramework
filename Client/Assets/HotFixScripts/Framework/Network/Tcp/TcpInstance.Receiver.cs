@@ -54,7 +54,7 @@ namespace Framework
                     {
                         if (_connecter.IsConnected && stream.DataAvailable)
                         {
-                            var packet = UnPack(stream, headerBuffer, bodyBuffer);
+                            var packet = UnPack(stream);
                             if(packet != null)
                                 _packets.Enqueue(packet);
                         }
@@ -76,8 +76,9 @@ namespace Framework
             /// <returns></returns>
             byte[] bodyBuffer = new byte[NetDefine.SCMaxMsgLen];
             byte[] headerBuffer = new byte[NetDefine.SCHeaderLen];
-            byte[] deCodeBuffer = new byte[NetDefine.SCMaxMsgLen];
-            private SCPacket UnPack(NetworkStream stream, in byte[] headerBuffer, in byte[] bodyBuffer)
+            //解压buffer,zip压缩比一般在30%-70%，这个buffer设置大一些
+            byte[] unZipBuffer = new byte[NetDefine.SCMaxMsgLen*10];
+            private SCPacket UnPack(NetworkStream stream)
             {
                 try
                 {
@@ -85,11 +86,10 @@ namespace Framework
                         return null;
 
                     var offset = 0;
-                    var length = PackUtility.UnPackInt(headerBuffer, ref offset);
-                    var originLength = PackUtility.UnPackInt(headerBuffer, ref offset);
-                    var msgId = (uint)PackUtility.UnPackInt(headerBuffer, ref offset);
-                    var flag = PackUtility.UnPackByte(headerBuffer, ref offset);
-                    var type = MsgTypeIdUtility.GetMsgType(msgId);
+                    var length = PackHelper.UnPackInt(headerBuffer, ref offset);
+                    var msgId = (uint)PackHelper.UnPackInt(headerBuffer, ref offset);
+                    var flag = PackHelper.UnPackByte(headerBuffer, ref offset);
+                    var type = ProtoTypeHelper.GetMsgType(msgId);
 
                     if (length < 0 || length >= NetDefine.SCMaxMsgLen)
                     {
@@ -107,10 +107,10 @@ namespace Framework
                     var size = length;
 
                     //解压
-                    if ((flag & NetDefine.FlagCompress) != 0)
+                    if ((flag & NetDefine.FlagZip) != 0)
                     {
-                        size = LZ4.LZ4Codec.Decode(buffer, 0, length, deCodeBuffer, 0, originLength);
-                        buffer = deCodeBuffer;
+                        buffer = ZipHelper.UnZip(buffer, 0, length);
+                        size = buffer.Length;
                     }
 
                     //解密
@@ -119,6 +119,7 @@ namespace Framework
                         buffer = _cryptor.Decrypt(buffer, 0, size);
                         size = buffer.Length;
                     }
+
                     packet.msg = packet.msg.Descriptor.Parser.ParseFrom(buffer, 0, size);
 
                     return packet;

@@ -10,18 +10,17 @@ namespace Framework
     {
         //消息头所占字节数
         //[length 4字节] 压缩、加密后消息Body长度
-        //[originLength 4字节] 压缩前消息Body长度
         //[msgId 4字节]
         //[flag 1字节（表示加密、压缩等）]
-        public static readonly int CSHeaderLen = 13; 
-        public static readonly int SCHeaderLen = 13;
+        public static readonly int CSHeaderLen = 9; 
+        public static readonly int SCHeaderLen = 9;
         public static readonly int CSMaxMsgLen = 1024*4;
         public static readonly int SCMaxMsgLen = 1024*10;
 
         //加密
         public static readonly byte FlagCrypt = 1;
         //压缩
-        public static readonly byte FlagCompress = 1 << 1;
+        public static readonly byte FlagZip = 1 << 1;
         
     }
 

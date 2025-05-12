@@ -1,13 +1,4 @@
-﻿using Framework;
-using Google.Protobuf;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Framework
+﻿namespace Framework
 {
     /// <summary>
     /// 发向服务器的包

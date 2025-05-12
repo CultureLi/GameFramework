@@ -8,10 +8,10 @@ using UnityEngine;
 
 namespace Framework
 {
-    public static class MsgTypeIdUtility
+    public class ProtoTypeHelper
     {
         private static Dictionary<Type, uint> _typeToIdMap = new Dictionary<Type, uint>();
-        private static Dictionary<uint, Type> _IdToTypeMap = new Dictionary<uint, Type>();
+        private static Dictionary<uint, Type> _idToTypeMap = new Dictionary<uint, Type>();
 
         public static uint GetMsgId(Type type)
         {
@@ -20,7 +20,7 @@ namespace Framework
 
         public static Type GetMsgType(uint id)
         {
-            return _IdToTypeMap.TryGetValue(id, out var type) ? type : null; 
+            return _idToTypeMap.TryGetValue(id, out var type) ? type : null; 
         }
 
         /// <summary>
@@ -44,10 +44,9 @@ namespace Framework
         /// <summary>
         /// 初始化，收集所有消息，做Type和id的双向映射
         /// </summary>
-        public static void Init()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        public static void CollectMsgType()
         {
-            Clear();
-
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 foreach (var type in assembly.GetTypes())
@@ -66,16 +65,9 @@ namespace Framework
                     }
 
                     _typeToIdMap[type] = msgId;
-                    _IdToTypeMap[msgId] = type;
+                    _idToTypeMap[msgId] = type;
                 }
             }
         }
-
-        public static void Clear()
-        {
-            _typeToIdMap.Clear();
-            _IdToTypeMap.Clear();
-        }
-
     }
 }

@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
-using UnityEditor.Sprites;
 using UnityEngine;
 
 namespace Framework
@@ -22,7 +21,6 @@ namespace Framework
             Cryptor _cryptor;
             private bool _disposed;
 
-            private readonly int _compressThreshold = 1024;
             private Queue<CSPacket> _packets = new Queue<CSPacket>();
 
             public Sender(Connecter connecter, Cryptor cryptor)
@@ -86,19 +84,20 @@ namespace Framework
             /// </summary>
             /// <param name="msg"></param>
             /// <returns></returns>
-            byte[] bodyBuffer = new byte[NetDefine.CSMaxMsgLen];
-            byte[] encodeBuffer = new byte[NetDefine.CSMaxMsgLen];
+            byte[] _bodyBuffer = new byte[NetDefine.CSMaxMsgLen];
+            byte[] _zipBuffer = new byte[NetDefine.CSMaxMsgLen];
+            private readonly int _compressThreshold = 0;
             private CSPacket Pack(IMessage msg)
             {
                 try
                 {
                     var packet = ReferencePool.Acquire<CSPacket>();
-                    packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
+                    packet.id = ProtoTypeHelper.GetMsgId(msg.GetType());
                     packet.flag = 0;
                     var length = msg.CalculateSize();
 
                     // 先序列化 msg 成为原始字节数组
-                    using (var memStream = new MemoryStream(bodyBuffer))
+                    using (var memStream = new MemoryStream(_bodyBuffer))
                     {
                         using (var codedStream = new CodedOutputStream(memStream))
                         {
@@ -110,29 +109,27 @@ namespace Framework
                     // 加密
                     packet.flag |= NetDefine.FlagCrypt;
                     //加密后字节数会变化, 因为会填充补齐数据
-                    var buffer = _cryptor.Encrypt(bodyBuffer, 0, length);
+                    var buffer = _cryptor.Encrypt(_bodyBuffer, 0, length);
                     var originLength = buffer.Length;
 
                     // 压缩
                     if ( originLength > _compressThreshold)
                     {
-                        packet.flag |= NetDefine.FlagCompress;
-                        length = LZ4.LZ4Codec.Encode(buffer, 0, buffer.Length, encodeBuffer, 0, encodeBuffer.Length);
-                        buffer = encodeBuffer;
+                        packet.flag |= NetDefine.FlagZip;
+                        buffer = ZipHelper.Zip(buffer, 0, buffer.Length);
                     }
 
                     packet.length = buffer.Length;
                     if (length < 0 || length > NetDefine.CSMaxMsgLen)
                     {
-                        throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {length}");
+                        throw new Exception($"PackMsg - Msg Size Exception, type: {msg.GetType()} size: {length}");
                     }
 
                     // 填写包头
                     var offset = 0;
-                    PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度
-                    PackUtility.PackInt(originLength, packet.buff, ref offset); // 消息体原始长度
-                    PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
-                    PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
+                    PackHelper.PackInt(packet.length, packet.buff, ref offset);
+                    PackHelper.PackInt((int)packet.id, packet.buff, ref offset);
+                    PackHelper.PackByte(packet.flag, packet.buff, ref offset);
 
                     // 写入
                     Buffer.BlockCopy(buffer, 0, packet.buff, offset, packet.length);

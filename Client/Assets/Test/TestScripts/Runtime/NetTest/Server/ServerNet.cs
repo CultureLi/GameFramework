@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.Windows;
 
 namespace Runtime.NetTest
 {
@@ -42,7 +43,7 @@ namespace Runtime.NetTest
         private Thread listenThread;
         private bool isRunning = false;
 
-        RSACrypto _rsaKeyMgr = new RSACrypto();
+        RSACrypto _cryptor = new RSACrypto();
        
         Dictionary<uint, Connection> connections = new Dictionary<uint, Connection>();
 
@@ -125,7 +126,6 @@ namespace Runtime.NetTest
             }
         }
 
-
         private void HandleClient(Connection conn)
         {
             byte[] receiveBuffer = new byte[NetDefine.SCMaxMsgLen];
@@ -148,7 +148,7 @@ namespace Runtime.NetTest
 
                                 var buff = new byte[len];
                                 conn.stream.ReadExactly(buff, len);
-                                byte[] decrypted = _rsaKeyMgr.RSADecrypt(buff);
+                                byte[] decrypted = _cryptor.RSADecrypt(buff);
                                 // 解析出 AES Key + IV
                                 int keySize = 32; // AES-256
                                 int ivSize = 16;  // AES 默认 IV 大小
@@ -165,7 +165,7 @@ namespace Runtime.NetTest
                             }
                             else
                             {
-                                var packet = UnPack(receiveBuffer, conn);
+                                var packet = UnPack(conn.stream, conn);
 
                                 lock (conn.receivePackets)
                                 {
@@ -222,7 +222,7 @@ namespace Runtime.NetTest
             SendMsg(connectId, ack);
         }
 
-        public void SendMsg(uint connId, IMessage msg, byte flag = 0)
+        public void SendMsg(uint connId, IMessage msg)
         {
             if (!connections.TryGetValue(connId, out var conn))
             {
@@ -230,123 +230,154 @@ namespace Runtime.NetTest
                 return;
             }
 
-            var packet = PackMsg(msg, conn._aesCrypto);
+            var packet = Pack(msg, conn);
 
             lock (conn.sendPackets)
             {
                 conn.sendPackets.Enqueue(packet);
             }
         }
-        private ServerPacket PackMsg(IMessage msg, AESCrypto crypto)
+
+        int _compressThreshold = 0;
+        byte[] encodeBuffer = new byte[NetDefine.CSMaxMsgLen];
+        private ServerPacket Pack(IMessage msg, Connection conn)
         {
-            var packet = ReferencePool.Acquire<ServerPacket>();
-            packet.id = MsgTypeIdUtility.GetMsgId(msg.GetType());
-            packet.flag = 0;
-
-            // 先序列化 msg 成为原始字节数组
-            byte[] plainBytes;
-            using (var memStream = new MemoryStream())
+            var _cryptor = conn._aesCrypto;
+            try
             {
-                using (var codedStream = new CodedOutputStream(memStream))
+                var packet = ReferencePool.Acquire<ServerPacket>();
+                packet.id = ProtoTypeHelper.GetMsgId(msg.GetType());
+                packet.flag = 0;
+                var length = msg.CalculateSize();
+
+                // 先序列化 msg 成为原始字节数组
+                using (var memStream = new MemoryStream(bodyBuffer))
                 {
-                    msg.WriteTo(codedStream);
-                    codedStream.Flush();
+                    using (var codedStream = new CodedOutputStream(memStream))
+                    {
+                        msg.WriteTo(codedStream);
+                        codedStream.Flush();
+                    }
                 }
-                plainBytes = memStream.ToArray();
+
+                // 加密
+                packet.flag |= NetDefine.FlagCrypt;
+                //加密后字节数会变化, 因为会填充补齐数据
+                var buffer = _cryptor.Encrypt(bodyBuffer, 0, length);
+                var originLength = buffer.Length;
+
+                // 压缩
+                if (originLength > _compressThreshold)
+                {
+                    packet.flag |= NetDefine.FlagZip;
+                    buffer = ZipHelper.Zip(buffer, 0, buffer.Length);
+                }
+
+                packet.length = buffer.Length;
+                if (length < 0 || length > NetDefine.CSMaxMsgLen)
+                {
+                    throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {length}");
+                }
+
+                // 填写包头
+                var offset = 0;
+                PackHelper.PackInt(packet.length, packet.buff, ref offset); // 消息体长度
+                                                                            //PackHelper.PackInt(originLength, packet.buff, ref offset); // 消息体原始长度
+                PackHelper.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
+                PackHelper.PackByte(packet.flag, packet.buff, ref offset);  // 标志位：标记已加密
+
+                // 写入
+                Buffer.BlockCopy(buffer, 0, packet.buff, offset, packet.length);
+
+                return packet;
             }
-
-            // AES 加密
-            packet.flag |= NetDefine.FlagCrypt;
-            byte[] encryptedBytes = crypto.Encrypt(plainBytes);
-            packet.length = encryptedBytes.Length;
-            var originLength = packet.length;
-
-            //压缩
-            packet.flag |= NetDefine.FlagCompress;
-            var compressdBytes = LZ4.LZ4Codec.Encode(encryptedBytes, 0, packet.length);
-            packet.length = compressdBytes.Length;
-
-            // 填写包头
-            var offset = 0;
-            PackUtility.PackInt(packet.length, packet.buff, ref offset); // 消息体长度（已加密）
-            PackUtility.PackInt(originLength, packet.buff, ref offset); // 消息体长度（已加密）
-            PackUtility.PackInt((int)packet.id, packet.buff, ref offset); // 消息 ID
-            PackUtility.PackByte(packet.flag, packet.buff, ref offset);  // 标志位
-
-            // 写入
-            Buffer.BlockCopy(compressdBytes, 0, packet.buff, offset, compressdBytes.Length);
-
-            return packet;
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                return null;
+            }
         }
 
-        private ClientPacket UnPack(byte[] buffer, Connection conn)
+        /// <summary>
+        /// 解包
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        byte[] bodyBuffer = new byte[NetDefine.SCMaxMsgLen];
+        byte[] headerBuffer = new byte[NetDefine.SCHeaderLen];
+        byte[] deCodeBuffer = new byte[NetDefine.SCMaxMsgLen];
+        private ClientPacket UnPack(NetworkStream stream, Connection conn)
         {
-            var stream = conn.stream;
-            byte[] headerBuffer = new byte[NetDefine.CSHeaderLen];
-            if (!stream.ReadCompletely(headerBuffer, NetDefine.SCHeaderLen))
+            var _cryptor = conn._aesCrypto;
+            try
+            {
+                if (!stream.ReadCompletely(headerBuffer, NetDefine.SCHeaderLen))
+                    return null;
+
+                var offset = 0;
+                var length = PackHelper.UnPackInt(headerBuffer, ref offset);
+                //var originLength = PackHelper.UnPackInt(headerBuffer, ref offset);
+                var msgId = (uint)PackHelper.UnPackInt(headerBuffer, ref offset);
+                var flag = PackHelper.UnPackByte(headerBuffer, ref offset);
+                var type = ProtoTypeHelper.GetMsgType(msgId);
+
+                if (length < 0 || length >= NetDefine.SCMaxMsgLen)
+                {
+                    throw new Exception($"PackMsg - type:{type} Size:{length}");
+                }
+
+                if (!stream.ReadCompletely(bodyBuffer, length))
+                    return null;
+
+                var packet = ReferencePool.Acquire<ClientPacket>();
+                packet.id = msgId;
+                packet.msg = Activator.CreateInstance(type) as IMessage;
+
+                var buffer = bodyBuffer;
+                var size = length;
+
+                //解压
+                if ((flag & NetDefine.FlagZip) != 0)
+                {
+                    buffer = ZipHelper.UnZip(buffer, 0, length);
+                    size = buffer.Length;
+                }
+
+                //解密
+                if ((flag & NetDefine.FlagCrypt) != 0)
+                {
+                    buffer = _cryptor.Decrypt(buffer, 0, size);
+                    size = buffer.Length;
+                }
+                packet.msg = packet.msg.Descriptor.Parser.ParseFrom(buffer, 0, size);
+
+                packet.connectId = conn.connectionId;
+                return packet;
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
                 return null;
-
-            var offset = 0;
-            var length = PackUtility.UnPackInt(headerBuffer, ref offset);
-            var originLength = PackUtility.UnPackInt(headerBuffer, ref offset);
-            var msgId = (uint)PackUtility.UnPackInt(headerBuffer, ref offset);
-            var flag = PackUtility.UnPackByte(headerBuffer, ref offset);
-            var type = MsgTypeIdUtility.GetMsgType(msgId);
-
-            buffer = new byte[length];
-            if (length < 0 || length >= NetDefine.SCMaxMsgLen)
-            {
-                throw new Exception($"PackMsg - type:{type} Size:{length}");
             }
-
-            if (!stream.ReadCompletely(buffer, length))
-                return null;
-
-            var packet = ReferencePool.Acquire<ClientPacket>();
-            packet.id = msgId;
-
-            packet.connectId = conn.connectionId;
-
-            packet.msg = Activator.CreateInstance(type) as IMessage;
-
-            //解压
-            if ((flag & NetDefine.FlagCompress) != 0)
-            {
-                buffer = LZ4.LZ4Codec.Decode(buffer, 0, length, originLength);
-            }
-
-            //解密
-            if ((flag & NetDefine.FlagCrypt) != 0)
-            {
-                buffer = conn._aesCrypto.Decrypt(buffer);
-            }
-
-            length = buffer.Length;
-
-
-            using (var codeStream = new CodedInputStream(buffer, 0, length))
-            {
-                packet.msg.MergeFrom(codeStream);
-            }
-            return packet;
         }
 
         public void SendPublicKey(Connection conn)
         {
             var buff = new byte[NetDefine.SCMaxMsgLen];
 
-            byte[] publicKeyBytes = Encoding.UTF8.GetBytes(_rsaKeyMgr.PublicKey);
+            byte[] publicKeyBytes = Encoding.UTF8.GetBytes(_cryptor.PublicKey);
             
             var length = publicKeyBytes.Length;
 
             var offset = 0;
-            PackUtility.PackInt(length, buff, ref offset);
+            PackHelper.PackInt(length, buff, ref offset);
 
             // 3. 将公钥数据写入 buff（紧跟包头之后）
             Buffer.BlockCopy(publicKeyBytes, 0, buff, offset, length);
 
             conn.stream.Write(buff, 0, length + 4);
-            Debug.Log($"服务端发送 public Key{_rsaKeyMgr.PublicKey}");
+            Debug.Log($"服务端发送 public Key{_cryptor.PublicKey}");
 
         }
 
@@ -362,7 +393,7 @@ namespace Runtime.NetTest
                     while (conn.receivePackets.Count > 0)
                     {
                         var packet = conn.receivePackets.Dequeue();
-                        var type = MsgTypeIdUtility.GetMsgType(packet.id);
+                        var type = ProtoTypeHelper.GetMsgType(packet.id);
                         if (handlerMap.TryGetValue(type, out var handlerList))
                         {
                             foreach (var handler in handlerList)

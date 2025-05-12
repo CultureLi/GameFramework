@@ -23,8 +23,8 @@ namespace Runtime.NetTest
 
         private void Start()
         {
-            //FW.NetMgr.Create("10.23.50.187", 8888);
-            FW.NetMgr.Create("10.1.2.144", 8888);
+            FW.NetMgr.Create("10.23.50.187", 8888);
+            //FW.NetMgr.Create("10.1.2.144", 8888);
             FW.NetMgr.Connect();
 
             FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);

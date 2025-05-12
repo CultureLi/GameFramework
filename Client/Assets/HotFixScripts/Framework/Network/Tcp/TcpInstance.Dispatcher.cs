@@ -53,7 +53,7 @@ namespace Framework
             /// <param name="packet"></param>
             public void DispatchMsg(SCPacket packet)
             {
-                var type = MsgTypeIdUtility.GetMsgType(packet.id);
+                var type = ProtoTypeHelper.GetMsgType(packet.id);
                 if (_handlers.TryGetValue(type, out var list))
                 {
                     foreach (var handler in list)

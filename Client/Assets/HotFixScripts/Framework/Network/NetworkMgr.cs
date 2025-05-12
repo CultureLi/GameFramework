@@ -17,7 +17,7 @@ namespace Framework
         /// </summary>
         public NetworkMgr()
         {
-            MsgTypeIdUtility.Init();
+            
         }
 
         public void Create(string host, int port, NetChannelType type = NetChannelType.Main)
@@ -75,7 +75,6 @@ namespace Framework
             {
                 instance.Dispose();
             }
-            MsgTypeIdUtility.Clear();
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)
