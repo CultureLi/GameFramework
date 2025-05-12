@@ -11,18 +11,17 @@ namespace Test.Runtime.ObjectPoolTest
 {
     public class ObjectPoolTest : MonoBehaviour
     {
-        public GameObject template;
         PrefabObjectPool _pool;
 
         Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
-            _pool = new PrefabObjectPool("Custom",10, 5);
+            _pool = new PrefabObjectPool("Custom", 10, 5);
         }
 
         public void Spawn()
         {
-            var go = _pool.Spawn("Assets/BundleRes/Prefabs/Sphere.prefab");
+            var go = _pool.Spawn("Assets/BundleRes/Prefab/Sphere.prefab");
 
             go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
 
@@ -35,6 +34,7 @@ namespace Test.Runtime.ObjectPoolTest
             if (nowAliveObject.Count > 0)
             {
                 var go = nowAliveObject.Dequeue();
+                go.SetActive(false);
                 _pool.UnSpawn(go);
             }
         }
