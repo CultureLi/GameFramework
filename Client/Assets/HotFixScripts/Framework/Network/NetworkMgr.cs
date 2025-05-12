@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace Framework
@@ -29,11 +30,11 @@ namespace Framework
             }
         }
 
-        public void Connect(NetChannelType type = NetChannelType.Main)
+        public async Task ConnectAsync(NetChannelType type = NetChannelType.Main, Action<NetworkConnectState> cb = null)
         {
             if (_tcpInstances.TryGetValue(type, out var instance))
             {
-                instance.ConnectAsync();
+                await instance.ConnectAsync(cb);
             }
         }
 

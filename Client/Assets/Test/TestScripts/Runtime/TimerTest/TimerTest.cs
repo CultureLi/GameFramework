@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.TestScripts.Runtime.TimerTest
+namespace Test.Runtime.TimerTest
 {
     internal class TimerTest : MonoBehaviour
     {

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Runtime.NetTest
+namespace Test.Runtime.NetTest
 {
     public class AESCrypto
     {

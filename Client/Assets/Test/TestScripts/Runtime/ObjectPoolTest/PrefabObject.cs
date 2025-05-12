@@ -6,14 +6,14 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Assets.TestScripts.Runtime.ObjectPoolTest
+namespace Test.Runtime.ObjectPoolTest
 {
-    internal class CustomObject : ObjectBase
+    /*internal class PrefabObject : ObjectBase
     {
-        public static CustomObject Create(object target)
+        public static PrefabObject Create(object target)
         {
-            var obj = ReferencePool.Acquire<CustomObject>();
-            obj.Initialize("CustomObj",target);
+            var obj = ReferencePool.Acquire<PrefabObject>();
+            obj.Initialize("PrefabObject", target);
             return obj;
         }
         protected override void Release(bool isShutdown)
@@ -24,7 +24,9 @@ namespace Assets.TestScripts.Runtime.ObjectPoolTest
         protected override void OnSpawn()
         {
             base.OnSpawn();
-            (Target as GameObject).SetActive(true);
+            var go = (Target as GameObject);
+            go.transform.position = new Vector3(UnityEngine.Random.Range(-10, 10), UnityEngine.Random.Range(-5, 5), 0);
+            go.SetActive(true);
         }
 
         protected override void OnUnspawn()
@@ -32,5 +34,5 @@ namespace Assets.TestScripts.Runtime.ObjectPoolTest
             base.OnUnspawn();
             (Target as GameObject).SetActive(false);
         }
-    }
+    }*/
 }

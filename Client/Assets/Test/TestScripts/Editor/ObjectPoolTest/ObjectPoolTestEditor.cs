@@ -1,10 +1,10 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-namespace Assets.TestScripts.Editor.ObjectPoolTest
+namespace Test.Inspector.ObjectPoolTest
 {
     [CustomEditor(typeof(Runtime.ObjectPoolTest.ObjectPoolTest))]
-    public class ObjectPoolTestEditor : UnityEditor.Editor
+    public class ObjectPoolTestEditor : Editor
     {
         public override void OnInspectorGUI()
         {

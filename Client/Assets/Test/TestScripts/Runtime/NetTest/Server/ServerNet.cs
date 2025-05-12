@@ -11,7 +11,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.Windows;
 
-namespace Runtime.NetTest
+namespace Test.Runtime.NetTest
 {
     
 

@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor.NetTest
+namespace Test.Inspector.NetTest
 {
     [CustomEditor(typeof(Runtime.NetTest.ClientNet))]
-    public class NetClientEditor : UnityEditor.Editor
+    public class NetClientEditor : Editor
     {
         public override void OnInspectorGUI()
         {

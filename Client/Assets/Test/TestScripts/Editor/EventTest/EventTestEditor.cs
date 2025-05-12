@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
 
-namespace Assets.TestScripts.Editor.EventTest
+namespace Test.Inspector.EventTest
 {
     [CustomEditor(typeof(Runtime.EventTest.EventTest))]
-    internal class EventTestEditor : UnityEditor.Editor
+    internal class EventTestEditor : Editor
     {
         public override void OnInspectorGUI()
         {

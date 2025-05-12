@@ -5,7 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-namespace Assets.TestScripts.Runtime.EventTest
+
+namespace Test.Runtime.EventTest
 {
     public class HpChangedEvent : EventBase, IReference
     {

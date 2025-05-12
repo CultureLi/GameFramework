@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Framework
 {
@@ -37,14 +38,14 @@ namespace Framework
         public TcpClient TCPClient => _connecter?.TCPClient ?? null;
 
 
-        public void ConnectAsync(Action<NetworkConnectState> cb = null)
+        public async Task ConnectAsync(Action<NetworkConnectState> cb = null)
         {
-            if (_connecter != null && _connecter.IsConnected)
+            if (_connecter == null)
             {
-                return;
+                _connecter = new Connecter();
             }
-            _connecter = new Connecter();
-            _connecter.ConnectAsync(_host, _port, (state) =>
+            
+            await _connecter.ConnectAsync(_host, _port, (state) =>
             {
                 if (state == NetworkConnectState.Succeed)
                 {
