@@ -1,10 +1,6 @@
-﻿using Framework;
-using System;
-using System.Collections.Generic;
+﻿using UnityEngine;
 
-using UnityEngine;
-
-namespace Test.Runtime.ObjectPoolTest
+namespace Framework
 {
     public partial class PrefabObjectPool
     {
@@ -16,7 +12,7 @@ namespace Test.Runtime.ObjectPoolTest
                 obj.Initialize(name, target);
                 return obj;
             }
-            protected override void Release(bool isShutdown)
+            protected internal override void Release(bool isShutdown)
             {
                 UnityEngine.Object.Destroy(Target as GameObject);
             }
