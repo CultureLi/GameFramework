@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.ResourceManagement.AsyncOperations;
 namespace Framework
 {
     /// <summary>
@@ -744,9 +744,17 @@ namespace Framework
             {
                 m_UIFormsBeingLoaded.Add(serialId, uiFormAssetName);
                 var handler = m_ResourceManager.LoadAssetAsync<GameObject>(uiFormAssetName);
-                handler.Completed += (ss) =>
+                var info = OpenUIFormInfo.Create(serialId, uiGroup, pauseCoveredUIForm, userData);
+                handler.Completed += (go) =>
                 {
-                    OpenUIFormInfo.Create(serialId, uiGroup, pauseCoveredUIForm, userData);
+                    if (handler.Status == AsyncOperationStatus.Succeeded)
+                    {
+                        LoadAssetSuccessCallback(uiFormAssetName, go, 0, info);
+                    }
+                    else
+                    {
+                        ReferencePool.Release(info);
+                    }
                 };
             }
             else
