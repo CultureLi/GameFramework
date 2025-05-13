@@ -110,19 +110,21 @@ namespace Framework
                     packet.flag |= NetDefine.FlagCrypt;
                     //加密后字节数会变化, 因为会填充补齐数据
                     var buffer = _cryptor.Encrypt(_bodyBuffer, 0, length);
-                    var originLength = buffer.Length;
+                    length = buffer.Length;
+                    var originLength = length;
 
                     // 压缩
                     if ( originLength > _compressThreshold)
                     {
                         packet.flag |= NetDefine.FlagZip;
-                        buffer = ZipHelper.Zip(buffer, 0, buffer.Length);
+                        length = ZipHelper.Zip(buffer, buffer.Length, _zipBuffer);
+                        buffer = _zipBuffer;
                     }
 
-                    packet.length = buffer.Length;
-                    if (length < 0 || length > NetDefine.CSMaxMsgLen)
+                    packet.length = length;
+                    if (packet.length < 0 || packet.length > NetDefine.CSMaxMsgLen)
                     {
-                        throw new Exception($"PackMsg - Msg Size Exception, type: {msg.GetType()} size: {length}");
+                        throw new Exception($"PackMsg - Msg Size Exception, type: {msg.GetType()} size: {packet.length}");
                     }
 
                     // 填写包头

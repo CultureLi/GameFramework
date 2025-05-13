@@ -239,7 +239,7 @@ namespace Test.Runtime.NetTest
         }
 
         int _compressThreshold = 0;
-        byte[] encodeBuffer = new byte[NetDefine.CSMaxMsgLen];
+        byte[] zipBuffer = new byte[NetDefine.CSMaxMsgLen];
         private ServerPacket Pack(IMessage msg, Connection conn)
         {
             var _cryptor = conn._aesCrypto;
@@ -264,16 +264,18 @@ namespace Test.Runtime.NetTest
                 packet.flag |= NetDefine.FlagCrypt;
                 //加密后字节数会变化, 因为会填充补齐数据
                 var buffer = _cryptor.Encrypt(bodyBuffer, 0, length);
-                var originLength = buffer.Length;
+                length = buffer.Length;
+                var originLength = length;
 
                 // 压缩
                 if (originLength > _compressThreshold)
                 {
                     packet.flag |= NetDefine.FlagZip;
-                    buffer = ZipHelper.Zip(buffer, 0, buffer.Length);
+                    length = ZipHelper.Zip(buffer, buffer.Length, zipBuffer);
+                    buffer = zipBuffer;
                 }
 
-                packet.length = buffer.Length;
+                packet.length = length;
                 if (length < 0 || length > NetDefine.CSMaxMsgLen)
                 {
                     throw new Exception($"PackMsg - Origin Msg Size Exception, type: {msg.GetType()} size: {length}");
@@ -306,7 +308,7 @@ namespace Test.Runtime.NetTest
         /// <returns></returns>
         byte[] bodyBuffer = new byte[NetDefine.SCMaxMsgLen];
         byte[] headerBuffer = new byte[NetDefine.SCHeaderLen];
-        byte[] deCodeBuffer = new byte[NetDefine.SCMaxMsgLen];
+        byte[] unZipBuffer = new byte[NetDefine.SCMaxMsgLen*10];
         private ClientPacket UnPack(NetworkStream stream, Connection conn)
         {
             var _cryptor = conn._aesCrypto;
@@ -340,8 +342,8 @@ namespace Test.Runtime.NetTest
                 //解压
                 if ((flag & NetDefine.FlagZip) != 0)
                 {
-                    buffer = ZipHelper.UnZip(buffer, 0, length);
-                    size = buffer.Length;
+                    size = ZipHelper.UnZip(buffer, length, unZipBuffer);
+                    buffer = unZipBuffer;
                 }
 
                 //解密

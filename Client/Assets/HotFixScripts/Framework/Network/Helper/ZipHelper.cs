@@ -1,4 +1,5 @@
 ﻿using System;
+using K4os.Compression.LZ4;
 namespace Framework
 {
     public class ZipHelper
@@ -7,30 +8,33 @@ namespace Framework
         /// 压缩
         /// </summary>
         /// <param name="srcBuffer"></param>
-        /// <param name="srcOffset"></param>
-        /// <param name="srcLenth"></param>
+        /// <param name="srcLength"></param>
+        /// <param name="dstBuffer"></param>
         /// <returns></returns>
-        public static byte[] Zip(byte[] srcBuffer, int srcOffset, int srcLength)
+        public static int Zip(byte[] srcBuffer, int srcLength, byte[] dstBuffer)
         {
-            var zipedBytes = LZ4.LZ4Codec.Encode(srcBuffer, srcOffset, srcLength);
-            var buffer = new byte[zipedBytes.Length + 4];
             //把原始数据长度放在压缩数据的前面
-            PackHelper.PackInt(srcLength, buffer);
-            Buffer.BlockCopy(zipedBytes, 0, buffer, 4, zipedBytes.Length);
-            return buffer;
+            int offset = 0;
+            PackHelper.PackInt(srcLength, dstBuffer, ref offset);
+            var size = 4;
+            size += LZ4Codec.Encode(srcBuffer, 0, srcLength,
+                dstBuffer, offset, dstBuffer.Length-offset);
+
+            return size;
         }
 
         /// <summary>
         /// 解压
         /// </summary>
         /// <param name="srcBuffer"></param>
-        /// <param name="srcOffset"></param>
         /// <param name="srcLength"></param>
-        public static byte[] UnZip(byte[] srcBuffer, int srcOffset, int srcLength)
+        /// <param name="dstBuffer"></param>
+        public static int UnZip(byte[] srcBuffer, int srcLength, byte[] dstBuffer)
         {
             //先取原始数据大小
-            var originLength = PackHelper.UnPackInt(srcBuffer, srcOffset);
-            return LZ4.LZ4Codec.Decode(srcBuffer, srcOffset + 4, srcLength - 4, originLength);
+            int offset = 0;
+            var originLength = PackHelper.UnPackInt(srcBuffer, ref offset);
+            return LZ4Codec.Decode(srcBuffer, offset, srcLength - offset, dstBuffer, 0, originLength);
         }
     }
 }

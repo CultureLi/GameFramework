@@ -109,8 +109,8 @@ namespace Framework
                     //解压
                     if ((flag & NetDefine.FlagZip) != 0)
                     {
-                        buffer = ZipHelper.UnZip(buffer, 0, length);
-                        size = buffer.Length;
+                        size = ZipHelper.UnZip(buffer, length, unZipBuffer);
+                        buffer = unZipBuffer;
                     }
 
                     //解密
