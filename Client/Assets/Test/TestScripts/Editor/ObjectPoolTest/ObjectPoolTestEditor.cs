@@ -19,6 +19,10 @@ namespace Test.Inspector.ObjectPoolTest
             {
                 myScript.Spawn();
             }
+            else if (GUILayout.Button("SpawnTemplate"))
+            {
+                myScript.SpawnTemplate();
+            }
             else if (GUILayout.Button("SpawnAsync"))
             {
                 myScript.SpawnAsync();

@@ -11,37 +11,42 @@ namespace Test.Runtime.ObjectPoolTest
 {
     public class ObjectPoolTest : MonoBehaviour
     {
-        PrefabObjectPool _pool;
+        public GameObject template;
 
+        PrefabObjectPool _pool;
         Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
-            _pool = new PrefabObjectPool("Custom", 10, 5);
+            _pool = PrefabObjectPool.Create("CustomPool", 10, 5);
         }
 
         public void Spawn()
         {
             var go = _pool.Spawn("Assets/BundleRes/Prefab/Sphere.prefab");
+            SetGo(go);
+        }
 
-            go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
-
-            nowAliveObject.Enqueue(go);
-            go.SetActive(true);
-            go.transform.SetParent(transform);
+        public void SpawnTemplate()
+        {
+            var go = _pool.Spawn("TemplateGo", template);
+            SetGo(go);
         }
 
         public void SpawnAsync()
         {
             _pool.SpawnAsync("Assets/BundleRes/Prefab/Sphere.prefab", (go) =>
             {
-                go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
-
-                nowAliveObject.Enqueue(go);
-                go.SetActive(true);
-                go.transform.SetParent(transform);
+                SetGo(go);
             });
+        }
 
-           
+        private void SetGo(GameObject go)
+        {
+            go.transform.position = new Vector3(UnityEngine.Random.Range(-5, 5), UnityEngine.Random.Range(-5, 5), 0);
+
+            nowAliveObject.Enqueue(go);
+            go.SetActive(true);
+            go.transform.SetParent(transform);
         }
 
         public void UnSpawn()
