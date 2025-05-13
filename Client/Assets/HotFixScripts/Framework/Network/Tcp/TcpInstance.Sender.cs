@@ -85,7 +85,7 @@ namespace Framework
             /// <param name="msg"></param>
             /// <returns></returns>
             byte[] _bodyBuffer = new byte[NetDefine.CSMaxMsgLen];
-            byte[] _zipBuffer = new byte[NetDefine.CSMaxMsgLen];
+            byte[] _zipBuffer = new byte[NetDefine.CSMaxMsgLen*2];
             private readonly int _compressThreshold = 0;
             private CSPacket Pack(IMessage msg)
             {
