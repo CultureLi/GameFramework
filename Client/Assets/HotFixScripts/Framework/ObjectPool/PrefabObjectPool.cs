@@ -17,12 +17,13 @@ namespace Framework
         /// <param name="name"></param>
         /// <param name="capacity"> 池子最大缓存容量 </param>
         /// <param name="expireTime"> 空闲 Object 过期时间, 过期销毁 </param>
-        public static PrefabObjectPool Create(string name, int capacity = 20, float expireTime = 60)
+        public static PrefabObjectPool Create(IResourceMgr resMgr, IObjectPoolManager objPoolMgr, 
+            string name, int capacity = 20, float expireTime = 60)
         {
             var go = new GameObject(name);
             var comp = go.AddComponent<PrefabObjectPool>();
-            _objectPoolMgr = FrameworkMgr.GetModule<IObjectPoolManager>();
-            _resourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
+            _objectPoolMgr = objPoolMgr;
+            _resourceMgr = resMgr;
 
             var pool = _objectPoolMgr.CreateSingleSpawnObjectPool<PrefabObject>(name, capacity, expireTime, 1);
             comp.Init(name, pool);
