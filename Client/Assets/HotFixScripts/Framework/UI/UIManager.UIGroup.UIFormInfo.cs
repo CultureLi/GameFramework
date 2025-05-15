@@ -12,68 +12,31 @@ namespace Framework
             /// </summary>
             private sealed class UIFormInfo : IReference
             {
-                private IUIForm m_UIForm;
-                private bool m_Paused;
-                private bool m_Covered;
+                private string _name;
+                private ViewBase _view;
+                private ViewData _data;
 
-                public UIFormInfo()
+                public static UIFormInfo Create(string name, ViewData data)
                 {
-                    m_UIForm = null;
-                    m_Paused = false;
-                    m_Covered = false;
+                    var info = ReferencePool.Acquire<UIFormInfo>();
+                    info._name = name;
+                    info._data = data;
+                    return info;
                 }
 
-                public IUIForm UIForm
+                public ViewBase View
                 {
                     get
                     {
-                        return m_UIForm;
+                        return _view;
                     }
-                }
-
-                public bool Paused
-                {
-                    get
-                    {
-                        return m_Paused;
-                    }
-                    set
-                    {
-                        m_Paused = value;
-                    }
-                }
-
-                public bool Covered
-                {
-                    get
-                    {
-                        return m_Covered;
-                    }
-                    set
-                    {
-                        m_Covered = value;
-                    }
-                }
-
-                public static UIFormInfo Create(IUIForm uiForm)
-                {
-                    if (uiForm == null)
-                    {
-                        throw new Exception("UI form is invalid.");
-                    }
-
-                    UIFormInfo uiFormInfo = ReferencePool.Acquire<UIFormInfo>();
-                    uiFormInfo.m_UIForm = uiForm;
-                    uiFormInfo.m_Paused = true;
-                    uiFormInfo.m_Covered = true;
-                    return uiFormInfo;
                 }
 
                 public void Clear()
                 {
-                    m_UIForm = null;
-                    m_Paused = false;
-                    m_Covered = false;
+                    _name = null;
+                    _data = null;
+                    _view = null;
                 }
             }
         }
