@@ -11,11 +11,15 @@ namespace Framework
     /// </summary>
     internal sealed partial class UIManager : IFramework, IUIManager
     {
+        public string UIAssetRootPath { get; set; } = "Assets/BundleRes/UI";
+
         private readonly Dictionary<UIGroupType, IUIGroup> _groups;
         private readonly HashSet<string> _loadingUIs;
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
         private readonly Dictionary<string, UICreateInfo> _createInfos;
+
+
 
         /// <summary>
         /// 初始化界面管理器的新实例。
@@ -178,11 +182,11 @@ namespace Framework
         /// </summary>
         /// <param name="serialId">界面序列编号。</param>
         /// <returns>是否存在界面。</returns>
-        public bool HasUIForm(string name)
+        public bool HasUI(string name)
         {
             foreach ((var _, var group) in _groups)
             {
-                if (group.HasUIView(name))
+                if (group.HasUI(name))
                 {
                     return true;
                 }
@@ -196,11 +200,11 @@ namespace Framework
         /// </summary>
         /// <param name="name">界面序列编号。</param>
         /// <returns>要获取的界面。</returns>
-        public ViewBase GetUIForm(string name)
+        public ViewBase GetUI(string name)
         {
             foreach ((var _, var group) in _groups)
             {
-                var view = group.GetUIView(name);
+                var view = group.GetUI(name);
                 if (view != null)
                     return view;
             }
@@ -213,7 +217,7 @@ namespace Framework
         /// </summary>
         /// <param name="name">界面资源名称。</param>
         /// <returns>是否正在加载界面。</returns>
-        public bool IsLoadingUIForm(string name)
+        public bool IsLoadingUI(string name)
         {
             return _loadingUIs.Contains(name);
         }
@@ -247,7 +251,7 @@ namespace Framework
             var createInfo = UICreateInfo.Create(name, userData);
             _createInfos[name] = createInfo;
 
-            var assetPath = "Assets/BundleRes/UI/Mail/UIMail.prefab";// Path.Combine("Assets/BundleRes/UI", $"{name}.prefab");
+            var assetPath = $"{UIAssetRootPath}/{name}.prefab";
             var handler = _resourceMgr.LoadAssetAsync<GameObject>(assetPath);
             handler.Completed += (asset) =>
             {
@@ -285,9 +289,9 @@ namespace Framework
         /// </summary>
         /// <param name="uiForm">要关闭的界面。</param>
         /// <param name="userData">用户自定义数据。</param>
-        public void CloseUIForm(string name)
+        public void CloseUI(string name)
         {
-            var uiForm = GetUIForm(name);
+            var uiForm = GetUI(name);
 
             UIGroup uiGroup = (UIGroup)uiForm.Group;
             if (uiGroup == null)
@@ -305,9 +309,9 @@ namespace Framework
         /// </summary>
         /// <param name="uiForm">要激活的界面。</param>
         /// <param name="userData">用户自定义数据。</param>
-        public void RefocusUIForm(string name, ViewData userData)
+        public void RefocusUI(string name, ViewData userData)
         {
-            var uiForm = GetUIForm(name);
+            var uiForm = GetUI(name);
             if (uiForm == null)
             {
                 throw new Exception("UI form is invalid.");
@@ -319,9 +323,7 @@ namespace Framework
                 throw new Exception("UI group is invalid.");
             }
 
-            uiGroup.RefocusUIForm(name, userData);
-            uiGroup.Refresh();
-            uiForm.OnShow(false, userData);
+            uiGroup.RefocusUI(name, userData);
         }
 
        

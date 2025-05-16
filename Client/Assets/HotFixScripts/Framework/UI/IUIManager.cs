@@ -9,7 +9,7 @@ namespace Framework
     /// </summary>
     public interface IUIManager
     {
-
+        string UIAssetRootPath { get; set; }
         bool AddUIGroup(UIGroupType type, Transform groupRoot);
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Framework
         /// </summary>
         /// <param name="uiFormAssetName">界面资源名称。</param>
         /// <returns>是否存在界面。</returns>
-        bool HasUIForm(string uiFormAssetName);
+        bool HasUI(string uiFormAssetName);
 
 
         /// <summary>
@@ -66,14 +66,14 @@ namespace Framework
         /// </summary>
         /// <param name="uiFormAssetName">界面资源名称。</param>
         /// <returns>要获取的界面。</returns>
-        ViewBase GetUIForm(string uiFormAssetName);
+        ViewBase GetUI(string uiFormAssetName);
 
         /// <summary>
         /// 是否正在加载界面。
         /// </summary>
         /// <param name="uiFormAssetName">界面资源名称。</param>
         /// <returns>是否正在加载界面。</returns>
-        bool IsLoadingUIForm(string uiFormAssetName);
+        bool IsLoadingUI(string uiFormAssetName);
 
         /// <summary>
         /// 打开界面。
@@ -88,12 +88,12 @@ namespace Framework
         /// 关闭界面。
         /// </summary>
         /// <param name="serialId">要关闭界面的序列编号。</param>
-        void CloseUIForm(string name);
+        void CloseUI(string name);
 
         /// <summary>
         /// 激活界面。
         /// </summary>
         /// <param name="uiForm">要激活的界面。</param>
-        void RefocusUIForm(string name, ViewData userData);
+        void RefocusUI(string name, ViewData userData);
     }
 }

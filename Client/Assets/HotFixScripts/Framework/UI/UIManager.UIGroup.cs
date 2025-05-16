@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace Framework
@@ -11,50 +12,44 @@ namespace Framework
         /// </summary>
         private sealed partial class UIGroup : IUIGroup
         {
-
             Transform _root;
             UIGroupType _groupType;
+
+            private int _sortLayer;
             public UIGroupType GroupType => _groupType;
 
-            private readonly LinkedList<UIViewInfo> m_UIFormInfos = new LinkedList<UIViewInfo>();
-            private readonly Dictionary<string, UIViewInfo> _pool = new Dictionary<string, UIViewInfo>();
+            private readonly LinkedList<UIViewWrapper> _viewWrappers = new LinkedList<UIViewWrapper>();
+            private readonly Dictionary<string, UIViewWrapper> _pool = new Dictionary<string, UIViewWrapper>();
 
             public UIGroup(UIGroupType type, Transform root)
             {
                 _root = root;
                 _groupType = type;
+                _sortLayer = ((int)type) * 10000;
             }
 
-            /// <summary>
-            /// 获取界面组中界面数量。
-            /// </summary>
-            public int UIFormCount
+            private int CalcSortLayer()
+            {
+                int cnt = _viewWrappers.Count;
+                return CalcSortLayer(cnt);
+            }
+
+            private int CalcSortLayer(int idx)
+            {
+                return _sortLayer + idx * 100;
+            }
+
+            public ViewBase CurrentView
             {
                 get
                 {
-                    return m_UIFormInfos.Count;
+                    return _viewWrappers.First?.Value.View ?? null;
                 }
             }
 
-            /// <summary>
-            /// 获取当前界面。
-            /// </summary>
-            public ViewBase CurrentUIForm
+            public bool HasUI(string name)
             {
-                get
-                {
-                    return m_UIFormInfos.First?.Value.View ?? null;
-                }
-            }
-
-            /// <summary>
-            /// 界面组中是否存在界面。
-            /// </summary>
-            /// <param name="serialId">界面序列编号。</param>
-            /// <returns>界面组中是否存在界面。</returns>
-            public bool HasUIView(string name)
-            {
-                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
+                foreach (UIViewWrapper uiFormInfo in _viewWrappers)
                 {
                     if (uiFormInfo.Name == name)
                     {
@@ -65,40 +60,93 @@ namespace Framework
                 return false;
             }
 
-
-            /// <summary>
-            /// 从界面组中获取界面。
-            /// </summary>
-            /// <param name="serialId">界面序列编号。</param>
-            /// <returns>要获取的界面。</returns>
-            public ViewBase GetUIView(string name)
+            public ViewBase GetUI(string name)
             {
-                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
+                foreach (UIViewWrapper wrapper in _viewWrappers)
                 {
-                    if (uiFormInfo.Name == name)
+                    if (wrapper.Name == name)
                     {
-                        return uiFormInfo.View;
+                        return wrapper.View;
                     }
                 }
 
                 return null;
             }
 
-
-            /// <summary>
-            /// 往界面组增加界面。
-            /// </summary>
-            /// <param name="uiForm">要增加的界面。</param>
-            private void AddUIForm(UIViewInfo uiInfo)
+            private UIViewWrapper GetUIWrapper(string name)
             {
-                m_UIFormInfos.AddFirst(uiInfo);
+                foreach (UIViewWrapper wrapper in _viewWrappers)
+                {
+                    if (wrapper.Name == name)
+                    {
+                        return wrapper;
+                    }
+                }
+
+                return null;
             }
 
             public void OpenUI(string name, ViewData data, GameObject asset)
             {
-                var uiInfo = UIViewInfo.Create(name, data, asset, _root);
-                AddUIForm(uiInfo);
-                uiInfo.DoShow();
+                var wrapper = GetUIWrapper(name);
+                if (wrapper == null)
+                {
+                    InitCreateUI(name, data, asset);
+                }
+                else
+                {
+                    RefocusUI(wrapper, data);
+                }
+            }
+
+            private void InitCreateUI(string name, ViewData data, GameObject asset)
+            {
+                var wrapper = UIViewWrapper.Create(name, data, asset, _root);
+                _viewWrappers.AddFirst(wrapper);
+                int layer = CalcSortLayer();
+                wrapper.SetLayer(layer);
+                wrapper.DoShow();
+            }
+
+            private void RefocusUI(UIViewWrapper wrapper, ViewData data)
+            {
+                wrapper.UpdateViewData(data);
+                _viewWrappers.Remove(wrapper);
+                _viewWrappers.AddFirst(wrapper);
+                ForceUpdateUILayer();
+                wrapper.DoShow();
+            }
+
+            public void RefocusUI(string name, ViewData data)
+            {
+                var wrapper = GetUIWrapper(name);
+                if (wrapper != null)
+                {
+                    RefocusUI(wrapper, data);
+                }
+            }
+
+            private void ForceUpdateUILayer()
+            {
+                var idx = _viewWrappers.Count - 1;
+                foreach(var wrapper in _viewWrappers)
+                {
+                    var layer = CalcSortLayer(idx);
+                    wrapper.SetLayer(layer);
+                    idx--;
+                }
+            }
+
+            public void RefocusUIForm(string name, ViewData data)
+            {
+                UIViewWrapper uiFormInfo = GetUIFormInfo(name);
+                if (uiFormInfo == null)
+                {
+                    throw new Exception("Can not find UI form info.");
+                }
+
+                _viewWrappers.Remove(uiFormInfo);
+                _viewWrappers.AddFirst(uiFormInfo);
             }
 
             public void CloseUI(string name)
@@ -113,13 +161,13 @@ namespace Framework
             /// <param name="view">要移除的界面。</param>
             public void RemoveUIForm(string name)
             {
-                UIViewInfo uiFormInfo = GetUIFormInfo(name);
+                UIViewWrapper uiFormInfo = GetUIFormInfo(name);
                 if (uiFormInfo == null)
                 {
                     throw new Exception($"Can not find UI {name}'.");
                 }
 
-                if (!m_UIFormInfos.Remove(uiFormInfo))
+                if (!_viewWrappers.Remove(uiFormInfo))
                 {
                     throw new Exception($"UI group '{_groupType}' not exists specified UI form '{name}'.");
                 }
@@ -127,35 +175,16 @@ namespace Framework
                 ReferencePool.Release(uiFormInfo);
             }
 
-            /// <summary>
-            /// 激活界面。
-            /// </summary>
-            /// <param name="uiForm">要激活的界面。</param>
-            /// <param name="data">用户自定义数据。</param>
-            public void RefocusUIForm(string name, ViewData data)
-            {
-                UIViewInfo uiFormInfo = GetUIFormInfo(name);
-                if (uiFormInfo == null)
-                {
-                    throw new Exception("Can not find UI form info.");
-                }
 
-                m_UIFormInfos.Remove(uiFormInfo);
-                m_UIFormInfos.AddFirst(uiFormInfo);
-            }
 
-            /// <summary>
-            /// 刷新界面组。
-            /// </summary>
             public void Refresh()
             {
                
             }
-
            
-            private UIViewInfo GetUIFormInfo(string name)
+            private UIViewWrapper GetUIFormInfo(string name)
             {
-                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
+                foreach (UIViewWrapper uiFormInfo in _viewWrappers)
                 {
                     if (uiFormInfo.Name == name)
                     {

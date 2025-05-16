@@ -18,7 +18,12 @@ namespace Test.Runtime.UITest
         {
             FW.UIMgr.AddUIGroup(Framework.UIGroupType.Normal,normalRoot);
 
-            FW.UIMgr.OpenUI("Mail/UIMail", Framework.UIGroupType.Normal);
+            
+        }
+
+        public void Open(string name)
+        {
+            FW.UIMgr.OpenUI(name, Framework.UIGroupType.Normal);
         }
 
         // Update is called once per frame
