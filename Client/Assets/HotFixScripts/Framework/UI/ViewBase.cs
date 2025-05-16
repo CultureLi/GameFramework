@@ -13,10 +13,10 @@ namespace Framework
     }
     public abstract class ViewBase : MonoBehaviour
     {
-        public string UIName;
+ 
         public IUIGroup Group;
 
-        public virtual void OnOpen(ViewData data)
+        public virtual void OnShow(bool isInitShow, ViewData data)
         {
         }
         public virtual void OnClose()

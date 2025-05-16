@@ -16,8 +16,8 @@ namespace Framework
             UIGroupType _groupType;
             public UIGroupType GroupType => _groupType;
 
-            private readonly LinkedList<UIFormInfo> m_UIFormInfos = new LinkedList<UIFormInfo>();
-            private readonly Dictionary<string, UIFormInfo> _pool = new Dictionary<string, UIFormInfo>();
+            private readonly LinkedList<UIViewInfo> m_UIFormInfos = new LinkedList<UIViewInfo>();
+            private readonly Dictionary<string, UIViewInfo> _pool = new Dictionary<string, UIViewInfo>();
 
             public UIGroup(UIGroupType type, Transform root)
             {
@@ -43,7 +43,7 @@ namespace Framework
             {
                 get
                 {
-                    return m_UIFormInfos.First != null ? m_UIFormInfos.First.Value.View : null;
+                    return m_UIFormInfos.First?.Value.View ?? null;
                 }
             }
 
@@ -52,11 +52,11 @@ namespace Framework
             /// </summary>
             /// <param name="serialId">界面序列编号。</param>
             /// <returns>界面组中是否存在界面。</returns>
-            public bool HasUIForm(string name)
+            public bool HasUIView(string name)
             {
-                foreach (UIFormInfo uiFormInfo in m_UIFormInfos)
+                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
                 {
-                    if (uiFormInfo.View.UIName == name)
+                    if (uiFormInfo.Name == name)
                     {
                         return true;
                     }
@@ -71,11 +71,11 @@ namespace Framework
             /// </summary>
             /// <param name="serialId">界面序列编号。</param>
             /// <returns>要获取的界面。</returns>
-            public ViewBase GetUIForm(string name)
+            public ViewBase GetUIView(string name)
             {
-                foreach (UIFormInfo uiFormInfo in m_UIFormInfos)
+                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
                 {
-                    if (uiFormInfo.View.UIName == name)
+                    if (uiFormInfo.Name == name)
                     {
                         return uiFormInfo.View;
                     }
@@ -89,26 +89,39 @@ namespace Framework
             /// 往界面组增加界面。
             /// </summary>
             /// <param name="uiForm">要增加的界面。</param>
-            public void AddUIForm(string name, ViewData data)
+            private void AddUIForm(UIViewInfo uiInfo)
             {
-                m_UIFormInfos.AddFirst(UIFormInfo.Create(name, data));
+                m_UIFormInfos.AddFirst(uiInfo);
+            }
+
+            public void OpenUI(string name, ViewData data, GameObject asset)
+            {
+                var uiInfo = UIViewInfo.Create(name, data, asset, _root);
+                AddUIForm(uiInfo);
+                uiInfo.DoShow();
+            }
+
+            public void CloseUI(string name)
+            {
+                var uiInfo = GetUIFormInfo(name);
+                uiInfo.DoClose();
             }
 
             /// <summary>
             /// 从界面组移除界面。
             /// </summary>
             /// <param name="view">要移除的界面。</param>
-            public void RemoveUIForm(ViewBase view)
+            public void RemoveUIForm(string name)
             {
-                UIFormInfo uiFormInfo = GetUIFormInfo(view);
+                UIViewInfo uiFormInfo = GetUIFormInfo(name);
                 if (uiFormInfo == null)
                 {
-                    throw new Exception($"Can not find UI {view.UIName}'.");
+                    throw new Exception($"Can not find UI {name}'.");
                 }
 
                 if (!m_UIFormInfos.Remove(uiFormInfo))
                 {
-                    throw new Exception($"UI group '{_groupType}' not exists specified UI form '{view.UIName}'.");
+                    throw new Exception($"UI group '{_groupType}' not exists specified UI form '{name}'.");
                 }
 
                 ReferencePool.Release(uiFormInfo);
@@ -119,9 +132,9 @@ namespace Framework
             /// </summary>
             /// <param name="uiForm">要激活的界面。</param>
             /// <param name="data">用户自定义数据。</param>
-            public void RefocusUIForm(ViewBase view, ViewData data)
+            public void RefocusUIForm(string name, ViewData data)
             {
-                UIFormInfo uiFormInfo = GetUIFormInfo(view);
+                UIViewInfo uiFormInfo = GetUIFormInfo(name);
                 if (uiFormInfo == null)
                 {
                     throw new Exception("Can not find UI form info.");
@@ -140,16 +153,11 @@ namespace Framework
             }
 
            
-            private UIFormInfo GetUIFormInfo(ViewBase view)
+            private UIViewInfo GetUIFormInfo(string name)
             {
-                if (view == null)
+                foreach (UIViewInfo uiFormInfo in m_UIFormInfos)
                 {
-                    throw new Exception("UI form is invalid.");
-                }
-
-                foreach (UIFormInfo uiFormInfo in m_UIFormInfos)
-                {
-                    if (uiFormInfo.View == view)
+                    if (uiFormInfo.Name == name)
                     {
                         return uiFormInfo;
                     }

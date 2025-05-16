@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
@@ -8,6 +9,9 @@ namespace Framework
     /// </summary>
     public interface IUIManager
     {
+
+        bool AddUIGroup(UIGroupType type, Transform groupRoot);
+
         /// <summary>
         /// 获取界面组数量。
         /// </summary>

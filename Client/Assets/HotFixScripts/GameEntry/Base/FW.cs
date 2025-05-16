@@ -11,6 +11,8 @@ namespace GameEntry
         public static ITimerMgr TimerMgr { get; private set; }
         public static INetworkMgr NetMgr { get; private set; }
         public static IObjectPoolManager ObjectPoolMgr { get; private set; }
+        public static IUIManager UIMgr { get; private set; }
+
 
         void Awake()
         {
@@ -25,6 +27,8 @@ namespace GameEntry
             TimerMgr = FrameworkMgr.GetModule<ITimerMgr>();
             NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
             ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolManager>();
+            UIMgr = FrameworkMgr.GetModule<IUIManager>();
+            UIMgr.SetResourceManager(ResourceMgr);
         }
 
         void Update()

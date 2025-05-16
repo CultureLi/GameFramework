@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
+
 namespace Framework
 {
     /// <summary>
@@ -8,27 +11,22 @@ namespace Framework
     /// </summary>
     internal sealed partial class UIManager : IFramework, IUIManager
     {
-        private readonly Dictionary<UIGroupType, IUIGroup> m_UIGroups;
-        private readonly HashSet<string> m_UIFormsBeingLoaded;
-        private readonly HashSet<int> m_UIFormsToReleaseOnLoad;
-        private IResourceMgr m_ResourceManager;
-        private int m_Serial;
-        private bool m_IsShutdown;
-
-        private EventHandler<CloseUIFormComplete> m_CloseUIFormCompleteEventHandler;
+        private readonly Dictionary<UIGroupType, IUIGroup> _groups;
+        private readonly HashSet<string> _loadingUIs;
+        private readonly HashSet<string> _toReleaseOnLoading;
+        private IResourceMgr _resourceMgr;
+        private readonly Dictionary<string, UICreateInfo> _createInfos;
 
         /// <summary>
         /// 初始化界面管理器的新实例。
         /// </summary>
         public UIManager()
         {
-            m_UIGroups = new Dictionary<UIGroupType, IUIGroup>();
-            m_UIFormsBeingLoaded = new HashSet<string>();
-            m_UIFormsToReleaseOnLoad = new HashSet<int>();
-            m_ResourceManager = null;
-            m_Serial = 0;
-            m_IsShutdown = false;
-            m_CloseUIFormCompleteEventHandler = null;
+            _groups = new Dictionary<UIGroupType, IUIGroup>();
+            _loadingUIs = new HashSet<string>();
+            _toReleaseOnLoading = new HashSet<string>();
+            _createInfos = new Dictionary<string, UICreateInfo>();
+            _resourceMgr = null;
         }
 
         /// <summary>
@@ -38,7 +36,7 @@ namespace Framework
         {
             get
             {
-                return m_UIGroups.Count;
+                return _groups.Count;
             }
         }
 
@@ -50,7 +48,7 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            foreach ((var _, var group) in m_UIGroups)
+            foreach ((var _, var group) in _groups)
             {
                 group.Update(elapseSeconds, realElapseSeconds);
             }
@@ -61,10 +59,9 @@ namespace Framework
         /// </summary>
         public void Shutdown()
         {
-            m_IsShutdown = true;
-            m_UIGroups.Clear();
-            m_UIFormsBeingLoaded.Clear();
-            m_UIFormsToReleaseOnLoad.Clear();
+            _groups.Clear();
+            _loadingUIs.Clear();
+            _toReleaseOnLoading.Clear();
         }
 
 
@@ -79,7 +76,7 @@ namespace Framework
                 throw new Exception("Resource manager is invalid.");
             }
 
-            m_ResourceManager = resourceManager;
+            _resourceMgr = resourceManager;
         }
 
         /// <summary>
@@ -89,7 +86,7 @@ namespace Framework
         /// <returns>是否存在界面组。</returns>
         public bool HasUIGroup(UIGroupType type)
         {
-            return m_UIGroups.ContainsKey(type);
+            return _groups.ContainsKey(type);
         }
 
         /// <summary>
@@ -99,7 +96,7 @@ namespace Framework
         /// <returns>要获取的界面组。</returns>
         public IUIGroup GetUIGroup(UIGroupType type)
         {
-            return m_UIGroups.TryGetValue(type, out var group) ? group : null;
+            return _groups.TryGetValue(type, out var group) ? group : null;
         }
 
         /// <summary>
@@ -109,8 +106,8 @@ namespace Framework
         public IUIGroup[] GetAllUIGroups()
         {
             int index = 0;
-            IUIGroup[] results = new IUIGroup[m_UIGroups.Count];
-            foreach ((var _, var group) in m_UIGroups)
+            IUIGroup[] results = new IUIGroup[_groups.Count];
+            foreach ((var _, var group) in _groups)
             {
                 results[index++] = group;
             }
@@ -129,7 +126,7 @@ namespace Framework
                 throw new Exception("Results is invalid.");
             }
 
-            foreach ((var _, var group) in m_UIGroups)
+            foreach ((var _, var group) in _groups)
             {
                 results.Add(group);
             }
@@ -149,7 +146,7 @@ namespace Framework
                 return false;
             }
 
-            m_UIGroups.Add(type, new UIGroup(type, groupRoot));
+            _groups.Add(type, new UIGroup(type, groupRoot));
 
             return true;
         }
@@ -171,7 +168,7 @@ namespace Framework
                 return false;
             }
 
-            m_UIGroups.Add(group.GroupType, group);
+            _groups.Add(group.GroupType, group);
 
             return true;
         }
@@ -183,9 +180,9 @@ namespace Framework
         /// <returns>是否存在界面。</returns>
         public bool HasUIForm(string name)
         {
-            foreach ((var _, var group) in m_UIGroups)
+            foreach ((var _, var group) in _groups)
             {
-                if (group.HasUIForm(name))
+                if (group.HasUIView(name))
                 {
                     return true;
                 }
@@ -201,9 +198,9 @@ namespace Framework
         /// <returns>要获取的界面。</returns>
         public ViewBase GetUIForm(string name)
         {
-            foreach ((var _, var group) in m_UIGroups)
+            foreach ((var _, var group) in _groups)
             {
-                var view = group.GetUIForm(name);
+                var view = group.GetUIView(name);
                 if (view != null)
                     return view;
             }
@@ -218,7 +215,7 @@ namespace Framework
         /// <returns>是否正在加载界面。</returns>
         public bool IsLoadingUIForm(string name)
         {
-            return m_UIFormsBeingLoaded.Contains(name);
+            return _loadingUIs.Contains(name);
         }
 
         /// <summary>
@@ -241,25 +238,46 @@ namespace Framework
                 throw new Exception($"UI group '{groupType}' is not exist.");
             }
 
-            if (m_UIFormsBeingLoaded.Contains(name))
+            if (_loadingUIs.Contains(name))
             {
                 Debug.Log("正在加载，不要着急");
                 return;
             }
-           /* m_UIFormsBeingLoaded.Add(name);
-            var handler = m_ResourceManager.LoadAssetAsync<GameObject>(uiFormAssetName);
-            var info = OpenUIFormInfo.Create(serialId, uiGroup, pauseCoveredUIForm, userData);
-            handler.Completed += (go) =>
+
+            var createInfo = UICreateInfo.Create(name, userData);
+            _createInfos[name] = createInfo;
+
+            var assetPath = "Assets/BundleRes/UI/Mail/UIMail.prefab";// Path.Combine("Assets/BundleRes/UI", $"{name}.prefab");
+            var handler = _resourceMgr.LoadAssetAsync<GameObject>(assetPath);
+            handler.Completed += (asset) =>
             {
                 if (handler.Status == AsyncOperationStatus.Succeeded)
                 {
-                    LoadAssetSuccessCallback(uiFormAssetName, go, 0, info);
+                    LoadAssetSuccessCallback(createInfo, uiGroup, asset.Result);
                 }
                 else
                 {
-                    ReferencePool.Release(info);
+                    _createInfos.Remove(name);
+                    ReferencePool.Release(createInfo);
                 }
-            };*/
+            };
+        }
+
+        private void LoadAssetSuccessCallback(UICreateInfo createInfo, IUIGroup group, GameObject asset)
+        {
+             if (_toReleaseOnLoading.Contains(createInfo.Name))
+             {
+                 _toReleaseOnLoading.Remove(createInfo.Name);
+                 ReferencePool.Release(createInfo);
+                 return;
+             }
+
+             _loadingUIs.Remove(createInfo.Name);
+
+
+            group.OpenUI(createInfo.Name, createInfo.Data, asset);
+
+            ReferencePool.Release(createInfo);
         }
 
         /// <summary>
@@ -277,7 +295,7 @@ namespace Framework
                 throw new Exception("UI group is invalid.");
             }
 
-            uiGroup.RemoveUIForm(uiForm);
+            uiGroup.RemoveUIForm(name);
             uiForm.OnClose();
             uiGroup.Refresh();
         }
@@ -301,33 +319,11 @@ namespace Framework
                 throw new Exception("UI group is invalid.");
             }
 
-            uiGroup.RefocusUIForm(uiForm, userData);
+            uiGroup.RefocusUIForm(name, userData);
             uiGroup.Refresh();
-            uiForm.OnOpen(userData);
+            uiForm.OnShow(false, userData);
         }
 
-        private void LoadAssetSuccessCallback(string uiFormAssetName, object uiFormAsset, float duration, object userData)
-        {
-           /* OpenUIFormInfo openUIFormInfo = (OpenUIFormInfo)userData;
-            if (openUIFormInfo == null)
-            {
-                throw new Exception("Open UI form info is invalid.");
-            }
-
-            if (m_UIFormsToReleaseOnLoad.Contains(openUIFormInfo.SerialId))
-            {
-                m_UIFormsToReleaseOnLoad.Remove(openUIFormInfo.SerialId);
-                ReferencePool.Release(openUIFormInfo);
-                m_UIFormHelper.ReleaseUIForm(uiFormAsset, null);
-                return;
-            }
-
-            m_UIFormsBeingLoaded.Remove(openUIFormInfo.SerialId);
-            UIFormInstanceObject uiFormInstanceObject = UIFormInstanceObject.Create(uiFormAssetName, uiFormAsset, m_UIFormHelper.InstantiateUIForm(uiFormAsset), m_UIFormHelper);
-            m_InstancePool.Register(uiFormInstanceObject, true);
-
-            InternalOpenUIForm(openUIFormInfo.SerialId, uiFormAssetName, openUIFormInfo.UIGroup, uiFormInstanceObject.Target, openUIFormInfo.PauseCoveredUIForm, true, duration, openUIFormInfo.UserData);
-            ReferencePool.Release(openUIFormInfo);*/
-        }
+       
     }
 }

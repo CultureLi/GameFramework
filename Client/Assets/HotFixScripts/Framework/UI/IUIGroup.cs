@@ -5,7 +5,7 @@
 // Feedback: mailto:ellan@gameframework.cn
 //------------------------------------------------------------
 
-using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
@@ -25,6 +25,10 @@ namespace Framework
             get;
         }
 
+        void OpenUI(string name, ViewData data, GameObject asset);
+
+        void CloseUI(string name);
+
         void Update(float elapseSeconds, float realElapseSeconds);
 
         /// <summary>
@@ -32,14 +36,14 @@ namespace Framework
         /// </summary>
         /// <param name="uiFormAssetName">界面资源名称。</param>
         /// <returns>界面组中是否存在界面。</returns>
-        bool HasUIForm(string name);
+        bool HasUIView(string name);
 
         /// <summary>
         /// 从界面组中获取界面。
         /// </summary>
         /// <param name="uiFormAssetName">界面资源名称。</param>
         /// <returns>要获取的界面。</returns>
-        ViewBase GetUIForm(string name);
+        ViewBase GetUIView(string name);
 
     }
 }
