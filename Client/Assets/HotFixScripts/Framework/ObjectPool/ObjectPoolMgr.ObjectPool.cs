@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Framework
 {
-    internal sealed partial class ObjectPoolManager : IFramework, IObjectPoolManager
+    internal sealed partial class ObjectPoolMgr : IFramework, IObjectPoolMgr
     {
         /// <summary>
         /// 对象池。

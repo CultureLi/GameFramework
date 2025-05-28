@@ -7,7 +7,7 @@ namespace Framework
     /// <summary>
     /// 对象池管理器。
     /// </summary>
-    internal sealed partial class ObjectPoolManager : IFramework, IObjectPoolManager
+    internal sealed partial class ObjectPoolMgr : IFramework, IObjectPoolMgr
     {
         private const int DefaultCapacity = int.MaxValue;
         private const float DefaultExpireTime = float.MaxValue;
@@ -20,7 +20,7 @@ namespace Framework
         /// <summary>
         /// 初始化对象池管理器的新实例。
         /// </summary>
-        public ObjectPoolManager()
+        public ObjectPoolMgr()
         {
             _objectPools = new Dictionary<TypeNamePair, ObjectPoolBase>();
             _cachedAllObjectPools = new List<ObjectPoolBase>();

@@ -19,7 +19,7 @@ namespace Framework
             public UIGroupType GroupType => _groupType;
 
             private readonly LinkedList<UIViewWrapper> _viewWrappers = new LinkedList<UIViewWrapper>();
-            private readonly Dictionary<string, UIViewWrapper> _pool = new Dictionary<string, UIViewWrapper>();
+            private readonly Dictionary<string, UIViewWrapper> _wrapperPool = new Dictionary<string, UIViewWrapper>();
 
             public UIGroup(UIGroupType type, Transform root)
             {
@@ -99,9 +99,10 @@ namespace Framework
                 }
             }
 
-            private void InitCreateUI(string name, ViewData data, GameObject asset)
+            private void InitCreateUI(string name, ViewData data, GameObject viewGo)
             {
-                var wrapper = UIViewWrapper.Create(name, data, asset, _root);
+                viewGo.transform.SetParent(_root);
+                var wrapper = UIViewWrapper.Create(this, name, data, viewGo);
                 _viewWrappers.AddFirst(wrapper);
                 int layer = CalcSortLayer();
                 wrapper.SetLayer(layer);
@@ -139,40 +140,36 @@ namespace Framework
 
             public void RefocusUIForm(string name, ViewData data)
             {
-                UIViewWrapper uiFormInfo = GetUIFormInfo(name);
-                if (uiFormInfo == null)
+                var wrapper = GetUIWrapper(name);
+                if (wrapper == null)
                 {
                     throw new Exception("Can not find UI form info.");
                 }
 
-                _viewWrappers.Remove(uiFormInfo);
-                _viewWrappers.AddFirst(uiFormInfo);
+                _viewWrappers.Remove(wrapper);
+                _viewWrappers.AddFirst(wrapper);
             }
 
             public void CloseUI(string name)
             {
-                var uiInfo = GetUIFormInfo(name);
-                uiInfo.DoClose();
+                var wrapper = GetUIWrapper(name);
+                wrapper.DoClose();
+                RemoveUIWrapper(wrapper);
+                Refresh();
             }
 
             /// <summary>
             /// 从界面组移除界面。
             /// </summary>
             /// <param name="view">要移除的界面。</param>
-            public void RemoveUIForm(string name)
+            private void RemoveUIWrapper(UIViewWrapper wrapper)
             {
-                UIViewWrapper uiFormInfo = GetUIFormInfo(name);
-                if (uiFormInfo == null)
+                if (!_viewWrappers.Remove(wrapper))
                 {
-                    throw new Exception($"Can not find UI {name}'.");
+                    throw new Exception($"UI group '{_groupType}' not exists specified UI form '{wrapper.Name}'.");
                 }
 
-                if (!_viewWrappers.Remove(uiFormInfo))
-                {
-                    throw new Exception($"UI group '{_groupType}' not exists specified UI form '{name}'.");
-                }
-
-                ReferencePool.Release(uiFormInfo);
+                ReferencePool.Release(wrapper);
             }
 
 
@@ -180,19 +177,6 @@ namespace Framework
             public void Refresh()
             {
                
-            }
-           
-            private UIViewWrapper GetUIFormInfo(string name)
-            {
-                foreach (UIViewWrapper uiFormInfo in _viewWrappers)
-                {
-                    if (uiFormInfo.Name == name)
-                    {
-                        return uiFormInfo;
-                    }
-                }
-
-                return null;
             }
 
             public void Update(float elapseSeconds, float realElapseSeconds)

@@ -26,6 +26,11 @@ namespace Test.Runtime.UITest
             FW.UIMgr.OpenUI(name, Framework.UIGroupType.Normal);
         }
 
+        public void Close(string name)
+        {
+            FW.UIMgr.CloseUI(name, Framework.UIGroupType.Normal);
+        }
+
         // Update is called once per frame
         void Update()
         {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Framework
 {
@@ -18,7 +17,7 @@ namespace Framework
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
         private readonly Dictionary<string, UICreateInfo> _createInfos;
-
+        private PrefabObjectPool _viewGoPool;
 
 
         /// <summary>
@@ -31,6 +30,7 @@ namespace Framework
             _toReleaseOnLoading = new HashSet<string>();
             _createInfos = new Dictionary<string, UICreateInfo>();
             _resourceMgr = null;
+            _viewGoPool = PrefabObjectPool.Create("UIPrefab");
         }
 
         /// <summary>
@@ -248,40 +248,17 @@ namespace Framework
                 return;
             }
 
-            var createInfo = UICreateInfo.Create(name, userData);
-            _createInfos[name] = createInfo;
-
             var assetPath = $"{UIAssetRootPath}/{name}.prefab";
-            var handler = _resourceMgr.LoadAssetAsync<GameObject>(assetPath);
-            handler.Completed += (asset) =>
+            var viewGo = _viewGoPool.Spawn(assetPath);
+
+            if (_toReleaseOnLoading.Contains(name))
             {
-                if (handler.Status == AsyncOperationStatus.Succeeded)
-                {
-                    LoadAssetSuccessCallback(createInfo, uiGroup, asset.Result);
-                }
-                else
-                {
-                    _createInfos.Remove(name);
-                    ReferencePool.Release(createInfo);
-                }
-            };
-        }
+                _toReleaseOnLoading.Remove(name);
+                return;
+            }
+            _loadingUIs.Remove(name);
 
-        private void LoadAssetSuccessCallback(UICreateInfo createInfo, IUIGroup group, GameObject asset)
-        {
-             if (_toReleaseOnLoading.Contains(createInfo.Name))
-             {
-                 _toReleaseOnLoading.Remove(createInfo.Name);
-                 ReferencePool.Release(createInfo);
-                 return;
-             }
-
-             _loadingUIs.Remove(createInfo.Name);
-
-
-            group.OpenUI(createInfo.Name, createInfo.Data, asset);
-
-            ReferencePool.Release(createInfo);
+            uiGroup.OpenUI(name, userData, viewGo);
         }
 
         /// <summary>
@@ -289,19 +266,17 @@ namespace Framework
         /// </summary>
         /// <param name="uiForm">要关闭的界面。</param>
         /// <param name="userData">用户自定义数据。</param>
-        public void CloseUI(string name)
+        public void CloseUI(string name, UIGroupType groupType)
         {
-            var uiForm = GetUI(name);
-
-            UIGroup uiGroup = (UIGroup)uiForm.Group;
+            UIGroup uiGroup = (UIGroup)GetUIGroup(groupType);
             if (uiGroup == null)
             {
-                throw new Exception("UI group is invalid.");
+                throw new Exception($"UI group '{groupType}' is not exist.");
             }
 
-            uiGroup.RemoveUIForm(name);
-            uiForm.OnClose();
-            uiGroup.Refresh();
+            var uiView = uiGroup.GetUI(name);
+            _viewGoPool.UnSpawn(uiView.gameObject);
+            uiGroup.CloseUI(name);
         }
 
         /// <summary>

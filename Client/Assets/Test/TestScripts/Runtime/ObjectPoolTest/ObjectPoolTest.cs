@@ -17,7 +17,8 @@ namespace Test.Runtime.ObjectPoolTest
         Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
-            _pool = PrefabObjectPool.Create(FW.ResourceMgr, FW.ObjectPoolMgr, "CustomPool", 10, 5);
+            PrefabObjectPool.Init(FW.ResourceMgr, FW.ObjectPoolMgr);
+            _pool = PrefabObjectPool.Create( "CustomPool", 10, 5);
         }
 
         public void Spawn()

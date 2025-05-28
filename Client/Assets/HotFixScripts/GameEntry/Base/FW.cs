@@ -10,7 +10,7 @@ namespace GameEntry
         public static IResourceMgr ResourceMgr { get; private set; }
         public static ITimerMgr TimerMgr { get; private set; }
         public static INetworkMgr NetMgr { get; private set; }
-        public static IObjectPoolManager ObjectPoolMgr { get; private set; }
+        public static IObjectPoolMgr ObjectPoolMgr { get; private set; }
         public static IUIManager UIMgr { get; private set; }
 
 
@@ -26,7 +26,7 @@ namespace GameEntry
             ResourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
             TimerMgr = FrameworkMgr.GetModule<ITimerMgr>();
             NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
-            ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolManager>();
+            ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
             UIMgr = FrameworkMgr.GetModule<IUIManager>();
             UIMgr.SetResourceManager(ResourceMgr);
         }

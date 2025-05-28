@@ -88,7 +88,7 @@ namespace Framework
         /// 关闭界面。
         /// </summary>
         /// <param name="serialId">要关闭界面的序列编号。</param>
-        void CloseUI(string name);
+        void CloseUI(string name, UIGroupType groupType);
 
         /// <summary>
         /// 激活界面。

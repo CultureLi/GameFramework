@@ -24,10 +24,19 @@ namespace Test.Inspector.UITest
             {
                 myScript.Open("Mail/UIMail");
             }
+            else if (GUILayout.Button("CloseMail"))
+            {
+                myScript.Close("Mail/UIMail");
+            }
             else if (GUILayout.Button("OpenRole"))
             {
                 myScript.Open("Mail/UIRole");
             }
+            else if (GUILayout.Button("CloseRole"))
+            {
+                myScript.Close("Mail/UIRole");
+            }
+
         }
     }
 }

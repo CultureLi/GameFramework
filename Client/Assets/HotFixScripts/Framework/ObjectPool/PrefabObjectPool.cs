@@ -1,45 +1,71 @@
 ﻿using System;
+using UnityEditor.VersionControl;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Framework
 {
-    public partial class PrefabObjectPool : MonoBehaviour
+    public partial class PrefabObjectPool
     {
-        private static IObjectPoolManager _objectPoolMgr;
+        private static IObjectPoolMgr _objectPoolMgr;
         private static IResourceMgr _resourceMgr;
         private IObjectPool<PrefabObject> _pool;
         private string _name;
         public int Count => _pool.Count;
 
+        private GameObject _poolRoot;
+
+        public static void Init(IResourceMgr resMgr, IObjectPoolMgr objPoolMgr)
+        {
+            _resourceMgr = resMgr;
+            _objectPoolMgr = objPoolMgr;
+        }
         /// <summary>
         /// 预制体对象池
         /// </summary>
         /// <param name="name"></param>
         /// <param name="capacity"> 池子最大缓存容量 </param>
         /// <param name="expireTime"> 空闲 Object 过期时间, 过期销毁 </param>
-        public static PrefabObjectPool Create(IResourceMgr resMgr, IObjectPoolManager objPoolMgr, 
-            string name, int capacity = 20, float expireTime = 60)
+        public static PrefabObjectPool Create(string name, int capacity = 20, float expireTime = 60)
         {
-            var go = new GameObject(name);
-            var comp = go.AddComponent<PrefabObjectPool>();
-            _objectPoolMgr = objPoolMgr;
-            _resourceMgr = resMgr;
+            InitMgr();
 
-            var pool = _objectPoolMgr.CreateSingleSpawnObjectPool<PrefabObject>(name, capacity, expireTime, 1);
-            comp.Init(name, pool);
+            if (_objectPoolMgr.GetObjectPool<PrefabObject>(name) != null)
+            {
+                Debug.LogError($"PrefabObjectPool Name: {name} is Already Exist !!");
+                return null;
+            }
 
-            return comp;
+            var instance = new PrefabObjectPool();
+            instance._poolRoot = new GameObject(name);
+            GameObject.DontDestroyOnLoad(instance._poolRoot);
+            instance._pool = _objectPoolMgr.CreateSingleSpawnObjectPool<PrefabObject>(name, capacity, expireTime, 1);
+            return instance;
         }
 
-        private void Init(string name, IObjectPool<PrefabObject> pool)
+        static void InitMgr()
         {
-            _name = name;
-            _pool = pool;
+            if (_objectPoolMgr == null)
+            {
+                _objectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
+            }
+            if (_resourceMgr == null)
+            {
+                _resourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
+            }
+        }
+
+        /// <summary>
+        /// 构造函数设置为私有，使用 PrefabObjectPool.Create创建
+        /// </summary>
+        private PrefabObjectPool()
+        {
+            
         }
 
         private PrefabObject RegisterObject(string key, GameObject go)
         {
-            var obj = PrefabObject.Create(key, go, transform);
+            var obj = PrefabObject.Create(key, go, _poolRoot.transform);
             _pool.Register(obj, true);
             return obj;
         }
@@ -59,6 +85,10 @@ namespace Framework
 
             var handler = _resourceMgr.InstantiateAsync(location);
             handler.WaitForCompletion();
+            if (handler.Status != AsyncOperationStatus.Succeeded)
+            {
+                Debug.LogError($"PrefabPool Spawn:{location} Failed");
+            }
 
             RegisterObject(location, handler.Result);
 
@@ -73,13 +103,18 @@ namespace Framework
         /// <returns></returns>
         public GameObject Spawn(string name, GameObject template)
         {
+            if (template == null)
+            {
+                Debug.LogError($"PrefabPool Spawn:{name}, Template is Null");
+                return null;
+            }
             var obj = _pool.Spawn(name);
             if (obj != null)
             {
                 return obj.Target as GameObject;
             }
 
-            var go = Instantiate(template);
+            var go = GameObject.Instantiate(template);
             RegisterObject(name, go);
 
             return go;
@@ -102,8 +137,17 @@ namespace Framework
             var handler = _resourceMgr.InstantiateAsync(location);
             handler.Completed += (handler) =>
             {
-                var obj = RegisterObject(location, handler.Result);
-                cb?.Invoke(obj.Target as GameObject);
+                if (handler.Status == AsyncOperationStatus.Succeeded)
+                {
+                    var obj = RegisterObject(location, handler.Result);
+                    cb?.Invoke(obj.Target as GameObject);
+                }
+                else
+                {
+                    Debug.LogError($"PrefabPool SpawnAsync:{location} Failed");
+                    cb?.Invoke(null);
+                }
+                
             };
         }
 
@@ -116,7 +160,7 @@ namespace Framework
             _pool.Unspawn(go);
         }
 
-        public void OnDestroy()
+        public void Despose()
         {
             _objectPoolMgr.DestroyObjectPool<PrefabObject>(_name);
         }

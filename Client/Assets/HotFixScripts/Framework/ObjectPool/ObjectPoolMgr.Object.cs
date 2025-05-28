@@ -3,7 +3,7 @@ using System;
 
 namespace Framework
 {
-    internal sealed partial class ObjectPoolManager : IFramework, IObjectPoolManager
+    internal sealed partial class ObjectPoolMgr : IFramework, IObjectPoolMgr
     {
         /// <summary>
         /// 内部对象。

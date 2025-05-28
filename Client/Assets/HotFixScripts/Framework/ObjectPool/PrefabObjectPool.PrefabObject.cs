@@ -25,15 +25,23 @@ namespace Framework
                 _root = root;
                 Initialize(name, target);
             }
-
+                
             protected internal override void Release(bool isShutdown)
             {
-                Destroy(Target as GameObject);
+                GameObject.Destroy(Target as GameObject);
+            }
+
+            protected internal override void OnSpawn()
+            {
+                var go = (Target as GameObject);
+                go.SetActive(true);
             }
 
             protected internal override void OnUnspawn()
             {
-                (Target as GameObject).transform.parent = _root;
+                var go = (Target as GameObject);
+                go.transform.parent = _root;
+                go.SetActive(false);
             }
         }
     }

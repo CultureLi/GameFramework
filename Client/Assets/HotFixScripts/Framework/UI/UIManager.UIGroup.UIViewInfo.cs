@@ -21,14 +21,13 @@ namespace Framework
                 private ViewData _data;
                 private bool _initShow = true;
 
-                public static UIViewWrapper Create(string name, ViewData data, GameObject asset, Transform parent)
+                public static UIViewWrapper Create(IUIGroup group, string name, ViewData data, GameObject viewGo)
                 {
                     var info = ReferencePool.Acquire<UIViewWrapper>();
                     info._name = name;
                     info._data = data;
-                    var ui = GameObject.Instantiate(asset, parent);
-                    info._view = ui.GetComponent<ViewBase>();
-                    info._canvas = ui.GetComponent<Canvas>();
+                    info._view = viewGo.GetComponent<ViewBase>();
+                    info._canvas = viewGo.GetComponent<Canvas>();
                     return info;
                 }
 
