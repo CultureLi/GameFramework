@@ -84,7 +84,7 @@ namespace Framework
 
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            _receiver?.Update(elapseSeconds, realElapseSeconds);
+            _dispatcher?.Update(elapseSeconds, realElapseSeconds);
             _cryptor?.Update(elapseSeconds, realElapseSeconds);
         }
         public void Dispose()

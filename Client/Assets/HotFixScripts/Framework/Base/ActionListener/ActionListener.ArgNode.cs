@@ -9,7 +9,7 @@ using System;
 
 namespace Framework
 {
-    public sealed partial class ActionListener<TArg>
+    public sealed partial class ActionListener<TArg> where TArg : class
     {
         /// <summary>
         /// 事件结点。
@@ -18,11 +18,6 @@ namespace Framework
         {
             private Type _type;
             private TArg _data;
-
-            public ArgNode()
-            {
-                _data = null;
-            }
 
             public TArg Data => _data;
 
@@ -33,7 +28,7 @@ namespace Framework
             {
                 ArgNode eventNode = ReferencePool.Acquire<ArgNode>();
                 eventNode._data = e;
-                eventNode._type = typeof(T);
+                eventNode._type = e.GetType();
                 return eventNode;
             }
 

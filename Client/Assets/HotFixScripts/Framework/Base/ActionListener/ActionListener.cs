@@ -8,7 +8,7 @@ namespace Framework
     /// Action 监听器
     /// </summary>
     /// <typeparam name="T">事件类型。</typeparam>
-    public sealed partial class ActionListener<TArg> where TArg : ArgsBase
+    public sealed partial class ActionListener<TArg> where TArg : class
     {
         private readonly Dictionary<Type, IActionList<TArg>> _listeners = new();
 
@@ -67,7 +67,7 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void Broadcast<T>(T ev = null) where T : TArg
+        public void Broadcast<T>(T ev = null) where T : class, TArg
         {
             var eventType = typeof(T);
             Broadcast(eventType, ev);
@@ -86,16 +86,19 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void BroadcastAsync<T>(T ev = null) where T : TArg
+        public void BroadcastAsync<T>(T ev) where T : class, TArg
         {
             var data = ArgNode.Create(ev);
             _eventQueue.Enqueue(data);
         }
 
+        private readonly int _maxCntPerFrame = 50;
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            while (_eventQueue.Count > 0)
+            int msgCount = 0;
+            while (_eventQueue.Count > 0 && msgCount < _maxCntPerFrame)
             {
+                msgCount++;
                 var node = _eventQueue.Dequeue();
                 Broadcast(node.Type, node.Data);
                 ReferencePool.Release(node);

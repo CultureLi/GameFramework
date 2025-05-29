@@ -3,9 +3,11 @@
     /// <summary>
     /// 网络消息包基类。
     /// </summary>
-    public class Packet : ArgsBase
+    public abstract class Packet : IReference
     {
         public uint id;
-
+        public virtual void Clear()
+        {
+        }
     }
 }

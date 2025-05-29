@@ -23,8 +23,6 @@ namespace Framework
             Cryptor _cryptor;
             Dispatcher _dispatcher;
 
-            Queue<SCPacket> _packets = new Queue<SCPacket>();
-
             public Receiver(Connecter connecter, Cryptor cryptor, Dispatcher dispatcher)
             {
                 _connecter = connecter;
@@ -55,8 +53,10 @@ namespace Framework
                         if (_connecter.IsConnected && stream.DataAvailable)
                         {
                             var packet = UnPack(stream);
-                            if(packet != null)
-                                _packets.Enqueue(packet);
+                            if (packet != null)
+                            {
+                                _dispatcher.BroadcastAsync(packet);
+                            }
                         }
                     }
                     catch (Exception e)
@@ -128,24 +128,6 @@ namespace Framework
                 {
                     Debug.LogException(e);
                     return null;
-                }
-            }
-
-
-            private readonly int _maxCntPerFrame = 50;
-            /// <summary>
-            /// 派发
-            /// </summary>
-            /// <param name="elapseSeconds"></param>
-            /// <param name="realElapseSeconds"></param>
-            public void Update(float elapseSeconds, float realElapseSeconds)
-            {
-                int msgCount = 0;
-                while (_packets.Count > 0 && msgCount < _maxCntPerFrame)
-                {
-                    var packet = _packets.Dequeue();
-                    _dispatcher.DispatchMsg(packet);
-                    ReferencePool.Release(packet);
                 }
             }
         }

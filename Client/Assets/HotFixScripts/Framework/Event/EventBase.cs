@@ -1,6 +1,7 @@
 ﻿using Framework;
 
-public class EventBase : ArgsBase
+public abstract class EventBase : IReference
 {
+    public virtual void Clear() { }
 }
 

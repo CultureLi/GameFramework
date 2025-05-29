@@ -14,7 +14,8 @@ namespace Framework
         /// </summary>
         private sealed class Dispatcher
         {
-            Dictionary<Type, List<Delegate>> _handlers = new Dictionary<Type, List<Delegate>>();
+
+            private ActionListener<IMessage> _ActionListener = new ActionListener<IMessage>();
 
             /// <summary>
             /// 注册回调函数
@@ -23,14 +24,7 @@ namespace Framework
             /// <param name="handler"></param>
             public void RegisterMsg<T>(Action<T> handler) where T : IMessage
             {
-                var msgType = typeof(T);
-                if (!_handlers.TryGetValue(msgType, out var list))
-                {
-                    list = new List<Delegate>();
-                    _handlers[msgType] = list;
-                }
-                if (!list.Contains(handler))
-                    list.Add(handler);
+                _ActionListener.Subscribe(handler);
             }
 
             /// <summary>
@@ -40,32 +34,28 @@ namespace Framework
             /// <param name="handler"></param>
             public void UnregisterMsg<T>(Action<T> handler) where T : IMessage
             {
-                var msgType = typeof(T);
-                if (_handlers.TryGetValue(msgType, out var list))
-                {
-                    list.Remove(handler);
-                }
+                _ActionListener.Unsubscribe(handler);
             }
 
             /// <summary>
             /// 派发给消息回调函数
             /// </summary>
             /// <param name="packet"></param>
-            public void DispatchMsg(SCPacket packet)
+            public void BroadcastAsync(SCPacket packet)
             {
                 var type = ProtoTypeHelper.GetMsgType(packet.id);
-                if (_handlers.TryGetValue(type, out var list))
-                {
-                    foreach (var handler in list)
-                    {
-                        handler.DynamicInvoke(packet.msg);
-                    }
-                }
+                _ActionListener.BroadcastAsync(packet.msg);
+
+            }
+
+            public void Update(float elapseSeconds, float realElapseSeconds)
+            {
+                _ActionListener.Update(elapseSeconds, realElapseSeconds);
             }
 
             public void Dispose()
             {
-                _handlers.Clear();
+                _ActionListener.Shutdown();
             }
         }
     }

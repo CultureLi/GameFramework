@@ -23,8 +23,8 @@ namespace Test.Runtime.NetTest
 
         async Task Start()
         {
-            FW.NetMgr.Create("10.23.50.187", 8888);
-            //FW.NetMgr.Create("10.1.2.144", 8888);
+            //FW.NetMgr.Create("10.23.50.187", 8888);
+            FW.NetMgr.Create("10.1.2.144", 8888);
             await FW.NetMgr.ConnectAsync();
 
             FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
