@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Framework;
 
-public abstract class ArgBase : IReference
+public abstract class ArgsBase : IReference
 {
     public virtual void Clear()
     {

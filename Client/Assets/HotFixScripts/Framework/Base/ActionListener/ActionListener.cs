@@ -8,7 +8,7 @@ namespace Framework
     /// Action 监听器
     /// </summary>
     /// <typeparam name="T">事件类型。</typeparam>
-    public sealed partial class ActionListener<TArg> where TArg : ArgBase
+    public sealed partial class ActionListener<TArg> where TArg : ArgsBase
     {
         private readonly Dictionary<Type, IActionList<TArg>> _listeners = new();
 
@@ -33,8 +33,6 @@ namespace Framework
         public void Subscribe<T>(Action<T> listener) where T : TArg
         {
             var eventType = typeof(T);
-            if (!_listeners.ContainsKey(eventType))
-                _listeners[eventType] = new ActionList<T, TArg>();
 
             if (!_listeners.TryGetValue(eventType, out var eventListener))
             {

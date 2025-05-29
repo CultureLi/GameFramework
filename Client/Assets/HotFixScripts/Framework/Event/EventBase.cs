@@ -1,6 +1,6 @@
 ﻿using Framework;
 
-public class EventBase : ArgBase
+public class EventBase : ArgsBase
 {
 }
 

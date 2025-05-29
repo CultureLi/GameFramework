@@ -4,11 +4,11 @@ namespace Framework
 {
     internal sealed class EventMgr : IEventMgr, IFramework
     {
-        private ActionListener<EventBase> _eventPool;
+        private ActionListener<EventBase> _ActionListener;
 
         public EventMgr()
         {
-            _eventPool = new ActionListener<EventBase>();
+            _ActionListener = new ActionListener<EventBase>();
         }
 
         /// <summary>
@@ -18,7 +18,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Subscribe<T>(Action<T> listener) where T : EventBase
         {
-            _eventPool.Subscribe(listener);
+            _ActionListener.Subscribe(listener);
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Unsubscribe<T>(Action<T> listener) where T : EventBase
         {
-            _eventPool.Unsubscribe(listener);
+            _ActionListener.Unsubscribe(listener);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Framework
         /// <param name="ev"></param>
         public void Broadcast<T>(T ev = null) where T : EventBase
         {
-            _eventPool.Broadcast(ev);
+            _ActionListener.Broadcast(ev);
         }
 
         /// <summary>
@@ -48,17 +48,17 @@ namespace Framework
         /// <param name="ev"></param>
         public void BroadcastAsync<T>(T ev = null) where T : EventBase
         {
-            _eventPool.BroadcastAsync(ev);
+            _ActionListener.BroadcastAsync(ev);
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            _eventPool.Update(elapseSeconds, realElapseSeconds);
+            _ActionListener.Update(elapseSeconds, realElapseSeconds);
         }
 
         public void Shutdown()
         {
-            _eventPool?.Shutdown();
+            _ActionListener?.Shutdown();
         }
     }
 }
