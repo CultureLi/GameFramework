@@ -5,14 +5,14 @@ using UnityEngine;
 namespace Framework
 {
     /// <summary>
-    /// 事件池。
+    /// Action 监听器
     /// </summary>
     /// <typeparam name="T">事件类型。</typeparam>
-    public sealed partial class EventPool
+    public sealed partial class ActionListener<TArg> where TArg : ArgBase
     {
-        private readonly Dictionary<Type, IActionList<EventBase>> _listeners = new();
+        private readonly Dictionary<Type, IActionList<TArg>> _listeners = new();
 
-        private readonly Queue<EventNode> _eventQueue = new();
+        private readonly Queue<ArgNode> _eventQueue = new();
 
         /// <summary>
         /// 获取事件数量。
@@ -30,19 +30,19 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="listener"></param>
-        public void Subscribe<T>(Action<T> listener) where T : EventBase
+        public void Subscribe<T>(Action<T> listener) where T : TArg
         {
             var eventType = typeof(T);
             if (!_listeners.ContainsKey(eventType))
-                _listeners[eventType] = new ActionList<T,EventBase>();
+                _listeners[eventType] = new ActionList<T, TArg>();
 
             if (!_listeners.TryGetValue(eventType, out var eventListener))
             {
-                eventListener = new ActionList<T,EventBase>();
+                eventListener = new ActionList<T, TArg>();
                 _listeners[eventType] = eventListener;
             }
 
-            (eventListener as ActionList<T, EventBase>).AddListener(listener);
+            (eventListener as ActionList<T, TArg>).AddListener(listener);
         }
 
         /// <summary>
@@ -50,12 +50,12 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="listener"></param>
-        public void Unsubscribe<T>(Action<T> listener) where T : EventBase
+        public void Unsubscribe<T>(Action<T> listener) where T : TArg
         {
             var eventType = typeof(T);
             if (_listeners.ContainsKey(eventType))
             {
-                var eventListener = (_listeners[eventType] as ActionList<T, EventBase>);
+                var eventListener = (_listeners[eventType] as ActionList<T, TArg>);
                 eventListener.RemoveListener(listener);
                 if (eventListener.Count == 0)
                 {
@@ -69,13 +69,13 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void Broadcast<T>(T ev = null) where T : EventBase
+        public void Broadcast<T>(T ev = null) where T : TArg
         {
             var eventType = typeof(T);
             Broadcast(eventType, ev);
         }
 
-        public void Broadcast(Type eventType, EventBase ev)
+        public void Broadcast(Type eventType, TArg ev)
         {
             if (_listeners.TryGetValue(eventType, out var listener))
             {
@@ -88,9 +88,9 @@ namespace Framework
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void BroadcastAsync<T>(T ev = null) where T : EventBase
+        public void BroadcastAsync<T>(T ev = null) where T : TArg
         {
-            var data = EventNode.Create(ev);
+            var data = ArgNode.Create(ev);
             _eventQueue.Enqueue(data);
         }
 

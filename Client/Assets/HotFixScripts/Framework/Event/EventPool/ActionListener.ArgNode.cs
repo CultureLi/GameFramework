@@ -9,29 +9,29 @@ using System;
 
 namespace Framework
 {
-    public sealed partial class EventPool
+    public sealed partial class ActionListener<TArg>
     {
         /// <summary>
         /// 事件结点。
         /// </summary>
-        private sealed class EventNode : IReference
+        private sealed class ArgNode : IReference
         {
             private Type _type;
-            private EventBase _data;
+            private TArg _data;
 
-            public EventNode()
+            public ArgNode()
             {
                 _data = null;
             }
 
-            public EventBase Data => _data;
+            public TArg Data => _data;
 
             public Type Type => _type;
 
 
-            public static EventNode Create<T>(T e) where T : EventBase
+            public static ArgNode Create<T>(T e) where T : TArg
             {
-                EventNode eventNode = ReferencePool.Acquire<EventNode>();
+                ArgNode eventNode = ReferencePool.Acquire<ArgNode>();
                 eventNode._data = e;
                 eventNode._type = typeof(T);
                 return eventNode;

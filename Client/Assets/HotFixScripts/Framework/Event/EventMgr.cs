@@ -4,11 +4,11 @@ namespace Framework
 {
     internal sealed class EventMgr : IEventMgr, IFramework
     {
-        private EventPool _eventPool;
+        private ActionListener<EventBase> _eventPool;
 
         public EventMgr()
         {
-            _eventPool = new EventPool();
+            _eventPool = new ActionListener<EventBase>();
         }
 
         /// <summary>
