@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
@@ -9,7 +10,7 @@ namespace Framework
     /// <typeparam name="T">事件类型。</typeparam>
     public sealed partial class EventPool
     {
-        private readonly Dictionary<Type, List<Delegate>> _listeners = new();
+        private readonly Dictionary<Type, IActionList<EventBase>> _listeners = new();
 
         private readonly Queue<EventNode> _eventQueue = new();
 
@@ -33,9 +34,15 @@ namespace Framework
         {
             var eventType = typeof(T);
             if (!_listeners.ContainsKey(eventType))
-                _listeners[eventType] = new List<Delegate>();
+                _listeners[eventType] = new ActionList<T,EventBase>();
 
-            _listeners[eventType].Add(listener);
+            if (!_listeners.TryGetValue(eventType, out var eventListener))
+            {
+                eventListener = new ActionList<T,EventBase>();
+                _listeners[eventType] = eventListener;
+            }
+
+            (eventListener as ActionList<T, EventBase>).AddListener(listener);
         }
 
         /// <summary>
@@ -48,7 +55,12 @@ namespace Framework
             var eventType = typeof(T);
             if (_listeners.ContainsKey(eventType))
             {
-                _listeners[eventType].Remove(listener);
+                var eventListener = (_listeners[eventType] as ActionList<T, EventBase>);
+                eventListener.RemoveListener(listener);
+                if (eventListener.Count == 0)
+                {
+                    _listeners.Remove(eventType);
+                }
             }
         }
 
@@ -60,12 +72,14 @@ namespace Framework
         public void Broadcast<T>(T ev = null) where T : EventBase
         {
             var eventType = typeof(T);
-            if (_listeners.TryGetValue(eventType, out var list))
+            Broadcast(eventType, ev);
+        }
+
+        public void Broadcast(Type eventType, EventBase ev)
+        {
+            if (_listeners.TryGetValue(eventType, out var listener))
             {
-                foreach (var listener in list)
-                {
-                    (listener as Action<T>)?.Invoke(ev);
-                }
+                listener.Invoke(ev);
             }
         }
 
@@ -85,7 +99,7 @@ namespace Framework
             while (_eventQueue.Count > 0)
             {
                 var node = _eventQueue.Dequeue();
-                Broadcast(node.Data);
+                Broadcast(node.Type, node.Data);
                 ReferencePool.Release(node);
             }
         }

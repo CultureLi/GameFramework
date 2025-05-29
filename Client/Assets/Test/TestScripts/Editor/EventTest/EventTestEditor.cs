@@ -44,6 +44,10 @@ namespace Test.Inspector.EventTest
             {
                 myScript.UnSubscribeCustomEventHandler();
             }
+            else if (GUILayout.Button("广播事件"))
+            {
+                myScript.BroadCastEvent();
+            }
 
         }
     }
