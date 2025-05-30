@@ -9,7 +9,10 @@ namespace Framework
 {
     public class ViewData
     {
-    
+        public virtual bool AsyncLoad
+        {
+            get; set;
+        }
     }
     public abstract class ViewBase : MonoBehaviour
     {

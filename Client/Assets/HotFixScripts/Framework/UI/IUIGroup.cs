@@ -8,20 +8,20 @@ namespace Framework
     public interface IUIGroup
     {   
         UIGroupType GroupType { get; }
-        ViewBase CurrentView
-        {
-            get;
+        
+        PrefabObjectPool ViewPool {
+            get; set;
         }
 
         void OpenUI(string name, ViewData data, GameObject asset);
 
         void CloseUI(string name);
 
-        void Update(float elapseSeconds, float realElapseSeconds);
+        void RefocusUI(string name, ViewData data);
 
         bool HasUI(string name);
 
-        ViewBase GetUI(string name);
+        void CloseAll();
 
     }
 }

@@ -32,7 +32,7 @@ namespace Framework
             {
                 current.Value.Shutdown();
             }
-
+            ReferencePool.ClearAll();
             _gameFrameworkModules.Clear();
         }
 

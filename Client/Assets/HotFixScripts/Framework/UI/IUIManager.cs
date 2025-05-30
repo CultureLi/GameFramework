@@ -9,7 +9,7 @@ namespace Framework
     /// </summary>
     public interface IUIManager
     {
-        string UIAssetRootPath { get; set; }
+        string UIAssetRootPath { get;}
         bool AddUIGroup(UIGroupType type, Transform groupRoot);
 
         /// <summary>
@@ -41,32 +41,11 @@ namespace Framework
         IUIGroup GetUIGroup(UIGroupType type);
 
         /// <summary>
-        /// 获取所有界面组。
+        /// 界面是否打开状态，不一定在最上层
         /// </summary>
-        /// <returns>所有界面组。</returns>
-        IUIGroup[] GetAllUIGroups();
-
-        /// <summary>
-        /// 获取所有界面组。
-        /// </summary>
-        /// <param name="results">所有界面组。</param>
-        void GetAllUIGroups(List<IUIGroup> results);
-
-
-        /// <summary>
-        /// 是否存在界面。
-        /// </summary>
-        /// <param name="uiFormAssetName">界面资源名称。</param>
-        /// <returns>是否存在界面。</returns>
-        bool HasUI(string uiFormAssetName);
-
-
-        /// <summary>
-        /// 获取界面。
-        /// </summary>
-        /// <param name="uiFormAssetName">界面资源名称。</param>
-        /// <returns>要获取的界面。</returns>
-        ViewBase GetUI(string uiFormAssetName);
+        /// <param name="name"></param>
+        /// <returns></returns>
+        bool IsOpened(string name);
 
         /// <summary>
         /// 是否正在加载界面。

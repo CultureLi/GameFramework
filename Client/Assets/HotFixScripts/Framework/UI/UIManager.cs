@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Framework
 {
@@ -10,13 +10,15 @@ namespace Framework
     /// </summary>
     internal sealed partial class UIManager : IFramework, IUIManager
     {
-        public string UIAssetRootPath { get; set; } = "Assets/BundleRes/UI";
+        public string UIAssetRootPath => _uiAssetRootPath;
+        private string _uiAssetRootPath = "Assets/BundleRes/UI";
 
         private readonly Dictionary<UIGroupType, IUIGroup> _groups;
+        private readonly Dictionary<string, IUIGroup> _viewNameToGroupMap;
+        private readonly Dictionary<string, AsyncOperationHandle> _viewNameToHandleMap;
         private readonly HashSet<string> _loadingUIs;
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
-        private readonly Dictionary<string, UICreateInfo> _createInfos;
         private PrefabObjectPool _viewGoPool;
 
 
@@ -26,11 +28,11 @@ namespace Framework
         public UIManager()
         {
             _groups = new Dictionary<UIGroupType, IUIGroup>();
+            _viewNameToGroupMap = new Dictionary<string, IUIGroup>();
             _loadingUIs = new HashSet<string>();
             _toReleaseOnLoading = new HashSet<string>();
-            _createInfos = new Dictionary<string, UICreateInfo>();
             _resourceMgr = null;
-            _viewGoPool = PrefabObjectPool.Create("UIPrefab");
+            _viewGoPool = PrefabObjectPool.Create("UIPrefabPool");
         }
 
         /// <summary>
@@ -44,31 +46,6 @@ namespace Framework
             }
         }
 
-
-        /// <summary>
-        /// 界面管理器轮询。
-        /// </summary>
-        /// <param name="elapseSeconds">逻辑流逝时间，以秒为单位。</param>
-        /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
-        public void Update(float elapseSeconds, float realElapseSeconds)
-        {
-            foreach ((var _, var group) in _groups)
-            {
-                group.Update(elapseSeconds, realElapseSeconds);
-            }
-        }
-
-        /// <summary>
-        /// 关闭并清理界面管理器。
-        /// </summary>
-        public void Shutdown()
-        {
-            _groups.Clear();
-            _loadingUIs.Clear();
-            _toReleaseOnLoading.Clear();
-        }
-
-
         /// <summary>
         /// 设置资源管理器。
         /// </summary>
@@ -81,6 +58,56 @@ namespace Framework
             }
 
             _resourceMgr = resourceManager;
+        }
+
+        /// <summary>
+        /// 设置ui资源根目录
+        /// </summary>
+        /// <param name="uiAssetRootPath"></param>
+        public void SetUIAssetRootPath(string uiAssetRootPath)
+        {
+            _uiAssetRootPath = uiAssetRootPath;
+        }
+
+        /// <summary>
+        /// 增加界面组。
+        /// </summary>
+        /// <param name="type">界面组id。</param>
+        /// <param name="groupRoot">界面组根节点。</param>
+        /// <returns>是否增加界面组成功。</returns>
+        public bool AddUIGroup(UIGroupType type, Transform groupRoot)
+        {
+            if (HasUIGroup(type))
+            {
+                return false;
+            }
+            var group = new UIGroup(type, groupRoot);
+            group.ViewPool = _viewGoPool;
+            _groups.Add(type, group);
+
+            return true;
+        }
+
+        /// <summary>
+        /// 增加界面组。
+        /// </summary>
+        /// <param name="type">界面组对象。</param>
+        /// <param name="groupRoot">界面组根节点。</param>
+        /// <returns>是否增加界面组成功。</returns>
+        public bool AddUIGroup(IUIGroup group, Transform groupRoot)
+        {
+            if (group == null)
+                return false;
+
+            if (HasUIGroup(group.GroupType))
+            {
+                return false;
+            }
+
+            group.ViewPool = _viewGoPool;
+            _groups.Add(group.GroupType, group);
+
+            return true;
         }
 
         /// <summary>
@@ -104,112 +131,13 @@ namespace Framework
         }
 
         /// <summary>
-        /// 获取所有界面组。
-        /// </summary>
-        /// <returns>所有界面组。</returns>
-        public IUIGroup[] GetAllUIGroups()
-        {
-            int index = 0;
-            IUIGroup[] results = new IUIGroup[_groups.Count];
-            foreach ((var _, var group) in _groups)
-            {
-                results[index++] = group;
-            }
-
-            return results;
-        }
-
-        /// <summary>
-        /// 获取所有界面组。
-        /// </summary>
-        /// <param name="results">所有界面组。</param>
-        public void GetAllUIGroups(List<IUIGroup> results)
-        {
-            if (results == null)
-            {
-                throw new Exception("Results is invalid.");
-            }
-
-            foreach ((var _, var group) in _groups)
-            {
-                results.Add(group);
-            }
-        }
-
-        /// <summary>
-        /// 增加界面组。
-        /// </summary>
-        /// <param name="type">界面组名称。</param>
-        /// <param name="uiGroupDepth">界面组深度。</param>
-        /// <param name="uiGroupHelper">界面组辅助器。</param>
-        /// <returns>是否增加界面组成功。</returns>
-        public bool AddUIGroup(UIGroupType type, Transform groupRoot)
-        {
-            if (HasUIGroup(type))
-            {
-                return false;
-            }
-
-            _groups.Add(type, new UIGroup(type, groupRoot));
-
-            return true;
-        }
-
-        /// <summary>
-        /// 增加界面组。
-        /// </summary>
-        /// <param name="type">界面组名称。</param>
-        /// <param name="uiGroupDepth">界面组深度。</param>
-        /// <param name="uiGroupHelper">界面组辅助器。</param>
-        /// <returns>是否增加界面组成功。</returns>
-        public bool AddUIGroup(IUIGroup group, Transform groupRoot)
-        {
-            if (group == null)
-                return false;
-
-            if (HasUIGroup(group.GroupType))
-            {
-                return false;
-            }
-
-            _groups.Add(group.GroupType, group);
-
-            return true;
-        }
-
-        /// <summary>
-        /// 是否存在界面。
+        /// 该UI是否正在打开，不一定在最上层
         /// </summary>
         /// <param name="serialId">界面序列编号。</param>
         /// <returns>是否存在界面。</returns>
-        public bool HasUI(string name)
+        public bool IsOpened(string name)
         {
-            foreach ((var _, var group) in _groups)
-            {
-                if (group.HasUI(name))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// 获取界面。
-        /// </summary>
-        /// <param name="name">界面序列编号。</param>
-        /// <returns>要获取的界面。</returns>
-        public ViewBase GetUI(string name)
-        {
-            foreach ((var _, var group) in _groups)
-            {
-                var view = group.GetUI(name);
-                if (view != null)
-                    return view;
-            }
-
-            return null;
+            return _viewNameToGroupMap.ContainsKey(name);
         }
 
         /// <summary>
@@ -249,16 +177,43 @@ namespace Framework
             }
 
             var assetPath = $"{UIAssetRootPath}/{name}.prefab";
-            var viewGo = _viewGoPool.Spawn(assetPath);
 
+            _loadingUIs.Add(name);
+            var handle = _resourceMgr.LoadAssetAsync<GameObject>(assetPath);
+            _viewNameToHandleMap[name] = handle;
+            handle.Completed += (op) =>
+            {
+                _loadingUIs.Remove(name);
+                if (op.Status == AsyncOperationStatus.Succeeded)
+                {
+                    OnLoaded(uiGroup, name, userData, op.Result);
+                }
+                else
+                {
+                    _viewNameToHandleMap.Remove(name);
+                    handle.Release();
+                    Debug.LogError($"Load");
+                }
+            };
+
+            //同步加载
+            if (userData == null || !userData.AsyncLoad)
+            {
+                handle.WaitForCompletion();
+            }
+        }
+
+        void OnLoaded(IUIGroup uiGroup, string name, ViewData userData, GameObject viewGo)
+        {
             if (_toReleaseOnLoading.Contains(name))
             {
                 _toReleaseOnLoading.Remove(name);
                 return;
             }
-            _loadingUIs.Remove(name);
 
+            _loadingUIs.Remove(name);
             uiGroup.OpenUI(name, userData, viewGo);
+            _viewNameToGroupMap[name] = uiGroup;
         }
 
         /// <summary>
@@ -268,6 +223,13 @@ namespace Framework
         /// <param name="userData">用户自定义数据。</param>
         public void CloseUI(string name, UIGroupType groupType)
         {
+            if (IsLoadingUI(name))
+            {
+                _toReleaseOnLoading.Add(name);
+                _loadingUIs.Remove(name);
+                return;
+            }
+
             UIGroup uiGroup = (UIGroup)GetUIGroup(groupType);
             if (uiGroup == null)
             {
@@ -277,6 +239,7 @@ namespace Framework
             var uiView = uiGroup.GetUI(name);
             _viewGoPool.UnSpawn(uiView.gameObject);
             uiGroup.CloseUI(name);
+            _viewNameToGroupMap.Remove(name);
         }
 
         /// <summary>
@@ -286,21 +249,35 @@ namespace Framework
         /// <param name="userData">用户自定义数据。</param>
         public void RefocusUI(string name, ViewData userData)
         {
-            var uiForm = GetUI(name);
-            if (uiForm == null)
+            if (_viewNameToGroupMap.TryGetValue(name, out var uiGroup))
             {
-                throw new Exception("UI form is invalid.");
+                uiGroup.RefocusUI(name, userData);
             }
-
-            UIGroup uiGroup = (UIGroup)uiForm.Group;
-            if (uiGroup == null)
-            {
-                throw new Exception("UI group is invalid.");
-            }
-
-            uiGroup.RefocusUI(name, userData);
         }
 
-       
+        /// <summary>
+        /// 界面管理器轮询。
+        /// </summary>
+        /// <param name="elapseSeconds">逻辑流逝时间，以秒为单位。</param>
+        /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
+        public void Update(float elapseSeconds, float realElapseSeconds)
+        {
+
+        }
+
+        /// <summary>
+        /// 关闭并清理界面管理器。
+        /// </summary>
+        public void Shutdown()
+        {
+            foreach ((var _, var group) in _groups)
+            {
+                group.CloseAll();
+            }
+
+            _groups.Clear();
+            _loadingUIs.Clear();
+            _toReleaseOnLoading.Clear();
+        }
     }
 }

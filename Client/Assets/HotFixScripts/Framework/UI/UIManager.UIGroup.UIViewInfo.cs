@@ -8,7 +8,7 @@ namespace Framework
         private sealed partial class UIGroup : IUIGroup
         {
             /// <summary>
-            /// 界面组界面信息。
+            /// 界面包装器
             /// </summary>
             private sealed class UIViewWrapper : IReference
             {
@@ -21,7 +21,7 @@ namespace Framework
                 private ViewData _data;
                 private bool _initShow = true;
 
-                public static UIViewWrapper Create(IUIGroup group, string name, ViewData data, GameObject viewGo)
+                public static UIViewWrapper Spawn(IUIGroup group, string name, ViewData data, GameObject viewGo)
                 {
                     var info = ReferencePool.Acquire<UIViewWrapper>();
                     info._name = name;
@@ -29,6 +29,11 @@ namespace Framework
                     info._view = viewGo.GetComponent<ViewBase>();
                     info._canvas = viewGo.GetComponent<Canvas>();
                     return info;
+                }
+
+                public static void UnSpawn(UIViewWrapper info)
+                {
+                    ReferencePool.Release(info);
                 }
 
                 public void UpdateViewData(ViewData data)

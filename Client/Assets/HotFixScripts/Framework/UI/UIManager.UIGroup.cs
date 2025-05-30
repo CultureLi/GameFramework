@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace Framework
@@ -14,12 +13,16 @@ namespace Framework
         {
             Transform _root;
             UIGroupType _groupType;
+            public PrefabObjectPool ViewPool
+            {
+                get; set;
+            }
 
             private int _sortLayer;
             public UIGroupType GroupType => _groupType;
 
             private readonly LinkedList<UIViewWrapper> _viewWrappers = new LinkedList<UIViewWrapper>();
-            private readonly Dictionary<string, UIViewWrapper> _wrapperPool = new Dictionary<string, UIViewWrapper>();
+            private readonly Dictionary<string, UIViewWrapper> _wrapperMap = new Dictionary<string, UIViewWrapper>();
 
             public UIGroup(UIGroupType type, Transform root)
             {
@@ -102,7 +105,7 @@ namespace Framework
             private void InitCreateUI(string name, ViewData data, GameObject viewGo)
             {
                 viewGo.transform.SetParent(_root);
-                var wrapper = UIViewWrapper.Create(this, name, data, viewGo);
+                var wrapper = UIViewWrapper.Spawn(this, name, data, viewGo);
                 _viewWrappers.AddFirst(wrapper);
                 int layer = CalcSortLayer();
                 wrapper.SetLayer(layer);
@@ -138,18 +141,6 @@ namespace Framework
                 }
             }
 
-            public void RefocusUIForm(string name, ViewData data)
-            {
-                var wrapper = GetUIWrapper(name);
-                if (wrapper == null)
-                {
-                    throw new Exception("Can not find UI form info.");
-                }
-
-                _viewWrappers.Remove(wrapper);
-                _viewWrappers.AddFirst(wrapper);
-            }
-
             public void CloseUI(string name)
             {
                 var wrapper = GetUIWrapper(name);
@@ -172,16 +163,21 @@ namespace Framework
                 ReferencePool.Release(wrapper);
             }
 
-
-
             public void Refresh()
             {
                
             }
 
-            public void Update(float elapseSeconds, float realElapseSeconds)
+            public void CloseAll()
             {
+                foreach (var wrapper in _viewWrappers)
+                {
+                    wrapper.DoClose();
+                }
+                _viewWrappers.Clear();
+                _wrapperMap.Clear();
             }
+
         }
     }
 }
