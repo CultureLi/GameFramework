@@ -15,7 +15,6 @@ namespace Framework
 
         private readonly Dictionary<UIGroupType, IUIGroup> _groups;
         private readonly Dictionary<string, IUIGroup> _viewNameToGroupMap;
-        private readonly Dictionary<string, AsyncOperationHandle> _viewNameToHandleMap;
         private readonly HashSet<string> _loadingUIs;
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
@@ -161,38 +160,36 @@ namespace Framework
         {
             if (string.IsNullOrEmpty(name))
             {
-                throw new Exception("UI form asset name is invalid.");
+                Debug.LogError("UI name is invalid.");
             }
 
             UIGroup uiGroup = (UIGroup)GetUIGroup(groupType);
             if (uiGroup == null)
             {
-                throw new Exception($"UI group '{groupType}' is not exist.");
+                Debug.LogError($"UI group '{groupType}' is not exist.");
             }
 
             if (_loadingUIs.Contains(name))
             {
-                Debug.Log("正在加载，不要着急");
+                Debug.Log($"UI {name} is loading....");
                 return;
             }
 
             var assetPath = $"{UIAssetRootPath}/{name}.prefab";
 
             _loadingUIs.Add(name);
-            var handle = _resourceMgr.LoadAssetAsync<GameObject>(assetPath);
-            _viewNameToHandleMap[name] = handle;
+            var handle = _resourceMgr.InstantiateAsync(assetPath);
+
             handle.Completed += (op) =>
             {
                 _loadingUIs.Remove(name);
                 if (op.Status == AsyncOperationStatus.Succeeded)
                 {
-                    OnLoaded(uiGroup, name, userData, op.Result);
+                    OnLoadedSuccess(uiGroup, name, userData, op.Result);
                 }
                 else
                 {
-                    _viewNameToHandleMap.Remove(name);
-                    handle.Release();
-                    Debug.LogError($"Load");
+                    Debug.LogError($"--Load UI {name} Failure");
                 }
             };
 
@@ -203,7 +200,7 @@ namespace Framework
             }
         }
 
-        void OnLoaded(IUIGroup uiGroup, string name, ViewData userData, GameObject viewGo)
+        void OnLoadedSuccess(IUIGroup uiGroup, string name, ViewData userData, GameObject viewGo)
         {
             if (_toReleaseOnLoading.Contains(name))
             {
@@ -211,7 +208,6 @@ namespace Framework
                 return;
             }
 
-            _loadingUIs.Remove(name);
             uiGroup.OpenUI(name, userData, viewGo);
             _viewNameToGroupMap[name] = uiGroup;
         }
