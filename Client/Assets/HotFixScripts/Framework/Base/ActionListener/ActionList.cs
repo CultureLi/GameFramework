@@ -54,13 +54,13 @@ namespace Framework
     {
         private List<Action<T>> _callback = new List<Action<T>>();
 
-        public void AddListener(Action<T> cb)
+        public void Add(Action<T> cb)
         {
             if (!_callback.Contains(cb))
                 _callback.Add(cb);
         }
 
-        public void RemoveListener(Action<T> cb)
+        public void Remove(Action<T> cb)
         {
             _callback.Remove(cb);
         }

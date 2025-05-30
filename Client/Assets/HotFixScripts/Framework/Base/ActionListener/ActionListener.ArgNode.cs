@@ -1,18 +1,11 @@
-﻿//------------------------------------------------------------
-// Game Framework
-// Copyright © 2013-2021 Jiang Yin. All rights reserved.
-// Homepage: https://gameframework.cn/
-// Feedback: mailto:ellan@gameframework.cn
-//------------------------------------------------------------
-
-using System;
+﻿using System;
 
 namespace Framework
 {
-    public sealed partial class ActionListener<TArg> where TArg : class
+    public sealed partial class ActionListener<TArg>
     {
         /// <summary>
-        /// 事件结点。
+        /// 内部结点，暂存参数真实类型和数据
         /// </summary>
         private sealed class ArgNode : IReference
         {
@@ -24,7 +17,7 @@ namespace Framework
             public Type Type => _type;
 
 
-            public static ArgNode Create<T>(T e) where T : TArg
+            public static ArgNode Spawn<T>(T e) where T : TArg
             {
                 ArgNode eventNode = ReferencePool.Acquire<ArgNode>();
                 eventNode._data = e;
@@ -32,10 +25,15 @@ namespace Framework
                 return eventNode;
             }
 
+            public static void UnSpawn(ArgNode node)
+            {
+                ReferencePool.Release(node);
+            }
+
             public void Clear()
             {
                 _type = null;
-                _data = null;
+                _data = default;
             }
         }
     }

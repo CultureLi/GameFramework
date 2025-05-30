@@ -55,7 +55,7 @@ namespace Framework
                             var packet = UnPack(stream);
                             if (packet != null)
                             {
-                                _dispatcher.BroadcastAsync(packet);
+                                _dispatcher.DispatchAsync(packet);
                             }
                         }
                     }

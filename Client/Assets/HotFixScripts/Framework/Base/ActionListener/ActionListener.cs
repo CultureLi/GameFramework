@@ -1,79 +1,75 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Framework
 {
     /// <summary>
     /// Action 监听器
     /// </summary>
-    /// <typeparam name="T">事件类型。</typeparam>
-    public sealed partial class ActionListener<TArg> where TArg : class
+    /// <typeparam name="TArg">参数类型。</typeparam>
+    public sealed partial class ActionListener<TArg>
     {
         private readonly Dictionary<Type, IActionList<TArg>> _listeners = new();
 
-        private readonly Queue<ArgNode> _eventQueue = new();
+        private readonly Queue<ArgNode> _nodeQueue = new();
 
-        /// <summary>
-        /// 获取事件数量。
-        /// </summary>
-        public int EventCount
+        public int NodeCount
         {
             get
             {
-                return _eventQueue.Count;
+                return _nodeQueue.Count;
             }
         }
 
         /// <summary>
-        /// 订阅事件
+        /// 添加回调
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="listener"></param>
-        public void Subscribe<T>(Action<T> listener) where T : TArg
+        /// <param name="callback"></param>
+        public void AddListener<T>(Action<T> callback) where T : TArg
         {
-            var eventType = typeof(T);
+            var type = typeof(T);
 
-            if (!_listeners.TryGetValue(eventType, out var eventListener))
+            if (!_listeners.TryGetValue(type, out var listener))
             {
-                eventListener = new ActionList<T, TArg>();
-                _listeners[eventType] = eventListener;
+                listener = new ActionList<T, TArg>();
+                _listeners[type] = listener;
             }
 
-            (eventListener as ActionList<T, TArg>).AddListener(listener);
+            (listener as ActionList<T, TArg>).AddListener(callback);
         }
 
         /// <summary>
-        /// 取消订阅
+        /// 移除回调
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="listener"></param>
-        public void Unsubscribe<T>(Action<T> listener) where T : TArg
+        /// <param name="callback"></param>
+        public void RemoveListener<T>(Action<T> callback) where T : TArg
         {
-            var eventType = typeof(T);
-            if (_listeners.ContainsKey(eventType))
+            var type = typeof(T);
+
+            if (_listeners.TryGetValue(type, out var value) && value is ActionList<T, TArg> listener)
             {
-                var eventListener = (_listeners[eventType] as ActionList<T, TArg>);
-                eventListener.RemoveListener(listener);
-                if (eventListener.Count == 0)
+                listener.RemoveListener(callback);
+                if (listener.Count == 0)
                 {
-                    _listeners.Remove(eventType);
+                    _listeners.Remove(type);
                 }
             }
         }
 
         /// <summary>
-        /// 同步广播，立即调用
+        /// 派发事件（同步）
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void Broadcast<T>(T ev = null) where T : class, TArg
+        public void Dispatch<T>(T ev = default) where T : TArg
         {
             var eventType = typeof(T);
-            Broadcast(eventType, ev);
+            Dispatch(eventType, ev);
         }
 
-        public void Broadcast(Type eventType, TArg ev)
+        public void Dispatch(Type eventType, TArg ev = default)
         {
             if (_listeners.TryGetValue(eventType, out var listener))
             {
@@ -82,41 +78,44 @@ namespace Framework
         }
 
         /// <summary>
-        /// 异步广播，放入队列，等待 Update 中派发
+        /// 派发事件（异步）放入队列，在Update中处理
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="ev"></param>
-        public void BroadcastAsync<T>(T ev) where T : class, TArg
+        public void DispatchAsync<T>(T ev) where T : TArg
         {
-            var data = ArgNode.Create(ev);
-            _eventQueue.Enqueue(data);
+            var data = ArgNode.Spawn(ev);
+            _nodeQueue.Enqueue(data);
         }
 
+        /// <summary>
+        /// 处理异步事件，每帧最多处理50个
+        /// </summary>
         private readonly int _maxCntPerFrame = 50;
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
             int msgCount = 0;
-            while (_eventQueue.Count > 0 && msgCount < _maxCntPerFrame)
+            while (_nodeQueue.Count > 0 && msgCount < _maxCntPerFrame)
             {
                 msgCount++;
-                var node = _eventQueue.Dequeue();
-                Broadcast(node.Type, node.Data);
-                ReferencePool.Release(node);
+                var node = _nodeQueue.Dequeue();
+                Dispatch(node.Type, node.Data);
+                ArgNode.UnSpawn(node);
             }
         }
 
-        public void Clear()
+        public void ClearNodes()
         {
-            foreach (var node in _eventQueue)
+            foreach (var node in _nodeQueue)
             {
                 ReferencePool.Release(node);
             }
-            _eventQueue.Clear();
+            _nodeQueue.Clear();
         }
 
         public void Shutdown()
         {
-            Clear();
+            ClearNodes();
             _listeners.Clear();
         }
     }

@@ -24,7 +24,7 @@ namespace Framework
             /// <param name="handler"></param>
             public void RegisterMsg<T>(Action<T> handler) where T : IMessage
             {
-                _ActionListener.Subscribe(handler);
+                _ActionListener.AddListener(handler);
             }
 
             /// <summary>
@@ -34,17 +34,17 @@ namespace Framework
             /// <param name="handler"></param>
             public void UnregisterMsg<T>(Action<T> handler) where T : IMessage
             {
-                _ActionListener.Unsubscribe(handler);
+                _ActionListener.RemoveListener(handler);
             }
 
             /// <summary>
-            /// 派发给消息回调函数
+            /// 异步派发消息
             /// </summary>
             /// <param name="packet"></param>
-            public void BroadcastAsync(SCPacket packet)
+            public void DispatchAsync(SCPacket packet)
             {
                 var type = ProtoTypeHelper.GetMsgType(packet.id);
-                _ActionListener.BroadcastAsync(packet.msg);
+                _ActionListener.DispatchAsync(packet.msg);
 
             }
 

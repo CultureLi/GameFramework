@@ -18,7 +18,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Subscribe<T>(Action<T> listener) where T : EventBase
         {
-            _ActionListener.Subscribe(listener);
+            _ActionListener.AddListener(listener);
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Framework
         /// <param name="listener"></param>
         public void Unsubscribe<T>(Action<T> listener) where T : EventBase
         {
-            _ActionListener.Unsubscribe(listener);
+            _ActionListener.RemoveListener(listener);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Framework
         /// <param name="ev"></param>
         public void Broadcast<T>(T ev = null) where T : EventBase
         {
-            _ActionListener.Broadcast(ev);
+            _ActionListener.Dispatch(ev);
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace Framework
         /// <param name="ev"></param>
         public void BroadcastAsync<T>(T ev = null) where T : EventBase
         {
-            _ActionListener.BroadcastAsync(ev);
+            _ActionListener.DispatchAsync(ev);
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)
