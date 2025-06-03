@@ -85,15 +85,6 @@ namespace Framework
         }
 
         /// <summary>
-        /// 获取或设置对象池的优先级。
-        /// </summary>
-        int Priority
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
         /// 创建对象。
         /// </summary>
         /// <param name="obj">对象。</param>
@@ -136,35 +127,7 @@ namespace Framework
         /// 回收对象。
         /// </summary>
         /// <param name="target">要回收的对象。</param>
-        void Unspawn(object target);
-
-        /// <summary>
-        /// 设置对象是否被加锁。
-        /// </summary>
-        /// <param name="obj">要设置被加锁的对象。</param>
-        /// <param name="locked">是否被加锁。</param>
-        void SetLocked(T obj, bool locked);
-
-        /// <summary>
-        /// 设置对象是否被加锁。
-        /// </summary>
-        /// <param name="target">要设置被加锁的对象。</param>
-        /// <param name="locked">是否被加锁。</param>
-        void SetLocked(object target, bool locked);
-
-        /// <summary>
-        /// 设置对象的优先级。
-        /// </summary>
-        /// <param name="obj">要设置优先级的对象。</param>
-        /// <param name="priority">优先级。</param>
-        void SetPriority(T obj, int priority);
-
-        /// <summary>
-        /// 设置对象的优先级。
-        /// </summary>
-        /// <param name="target">要设置优先级的对象。</param>
-        /// <param name="priority">优先级。</param>
-        void SetPriority(object target, int priority);
+        void Unspawn(UnityEngine.Object target);
 
         /// <summary>
         /// 释放对象。
@@ -178,7 +141,7 @@ namespace Framework
         /// </summary>
         /// <param name="target">要释放的对象。</param>
         /// <returns>释放对象是否成功。</returns>
-        bool ReleaseObject(object target);
+        bool ReleaseObject(UnityEngine.Object target);
 
         /// <summary>
         /// 释放对象池中的可释放对象。

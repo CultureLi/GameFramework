@@ -12,25 +12,25 @@ namespace Framework
         private sealed partial class UIGroup : IUIGroup
         {
             Transform _root;
-            UIGroupType _groupType;
-            public PrefabObjectPool ViewPool
-            {
-                get; set;
-            }
+            int _groupId;
 
             private int _sortLayer;
-            public UIGroupType GroupType => _groupType;
+            public int GroupId => _groupId;
 
             private readonly LinkedList<UIViewWrapper> _viewWrappers = new LinkedList<UIViewWrapper>();
             private readonly Dictionary<string, UIViewWrapper> _wrapperMap = new Dictionary<string, UIViewWrapper>();
 
-            public UIGroup(UIGroupType type, Transform root)
+            public UIGroup(int groupId, Transform root)
             {
                 _root = root;
-                _groupType = type;
-                _sortLayer = ((int)type) * 10000;
+                _groupId = groupId;
+                _sortLayer = groupId * 10000;
             }
 
+            /// <summary>
+            /// 计算层级
+            /// </summary>
+            /// <returns></returns>
             private int CalcSortLayer()
             {
                 int cnt = _viewWrappers.Count;
@@ -42,38 +42,9 @@ namespace Framework
                 return _sortLayer + idx * 100;
             }
 
-            public ViewBase CurrentView
+            public GameObject GetViewGo(string name)
             {
-                get
-                {
-                    return _viewWrappers.First?.Value.View ?? null;
-                }
-            }
-
-            public bool HasUI(string name)
-            {
-                foreach (UIViewWrapper uiFormInfo in _viewWrappers)
-                {
-                    if (uiFormInfo.Name == name)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            public ViewBase GetUI(string name)
-            {
-                foreach (UIViewWrapper wrapper in _viewWrappers)
-                {
-                    if (wrapper.Name == name)
-                    {
-                        return wrapper.View;
-                    }
-                }
-
-                return null;
+                return GetUIWrapper(name)?.View.gameObject;
             }
 
             private UIViewWrapper GetUIWrapper(string name)
@@ -85,10 +56,15 @@ namespace Framework
                         return wrapper;
                     }
                 }
-
                 return null;
             }
 
+            /// <summary>
+            /// 打开UI
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="data"></param>
+            /// <param name="asset"></param>
             public void OpenUI(string name, ViewData data, GameObject asset)
             {
                 var wrapper = GetUIWrapper(name);
@@ -112,6 +88,11 @@ namespace Framework
                 wrapper.DoShow();
             }
 
+            /// <summary>
+            /// 重新聚焦UI
+            /// </summary>
+            /// <param name="wrapper"></param>
+            /// <param name="data"></param>
             private void RefocusUI(UIViewWrapper wrapper, ViewData data)
             {
                 wrapper.UpdateViewData(data);
@@ -130,9 +111,12 @@ namespace Framework
                 }
             }
 
+            /// <summary>
+            /// 强制更新UI层级
+            /// </summary>
             private void ForceUpdateUILayer()
             {
-                var idx = _viewWrappers.Count - 1;
+                var idx = _viewWrappers.Count;
                 foreach(var wrapper in _viewWrappers)
                 {
                     var layer = CalcSortLayer(idx);
@@ -141,12 +125,15 @@ namespace Framework
                 }
             }
 
+            /// <summary>
+            /// 关闭UI
+            /// </summary>
+            /// <param name="name"></param>
             public void CloseUI(string name)
             {
                 var wrapper = GetUIWrapper(name);
                 wrapper.DoClose();
                 RemoveUIWrapper(wrapper);
-                Refresh();
             }
 
             /// <summary>
@@ -157,17 +144,14 @@ namespace Framework
             {
                 if (!_viewWrappers.Remove(wrapper))
                 {
-                    throw new Exception($"UI group '{_groupType}' not exists specified UI form '{wrapper.Name}'.");
+                    throw new Exception($"UI group '{_groupId}' not exists specified UI form '{wrapper.Name}'.");
                 }
-
-                ReferencePool.Release(wrapper);
+                UIViewWrapper.UnSpawn(wrapper);
             }
 
-            public void Refresh()
-            {
-               
-            }
-
+            /// <summary>
+            /// 关闭改组所有界面
+            /// </summary>
             public void CloseAll()
             {
                 foreach (var wrapper in _viewWrappers)

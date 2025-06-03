@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -15,18 +14,20 @@ namespace Framework
 
         private GameObject _poolRoot;
 
-        public static void Init(IResourceMgr resMgr, IObjectPoolMgr objPoolMgr)
+        /// <summary>
+        /// 构造函数设置为私有，使用 PrefabObjectPool.Create创建
+        /// </summary>
+        private PrefabObjectPool()
         {
-            _resourceMgr = resMgr;
-            _objectPoolMgr = objPoolMgr;
         }
+
         /// <summary>
         /// 预制体对象池
         /// </summary>
         /// <param name="name"></param>
         /// <param name="capacity"> 池子最大缓存容量 </param>
         /// <param name="expireTime"> 空闲 Object 过期时间, 过期销毁 </param>
-        public static PrefabObjectPool Create(string name, int capacity = 20, float expireTime = 60)
+        public static PrefabObjectPool Create(string name, int capacity = 10, float expireTime = 20)
         {
             InitMgr();
 
@@ -39,7 +40,7 @@ namespace Framework
             var instance = new PrefabObjectPool();
             instance._poolRoot = new GameObject(name);
             GameObject.DontDestroyOnLoad(instance._poolRoot);
-            instance._pool = _objectPoolMgr.CreateSingleSpawnObjectPool<PrefabObject>(name, capacity, expireTime, 1);
+            instance._pool = _objectPoolMgr.CreateSingleSpawnObjectPool<PrefabObject>(name, expireTime, capacity, expireTime);
             return instance;
         }
 
@@ -55,17 +56,9 @@ namespace Framework
             }
         }
 
-        /// <summary>
-        /// 构造函数设置为私有，使用 PrefabObjectPool.Create创建
-        /// </summary>
-        private PrefabObjectPool()
-        {
-            
-        }
-
         private PrefabObject RegisterObject(string key, GameObject go)
         {
-            var obj = PrefabObject.Create(key, go, _poolRoot.transform);
+            var obj = PrefabObject.Create(key, go, _poolRoot.transform, OnPreReleaseObject);
             _pool.Register(obj, true);
             return obj;
         }
@@ -135,7 +128,7 @@ namespace Framework
             }
 
             var handler = _resourceMgr.InstantiateAsync(location);
-            handler.Completed += (handler) =>
+            handler.AddCompleted((handler) =>
             {
                 if (handler.Status == AsyncOperationStatus.Succeeded)
                 {
@@ -148,7 +141,7 @@ namespace Framework
                     cb?.Invoke(null);
                 }
                 
-            };
+            });
         }
 
         /// <summary>
@@ -160,7 +153,17 @@ namespace Framework
             _pool.Unspawn(go);
         }
 
-        public void Despose()
+        public void UnSpawn(PrefabObject obj)
+        {
+            _pool.Unspawn(obj);
+        }
+
+        void OnPreReleaseObject(GameObject go)
+        {
+            _resourceMgr.ReleaseInstance(go);
+        }
+
+        public void Dispose()
         {
             _objectPoolMgr.DestroyObjectPool<PrefabObject>(_name);
         }

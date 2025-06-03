@@ -28,7 +28,6 @@ namespace GameEntry
             NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
             ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
             UIMgr = FrameworkMgr.GetModule<IUIManager>();
-            UIMgr.SetResourceManager(ResourceMgr);
         }
 
         void Update()

@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Framework
@@ -13,7 +12,7 @@ namespace Framework
         private sealed class ObjectPool<T> : ObjectPoolBase, IObjectPool<T> where T : ObjectBase
         {
             private readonly Dictionary<string, LinkedList<Object<T>>> _objects;
-            private readonly Dictionary<object, Object<T>> _objectMap;
+            private readonly Dictionary<UnityEngine.Object, Object<T>> _objectMap;
             private readonly ReleaseObjectFilterCallback<T> _defaultReleaseObjectFilterCallback;
             private readonly List<T> _cachedCanReleaseObjects;
             private readonly List<T> _cachedToReleaseObjects;
@@ -21,8 +20,15 @@ namespace Framework
             private float _autoReleaseInterval;
             private int _capacity;
             private float _expireTime;
-            private int _priority;
             private float _autoReleaseTime;
+
+            /// <summary>
+            /// 预释放对象
+            /// </summary>
+            public Action<T> PreReleaseObject
+            {
+                get;set;
+            }
 
             /// <summary>
             /// 初始化对象池的新实例。
@@ -33,11 +39,11 @@ namespace Framework
             /// <param name="capacity">对象池的容量。</param>
             /// <param name="expireTime">对象池对象过期秒数。</param>
             /// <param name="priority">对象池的优先级。</param>
-            public ObjectPool(string name, bool allowMultiSpawn, float autoReleaseInterval, int capacity, float expireTime, int priority)
+            public ObjectPool(string name, bool allowMultiSpawn, float autoReleaseInterval, int capacity, float expireTime)
                 : base(name)
             {
                 _objects = new Dictionary<string, LinkedList<Object<T>>>();
-                _objectMap = new Dictionary<object, Object<T>>();
+                _objectMap = new Dictionary<UnityEngine.Object, Object<T>>();
                 _defaultReleaseObjectFilterCallback = DefaultReleaseObjectFilterCallback;
                 _cachedCanReleaseObjects = new List<T>();
                 _cachedToReleaseObjects = new List<T>();
@@ -45,7 +51,6 @@ namespace Framework
                 _autoReleaseInterval = autoReleaseInterval;
                 Capacity = capacity;
                 ExpireTime = expireTime;
-                _priority = priority;
                 _autoReleaseTime = 0f;
             }
 
@@ -159,21 +164,6 @@ namespace Framework
 
                     _expireTime = value;
                     Release();
-                }
-            }
-
-            /// <summary>
-            /// 获取或设置对象池的优先级。
-            /// </summary>
-            public override int Priority
-            {
-                get
-                {
-                    return _priority;
-                }
-                set
-                {
-                    _priority = value;
                 }
             }
 
@@ -294,7 +284,7 @@ namespace Framework
             /// 回收对象。
             /// </summary>
             /// <param name="target">要回收的对象。</param>
-            public void Unspawn(object target)
+            public void Unspawn(UnityEngine.Object target)
             {
                 if (target == null)
                 {
@@ -309,82 +299,6 @@ namespace Framework
                     {
                         Release();
                     }
-                }
-                else
-                {
-                    throw new Exception($"Can not find target in object pool '{new TypeNamePair(typeof(T), Name)}', target type is '{target.GetType().FullName}', target value is '{target}'.");
-                }
-            }
-
-            /// <summary>
-            /// 设置对象是否被加锁。
-            /// </summary>
-            /// <param name="obj">要设置被加锁的对象。</param>
-            /// <param name="locked">是否被加锁。</param>
-            public void SetLocked(T obj, bool locked)
-            {
-                if (obj == null)
-                {
-                    throw new Exception("Object is invalid.");
-                }
-
-                SetLocked(obj.Target, locked);
-            }
-
-            /// <summary>
-            /// 设置对象是否被加锁。
-            /// </summary>
-            /// <param name="target">要设置被加锁的对象。</param>
-            /// <param name="locked">是否被加锁。</param>
-            public void SetLocked(object target, bool locked)
-            {
-                if (target == null)
-                {
-                    throw new Exception("Target is invalid.");
-                }
-
-                Object<T> internalObject = GetObject(target);
-                if (internalObject != null)
-                {
-                    internalObject.Locked = locked;
-                }
-                else
-                {
-                    throw new Exception($"Can not find target in object pool '{new TypeNamePair(typeof(T), Name)}', target type is '{target.GetType().FullName}', target value is '{target}'.");
-                }
-            }
-
-            /// <summary>
-            /// 设置对象的优先级。
-            /// </summary>
-            /// <param name="obj">要设置优先级的对象。</param>
-            /// <param name="priority">优先级。</param>
-            public void SetPriority(T obj, int priority)
-            {
-                if (obj == null)
-                {
-                    throw new Exception("Object is invalid.");
-                }
-
-                SetPriority(obj.Target, priority);
-            }
-
-            /// <summary>
-            /// 设置对象的优先级。
-            /// </summary>
-            /// <param name="target">要设置优先级的对象。</param>
-            /// <param name="priority">优先级。</param>
-            public void SetPriority(object target, int priority)
-            {
-                if (target == null)
-                {
-                    throw new Exception("Target is invalid.");
-                }
-
-                Object<T> internalObject = GetObject(target);
-                if (internalObject != null)
-                {
-                    internalObject.Priority = priority;
                 }
                 else
                 {
@@ -412,7 +326,7 @@ namespace Framework
             /// </summary>
             /// <param name="target">要释放的对象。</param>
             /// <returns>释放对象是否成功。</returns>
-            public bool ReleaseObject(object target)
+            public bool ReleaseObject(UnityEngine.Object target)
             {
                 if (target == null)
                 {
@@ -425,7 +339,7 @@ namespace Framework
                     return false;
                 }
 
-                if (internalObject.IsInUse || internalObject.Locked || !internalObject.CustomCanReleaseFlag)
+                if (internalObject.IsInUse || !internalObject.CustomCanReleaseFlag)
                 {
                     return false;
                 }
@@ -518,24 +432,6 @@ namespace Framework
                 }
             }
 
-            /// <summary>
-            /// 获取所有对象信息。
-            /// </summary>
-            /// <returns>所有对象信息。</returns>
-            public override ObjectInfo[] GetAllObjectInfos()
-            {
-                List<ObjectInfo> results = new List<ObjectInfo>();
-                foreach ((var key, var objectList) in _objects)
-                {
-                    foreach (var internalObject in objectList)
-                    {
-                        results.Add(new ObjectInfo(internalObject.Name, internalObject.Locked, internalObject.CustomCanReleaseFlag, internalObject.Priority, internalObject.LastUseTime, internalObject.SpawnCount));
-                    }
-                }
-
-                return results.ToArray();
-            }
-
             public override void Update(float elapseSeconds, float realElapseSeconds)
             {
                 _autoReleaseTime += realElapseSeconds;
@@ -549,10 +445,10 @@ namespace Framework
 
             public override void Shutdown()
             {
-                foreach (KeyValuePair<object, Object<T>> objectInMap in _objectMap)
+                foreach ((var key, var value) in _objectMap)
                 {
-                    objectInMap.Value.Release(true);
-                    ReferencePool.Release(objectInMap.Value);
+                    value.Release(true);
+                    ReferencePool.Release(value);
                 }
 
                 _objects.Clear();
@@ -561,7 +457,7 @@ namespace Framework
                 _cachedToReleaseObjects.Clear();
             }
 
-            private Object<T> GetObject(object target)
+            private Object<T> GetObject(UnityEngine.Object target)
             {
                 if (target == null)
                 {
@@ -585,15 +481,14 @@ namespace Framework
                 }
 
                 results.Clear();
-                foreach (KeyValuePair<object, Object<T>> objectInMap in _objectMap)
+                foreach ((var key, var value) in _objectMap)
                 {
-                    Object<T> internalObject = objectInMap.Value;
-                    if (internalObject.IsInUse || internalObject.Locked || !internalObject.CustomCanReleaseFlag)
+                    if (value.IsInUse || !value.CustomCanReleaseFlag)
                     {
                         continue;
                     }
 
-                    results.Add(internalObject.Peek());
+                    results.Add(value.Peek());
                 }
             }
 
@@ -620,8 +515,7 @@ namespace Framework
                 {
                     for (int j = i + 1; j < candidateObjects.Count; j++)
                     {
-                        if (candidateObjects[i].Priority > candidateObjects[j].Priority
-                            || candidateObjects[i].Priority == candidateObjects[j].Priority && candidateObjects[i].LastUseTime > candidateObjects[j].LastUseTime)
+                        if (candidateObjects[i].LastUseTime > candidateObjects[j].LastUseTime)
                         {
                             T temp = candidateObjects[i];
                             candidateObjects[i] = candidateObjects[j];

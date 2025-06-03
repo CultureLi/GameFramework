@@ -5,6 +5,10 @@ using UnityEngine;
 
 namespace Test.Runtime.UITest
 {
+    public enum UIGroupType
+    {
+        Normal = 1,
+    }
     public class UITest : MonoBehaviour
     {
         public Transform normalRoot;
@@ -16,19 +20,19 @@ namespace Test.Runtime.UITest
         }
         void Start()
         {
-            FW.UIMgr.AddUIGroup(Framework.UIGroupType.Normal,normalRoot);
+            FW.UIMgr.AddUIGroup((int)UIGroupType.Normal,normalRoot);
 
             
         }
 
         public void Open(string name)
         {
-            FW.UIMgr.OpenUI(name, Framework.UIGroupType.Normal);
+            FW.UIMgr.OpenUI(name, (int)UIGroupType.Normal);
         }
 
         public void Close(string name)
         {
-            FW.UIMgr.CloseUI(name, Framework.UIGroupType.Normal);
+            FW.UIMgr.CloseUI(name);
         }
 
         // Update is called once per frame

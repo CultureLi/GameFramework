@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Framework
 {
@@ -13,24 +11,23 @@ namespace Framework
         public string UIAssetRootPath => _uiAssetRootPath;
         private string _uiAssetRootPath = "Assets/BundleRes/UI";
 
-        private readonly Dictionary<UIGroupType, IUIGroup> _groups;
+        private readonly Dictionary<int, IUIGroup> _groups;
         private readonly Dictionary<string, IUIGroup> _viewNameToGroupMap;
         private readonly HashSet<string> _loadingUIs;
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
         private PrefabObjectPool _viewGoPool;
 
-
         /// <summary>
         /// 初始化界面管理器的新实例。
         /// </summary>
         public UIManager()
         {
-            _groups = new Dictionary<UIGroupType, IUIGroup>();
+            _groups = new Dictionary<int, IUIGroup>();
             _viewNameToGroupMap = new Dictionary<string, IUIGroup>();
             _loadingUIs = new HashSet<string>();
             _toReleaseOnLoading = new HashSet<string>();
-            _resourceMgr = null;
+            _resourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
             _viewGoPool = PrefabObjectPool.Create("UIPrefabPool");
         }
 
@@ -43,20 +40,6 @@ namespace Framework
             {
                 return _groups.Count;
             }
-        }
-
-        /// <summary>
-        /// 设置资源管理器。
-        /// </summary>
-        /// <param name="resourceManager">资源管理器。</param>
-        public void SetResourceManager(IResourceMgr resourceManager)
-        {
-            if (resourceManager == null)
-            {
-                throw new Exception("Resource manager is invalid.");
-            }
-
-            _resourceMgr = resourceManager;
         }
 
         /// <summary>
@@ -74,15 +57,14 @@ namespace Framework
         /// <param name="type">界面组id。</param>
         /// <param name="groupRoot">界面组根节点。</param>
         /// <returns>是否增加界面组成功。</returns>
-        public bool AddUIGroup(UIGroupType type, Transform groupRoot)
+        public bool AddUIGroup(int groupId, Transform groupRoot)
         {
-            if (HasUIGroup(type))
+            if (HasUIGroup(groupId))
             {
                 return false;
             }
-            var group = new UIGroup(type, groupRoot);
-            group.ViewPool = _viewGoPool;
-            _groups.Add(type, group);
+            var group = new UIGroup(groupId, groupRoot);
+            _groups.Add(groupId, group);
 
             return true;
         }
@@ -98,13 +80,11 @@ namespace Framework
             if (group == null)
                 return false;
 
-            if (HasUIGroup(group.GroupType))
+            if (HasUIGroup(group.GroupId))
             {
                 return false;
             }
-
-            group.ViewPool = _viewGoPool;
-            _groups.Add(group.GroupType, group);
+            _groups.Add(group.GroupId, group);
 
             return true;
         }
@@ -112,21 +92,21 @@ namespace Framework
         /// <summary>
         /// 是否存在界面组。
         /// </summary>
-        /// <param name="uiGroupName">界面组名称。</param>
+        /// <param name="groupId">界面组Id。</param>
         /// <returns>是否存在界面组。</returns>
-        public bool HasUIGroup(UIGroupType type)
+        public bool HasUIGroup(int groupId)
         {
-            return _groups.ContainsKey(type);
+            return _groups.ContainsKey(groupId);
         }
 
         /// <summary>
         /// 获取界面组。
         /// </summary>
-        /// <param name="uiGroupName">界面组名称。</param>
+        /// <param name="groupId">界面组Id。</param>
         /// <returns>要获取的界面组。</returns>
-        public IUIGroup GetUIGroup(UIGroupType type)
+        public IUIGroup GetUIGroup(int groupId)
         {
-            return _groups.TryGetValue(type, out var group) ? group : null;
+            return _groups.TryGetValue(groupId, out var group) ? group : null;
         }
 
         /// <summary>
@@ -152,21 +132,28 @@ namespace Framework
         /// <summary>
         /// 打开界面。
         /// </summary>
-        /// <param name="uiFormAssetName">界面资源名称。</param>
-        /// <param name="uiGroupName">界面组名称。</param>
+        /// <param name="name">界面资源名称。</param>
+        /// <param name="groupId">界面组名称。</param>
         /// <param name="userData">用户自定义数据。</param>
         /// <returns>界面的序列编号。</returns>
-        public void OpenUI(string name, UIGroupType groupType, ViewData userData = null)
+        public void OpenUI(string name, int groupId, ViewData userData = null)
         {
             if (string.IsNullOrEmpty(name))
             {
                 Debug.LogError("UI name is invalid.");
             }
 
-            UIGroup uiGroup = (UIGroup)GetUIGroup(groupType);
+            UIGroup uiGroup = (UIGroup)GetUIGroup(groupId);
             if (uiGroup == null)
             {
-                Debug.LogError($"UI group '{groupType}' is not exist.");
+                Debug.LogError($"UI group '{groupId}' is not exist.");
+            }
+
+            //已经打开，从新聚焦
+            if (IsOpened(name))
+            {
+                uiGroup.RefocusUI(name, userData);
+                return;
             }
 
             if (_loadingUIs.Contains(name))
@@ -178,38 +165,40 @@ namespace Framework
             var assetPath = $"{UIAssetRootPath}/{name}.prefab";
 
             _loadingUIs.Add(name);
-            var handle = _resourceMgr.InstantiateAsync(assetPath);
 
-            handle.Completed += (op) =>
+            if (userData != null && userData.AsyncLoad)
             {
-                _loadingUIs.Remove(name);
-                if (op.Status == AsyncOperationStatus.Succeeded)
+                _viewGoPool.SpawnAsync(assetPath, (assetGo)=>
                 {
-                    OnLoadedSuccess(uiGroup, name, userData, op.Result);
-                }
-                else
-                {
-                    Debug.LogError($"--Load UI {name} Failure");
-                }
-            };
-
-            //同步加载
-            if (userData == null || !userData.AsyncLoad)
+                    OnLoadAssetCompleted(uiGroup, name, userData, assetGo);
+                });
+            }
+            else
             {
-                handle.WaitForCompletion();
+                var assetGo = _viewGoPool.Spawn(assetPath);
+                OnLoadAssetCompleted(uiGroup, name, userData, assetGo);
             }
         }
 
-        void OnLoadedSuccess(IUIGroup uiGroup, string name, ViewData userData, GameObject viewGo)
+        void OnLoadAssetCompleted(IUIGroup uiGroup, string name, ViewData userData, GameObject viewGo)
         {
+            _loadingUIs.Remove(name);
+
             if (_toReleaseOnLoading.Contains(name))
             {
                 _toReleaseOnLoading.Remove(name);
                 return;
             }
 
-            uiGroup.OpenUI(name, userData, viewGo);
-            _viewNameToGroupMap[name] = uiGroup;
+            if (viewGo != null)
+            {
+                _viewNameToGroupMap[name] = uiGroup;
+                uiGroup.OpenUI(name, userData, viewGo);
+            }
+            else
+            {
+                Debug.Log($"Load UI Failure: {name}");
+            }
         }
 
         /// <summary>
@@ -217,7 +206,7 @@ namespace Framework
         /// </summary>
         /// <param name="uiForm">要关闭的界面。</param>
         /// <param name="userData">用户自定义数据。</param>
-        public void CloseUI(string name, UIGroupType groupType)
+        public void CloseUI(string name)
         {
             if (IsLoadingUI(name))
             {
@@ -226,16 +215,13 @@ namespace Framework
                 return;
             }
 
-            UIGroup uiGroup = (UIGroup)GetUIGroup(groupType);
-            if (uiGroup == null)
+            if (_viewNameToGroupMap.TryGetValue(name, out var uiGroup))
             {
-                throw new Exception($"UI group '{groupType}' is not exist.");
+                var viewGo = uiGroup.GetViewGo(name);
+                _viewGoPool.UnSpawn(viewGo);
+                uiGroup.CloseUI(name);
+                _viewNameToGroupMap.Remove(name);
             }
-
-            var uiView = uiGroup.GetUI(name);
-            _viewGoPool.UnSpawn(uiView.gameObject);
-            uiGroup.CloseUI(name);
-            _viewNameToGroupMap.Remove(name);
         }
 
         /// <summary>

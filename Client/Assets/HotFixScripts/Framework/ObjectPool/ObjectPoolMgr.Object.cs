@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace Framework
 {
@@ -31,36 +30,6 @@ namespace Framework
                 get
                 {
                     return _object.Name;
-                }
-            }
-
-            /// <summary>
-            /// 获取对象是否被加锁。
-            /// </summary>
-            public bool Locked
-            {
-                get
-                {
-                    return _object.Locked;
-                }
-                internal set
-                {
-                    _object.Locked = value;
-                }
-            }
-
-            /// <summary>
-            /// 获取对象的优先级。
-            /// </summary>
-            public int Priority
-            {
-                get
-                {
-                    return _object.Priority;
-                }
-                internal set
-                {
-                    _object.Priority = value;
                 }
             }
 

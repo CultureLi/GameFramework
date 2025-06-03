@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Framework
 {
@@ -9,14 +10,16 @@ namespace Framework
 
         }
 
-        private sealed class PrefabObject : ObjectBase
+        public class PrefabObject : ObjectBase
         {
             private Transform _root;
-            public static PrefabObject Create(string name, GameObject target, Transform root)
+            private Action<GameObject> _onPreRelease;
+            public static PrefabObject Create(string name, GameObject target, Transform root, Action<GameObject> onPreRelease)
             {
                 var obj = ReferencePool.Acquire<PrefabObject>();
                 obj.Initialize(name, target, root);
                 target.AddComponent<PrefabObjectBehaviour>();
+                obj._onPreRelease = onPreRelease;
                 return obj;
             }
 
@@ -28,6 +31,7 @@ namespace Framework
                 
             protected internal override void Release(bool isShutdown)
             {
+                _onPreRelease?.Invoke(Target as GameObject);
                 GameObject.Destroy(Target as GameObject);
             }
 

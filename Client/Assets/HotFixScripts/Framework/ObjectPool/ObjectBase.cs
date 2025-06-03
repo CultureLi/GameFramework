@@ -1,6 +1,4 @@
-﻿
-using System;
-using UnityEngine;
+﻿using System;
 
 namespace Framework
 {
@@ -10,9 +8,7 @@ namespace Framework
     public abstract class ObjectBase : IReference
     {
         private string _name;
-        private object _target;
-        private bool _locked;
-        private int _priority;
+        private UnityEngine.Object _target;
         private DateTime _lastUseTime;
 
         /// <summary>
@@ -22,8 +18,6 @@ namespace Framework
         {
             _name = null;
             _target = null;
-            _locked = false;
-            _priority = 0;
             _lastUseTime = default(DateTime);
         }
 
@@ -41,41 +35,11 @@ namespace Framework
         /// <summary>
         /// 获取对象。
         /// </summary>
-        public object Target
+        public UnityEngine.Object Target
         {
             get
             {
                 return _target;
-            }
-        }
-
-        /// <summary>
-        /// 获取或设置对象是否被加锁。
-        /// </summary>
-        public bool Locked
-        {
-            get
-            {
-                return _locked;
-            }
-            set
-            {
-                _locked = value;
-            }
-        }
-
-        /// <summary>
-        /// 获取或设置对象的优先级。
-        /// </summary>
-        public int Priority
-        {
-            get
-            {
-                return _priority;
-            }
-            set
-            {
-                _priority = value;
             }
         }
 
@@ -109,9 +73,9 @@ namespace Framework
         /// 初始化对象基类。
         /// </summary>
         /// <param name="target">对象。</param>
-        protected void Initialize(object target)
+        protected void Initialize(UnityEngine.Object target)
         {
-            Initialize(null, target, false, 0);
+            Initialize(null, target);
         }
 
         /// <summary>
@@ -119,41 +83,7 @@ namespace Framework
         /// </summary>
         /// <param name="name">对象名称。</param>
         /// <param name="target">对象。</param>
-        protected void Initialize(string name, object target)
-        {
-            Initialize(name, target, false, 0);
-        }
-
-        /// <summary>
-        /// 初始化对象基类。
-        /// </summary>
-        /// <param name="name">对象名称。</param>
-        /// <param name="target">对象。</param>
-        /// <param name="locked">对象是否被加锁。</param>
-        protected void Initialize(string name, object target, bool locked)
-        {
-            Initialize(name, target, locked, 0);
-        }
-
-        /// <summary>
-        /// 初始化对象基类。
-        /// </summary>
-        /// <param name="name">对象名称。</param>
-        /// <param name="target">对象。</param>
-        /// <param name="priority">对象的优先级。</param>
-        protected void Initialize(string name, object target, int priority)
-        {
-            Initialize(name, target, false, priority);
-        }
-
-        /// <summary>
-        /// 初始化对象基类。
-        /// </summary>
-        /// <param name="name">对象名称。</param>
-        /// <param name="target">对象。</param>
-        /// <param name="locked">对象是否被加锁。</param>
-        /// <param name="priority">对象的优先级。</param>
-        protected void Initialize(string name, object target, bool locked, int priority)
+        protected void Initialize(string name, UnityEngine.Object target)
         {
             if (target == null)
             {
@@ -162,8 +92,6 @@ namespace Framework
 
             this._name = name ?? string.Empty;
             this._target = target;
-            this._locked = locked;
-            this._priority = priority;
             _lastUseTime = DateTime.UtcNow;
         }
 
@@ -174,8 +102,6 @@ namespace Framework
         {
             _name = null;
             _target = null;
-            _locked = false;
-            _priority = 0;
             _lastUseTime = default(DateTime);
         }
 

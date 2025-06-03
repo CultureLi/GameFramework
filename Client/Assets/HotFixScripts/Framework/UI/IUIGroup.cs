@@ -7,11 +7,7 @@ namespace Framework
     /// </summary>
     public interface IUIGroup
     {   
-        UIGroupType GroupType { get; }
-        
-        PrefabObjectPool ViewPool {
-            get; set;
-        }
+        int GroupId { get; }
 
         void OpenUI(string name, ViewData data, GameObject asset);
 
@@ -19,7 +15,7 @@ namespace Framework
 
         void RefocusUI(string name, ViewData data);
 
-        bool HasUI(string name);
+        GameObject GetViewGo(string name);
 
         void CloseAll();
 

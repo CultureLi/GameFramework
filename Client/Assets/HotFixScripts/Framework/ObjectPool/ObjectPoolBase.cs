@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 
 namespace Framework
 {
@@ -109,15 +108,6 @@ namespace Framework
         }
 
         /// <summary>
-        /// 获取或设置对象池的优先级。
-        /// </summary>
-        public abstract int Priority
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
         /// 释放对象池中的可释放对象。
         /// </summary>
         public abstract void Release();
@@ -132,12 +122,6 @@ namespace Framework
         /// 释放对象池中的所有未使用对象。
         /// </summary>
         public abstract void ReleaseAllUnused();
-
-        /// <summary>
-        /// 获取所有对象信息。
-        /// </summary>
-        /// <returns>所有对象信息。</returns>
-        public abstract ObjectInfo[] GetAllObjectInfos();
 
         public abstract void Update(float elapseSeconds, float realElapseSeconds);
 
