@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -18,6 +17,14 @@ namespace Launcher
         List<DllInfo> _needDownloadDlls;
         HotFixDllManifest _remoteManifest;
         string _remoteManifestJsonText;
+
+        ulong _totalSize;
+        public ulong TotalSize => _totalSize;
+
+        public Action<float> OnProgress
+        {
+            get;set;
+        }
 
         IEnumerator DoHotFixTasks()
         {
@@ -137,18 +144,59 @@ namespace Launcher
                 Directory.CreateDirectory(dir);
             }
             var allCnt = _needDownloadDlls.Count;
+            _totalSize = 0;
+
+            //请求头部信息，获取下载大小
+            foreach (var assembly in _needDownloadDlls)
+            {
+                var url = Path.Combine(LauncherPathDefine.remoteHotFixDllPath, $"{assembly.name}.dll.bytes");
+
+                UnityWebRequest headReq = UnityWebRequest.Head(url);
+                yield return headReq.SendWebRequest();
+
+                if (headReq.result == UnityWebRequest.Result.Success)
+                {
+                    string contentLength = headReq.GetResponseHeader("Content-Length");
+                    if (!string.IsNullOrEmpty(contentLength))
+                    {
+                        _totalSize += ulong.Parse(contentLength);
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"Head 请求失败: {url} - {headReq.error}");
+                }
+            }
+
+            // 下载文件
+            ulong downloadedSize = 0;
             foreach (var assembly in _needDownloadDlls)
             {
                 var url = Path.Combine(LauncherPathDefine.remoteHotFixDllPath, $"{assembly.name}.dll.bytes");
                 var savePath = Path.Combine(Application.persistentDataPath, "HotFixDll", $"{assembly.name}.dll.bytes");
-                using (UnityWebRequest www = UnityWebRequest.Get(url))
+                using (UnityWebRequest req = UnityWebRequest.Get(url))
                 {
-                    www.downloadHandler = new DownloadHandlerFile(savePath, append: false);
-                    yield return www.SendWebRequest();
+                    req.downloadHandler = new DownloadHandlerFile(savePath, append: false);
+                    yield return req.SendWebRequest();
 
-                    if (www.result != UnityWebRequest.Result.Success)
+                    while (!req.isDone)
                     {
-                        Debug.LogError($"Download failed: {url}, Error: {www.error}");
+                        // 实时进度更新
+                        string contentLength = req.GetResponseHeader("Content-Length");
+                        ulong fileSize = !string.IsNullOrEmpty(contentLength) ? ulong.Parse(contentLength) : 0;
+                        ulong currentDownloaded = (ulong)(req.downloadProgress * fileSize);
+
+                        ulong totalDownloaded = downloadedSize + currentDownloaded;
+
+                        OnProgress?.Invoke(totalDownloaded);
+
+                        yield return null;
+                    }
+
+                    if (req.result != UnityWebRequest.Result.Success)
+                    {
+                        downloadedSize += req.downloadedBytes;
+                        Debug.LogError($"Download failed: {url}, Error: {req.error}");
                     }
                     else
                     {
