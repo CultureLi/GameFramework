@@ -35,5 +35,7 @@ namespace GameEntry
             return localCatalogHash.CompareTo(remoteCatalogHash) != 0;
         }
 
+        
+
     }
 }
