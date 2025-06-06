@@ -10,38 +10,37 @@ using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace GameMain.Editor.Build
+
+[CreateAssetMenu(fileName = "CustomBuildScript.asset", menuName = "Addressables/Content Builders/Custom Build Script")]
+public class CustomBuildScript : BuildScriptPackedMode
 {
-    [CreateAssetMenu(fileName = "CustomBuildScript.asset", menuName = "Addressables/Content Builders/Custom Build Script")]
-    public class CustomBuildScript : BuildScriptPackedMode
+    public override string Name => "Custom Build Script";
+
+    protected override TResult DoBuild<TResult>(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext)
     {
-        public override string Name => "Custom Build Script";
+        // 1. 执行原始构建流程
+        var result = base.DoBuild<TResult>(builderInput, aaContext);
 
-        protected override TResult DoBuild<TResult>(AddressablesDataBuilderInput builderInput, AddressableAssetsBuildContext aaContext)
+
+        // 2. 在这里添加你自己的逻辑（仅在构建成功后）
+        if (result != null && result.Error == null)
         {
-            // 1. 执行原始构建流程
-            var result = base.DoBuild<TResult>(builderInput, aaContext);
-
-
-            // 2. 在这里添加你自己的逻辑（仅在构建成功后）
-            if (result != null && result.Error == null)
-            {
-                PostProcess();
-            }
-
-            return result;
+            PostProcess();
         }
 
-        private void PostProcess()
-        {
-            //生成catalog.hash文件
-            var originCatalogPath = Path.Combine(Addressables.RuntimePath, "catalog.json");
-            var originCatalogHashPath = originCatalogPath.Replace(".json", ".hash");
+        return result;
+    }
 
-            var jsonText = File.ReadAllText(originCatalogPath);
-            var hashCode = HashingMethods.Calculate(jsonText).ToString();
+    private void PostProcess()
+    {
+        //生成catalog.hash文件
+        var originCatalogPath = Path.Combine(Addressables.RuntimePath, "catalog.json");
+        var originCatalogHashPath = originCatalogPath.Replace(".json", ".hash");
 
-            File.WriteAllText(originCatalogHashPath, hashCode);
-        }
+        var jsonText = File.ReadAllText(originCatalogPath);
+        var hashCode = HashingMethods.Calculate(jsonText).ToString();
+
+        File.WriteAllText(originCatalogHashPath, hashCode);
     }
 }
+

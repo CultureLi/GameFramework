@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System;
 using Framework;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GameEntry
 {
@@ -10,7 +11,7 @@ namespace GameEntry
     {
         public static void Entry()
         {
-            Debug.Log(" GameEntryMgr 进来了");
+            Debug.Log(" GameEntryMgr Entry()");
             var go = new GameObject("FW");
             GameObject.DontDestroyOnLoad(go);
             go.AddComponent<FW>();
@@ -22,6 +23,8 @@ namespace GameEntry
 
         public string remoteCatalogHash;
         public string localCatalogHash;
+
+        public AsyncOperationHandle LoadingSceneHandle;
 
 
         public bool IsCatalogHashChanged()

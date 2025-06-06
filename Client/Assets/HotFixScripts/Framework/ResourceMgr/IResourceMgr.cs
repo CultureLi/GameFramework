@@ -30,10 +30,11 @@ namespace Framework
             get; set;
         }
 
-        IEnumerator LoadFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10);
+        IEnumerator DownloadRemoteFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10);
         IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb);
+        IEnumerator LoadLocalFile(string[] paths, Action<DownloadHandler> completedCb);
 
-        IEnumerator ReloadRemoteCatalog(string url, Action completedCb);
+        IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null);
 
         public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog);
 

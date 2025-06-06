@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Framework;
+using UnityEngine;
 
 namespace GameMain
 {
@@ -6,7 +7,8 @@ namespace GameMain
     {
         public static void Entry()
         {
-            Debug.Log(" 反反复复 GameMainEntry");
+            Utility.Test();
+            Debug.Log(" 急急急 GameMainEntry");
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace GameEntry
+namespace AOTBase
 {
     public partial class PathDefine
     {
@@ -28,8 +28,23 @@ namespace GameEntry
 
         public static readonly string persistentBundlePath = Path.Combine(Application.persistentDataPath, "com.unity.addressables/bundles");
         //经过热更后下载的最新Catalog
-        public static readonly string persistentCatalogPath = Path.Combine(Application.persistentDataPath, "com.unity.addressables/intermediate/catalog.json");
+        public static readonly string persistentCatalogPath = Path.Combine(Application.persistentDataPath, "catalog.json");
         public static readonly string persistentCatalogHashPath = persistentCatalogPath.Replace(".json", ".hash");
         public static readonly string tempCalalogHashPath = persistentCatalogPath.Replace("catalog.json", "catalogTemp.hash");
+
+        public static readonly string remoteHotFixDllPath = Path.Combine(remoteUrl, platformSubFolder, "HotFixDll");
+
+        public static readonly string remoteHotFixDllManifest = Path.Combine(remoteUrl, platformSubFolder, "hotFixDllManifest.json");
+
+        public static readonly string originHotFixDllManifest = Path.Combine(Application.streamingAssetsPath, "hotFixDllManifest.json");
+
+        public static readonly string persistentHotFixManifestPath = Path.Combine(Application.persistentDataPath, "hotFixDllManifest.json");
+
+        public static readonly string metaDataPath = Path.Combine(Application.streamingAssetsPath, "MetaData");
+        public static readonly string metaDataListPath = Path.Combine(Application.streamingAssetsPath, "metaDataList.json");
+
+        public static readonly string originHotFixPath = Path.Combine(Application.streamingAssetsPath, "HotFixDll");
+
+        public static readonly string persistentHotFixPath = Path.Combine(Application.persistentDataPath, "HotFixDll");
     }
 }

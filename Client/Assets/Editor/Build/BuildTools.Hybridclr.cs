@@ -1,4 +1,5 @@
-﻿using HybridCLR.Editor.Commands;
+﻿using AOTBase;
+using HybridCLR.Editor.Commands;
 using HybridCLR.Editor.Settings;
 using Launcher;
 using System;
@@ -15,13 +16,16 @@ namespace Assets.GameMain.Editor.Build
     public partial class BuildTools
     {
 
-        [MenuItem("BuildTools/Hybridclr/BuildHybridclr")]
-        public static void BuildHybridclr()
+        [MenuItem("BuildTools/Hybridclr/BuildHybridclrAll")]
+        public static void BuildHybridclrAll()
         {
+            Debug.Log("BuildHybridclr 开始");
             PrebuildCommand.GenerateAll();
             CopyMetaData();
             GenHotFixManifest();
-            CopyHotFixDll();
+            CopyHotFixDllToServer();
+            CopyHotFixDllToStreamingAsset();
+            Debug.Log("BuildHybridclr 结束");
         }
 
         /// <summary>
@@ -65,7 +69,7 @@ namespace Assets.GameMain.Editor.Build
                 File.Copy(file, destPath, true);
             }
 
-            File.WriteAllText(LauncherPathDefine.metaDataListPath, JsonConvert.SerializeObject(metaDataInfo, Formatting.Indented));
+            File.WriteAllText(PathDefine.metaDataListPath, JsonConvert.SerializeObject(metaDataInfo, Formatting.Indented));
             Debug.Log($"已将 {dllFiles.Length} 个 DLL 拷贝到 {targetPath} 并生成 {listFileName}");
         }
 
@@ -79,10 +83,10 @@ namespace Assets.GameMain.Editor.Build
         /// 生成HotFixManifest.json
         /// </summary>
         /// <exception cref="Exception"></exception>
-        [MenuItem("BuildTools/Hybridclr/GenHotFixManifest")]
+        [MenuItem("BuildTools/Hybridclr/生成HotFixManifest")]
         public static void GenHotFixManifest()
         {
-            Debug.Log("开始生成 HotFixDllManifest.json");
+            Debug.Log("开始生成 hotFixDllManifest.json");
 
             string[] guids = AssetDatabase.FindAssets("t:AssemblyDefinitionAsset");
             var manifest = new HotFixDllManifest();
@@ -122,7 +126,9 @@ namespace Assets.GameMain.Editor.Build
                         {
                             string refGuid = reference.Substring(5);
                             string refPath = AssetDatabase.GUIDToAssetPath(refGuid);
-                            if (!string.IsNullOrEmpty(refPath))
+
+                            if (!string.IsNullOrEmpty(refPath) &&
+                                refPath.StartsWith("Assets/HotFixScripts"))
                             {
                                 string refJson = File.ReadAllText(refPath);
                                 var refAsmdef = JsonUtility.FromJson<AsmdefData>(refJson);
@@ -148,32 +154,26 @@ namespace Assets.GameMain.Editor.Build
 
                 manifest.item.Add(info);
             }
+            
+            File.WriteAllText(hotFixDllManifestSavePath, JsonUtility.ToJson(manifest, true));
 
-            File.WriteAllText(hotFixDllManifestSavePath, JsonConvert.SerializeObject(manifest, Formatting.Indented));
-
-            Debug.Log($"导出 HotFixDllManifest.json Path: {hotFixDllManifestSavePath}");
+            Debug.Log($"导出 hotFixDllManifest.json Path: {hotFixDllManifestSavePath}");
         }
 
         /// <summary>
         /// 拷贝HotFixDll到serverData 和 StreamingAssets
         /// </summary>
-        [MenuItem("BuildTools/Hybridclr/拷贝HotFixDll")]
-        public static void CopyHotFixDll()
+        [MenuItem("BuildTools/Hybridclr/拷贝HotFixDll到HttpServer")]
+        public static void CopyHotFixDllToServer()
         {
-            Debug.Log("拷贝HotFixDll 和 Manifest Start");
+            Debug.Log("拷贝HotFixDll到HttpServer");
             if (Directory.Exists(serverHotFixDllPath))
             {
                 Directory.Delete(serverHotFixDllPath, true);
             }
             Directory.CreateDirectory(serverHotFixDllPath);
 
-            if (Directory.Exists(LauncherPathDefine.originHotFixPath))
-            {
-                Directory.Delete(LauncherPathDefine.originHotFixPath, true);
-            }
-            Directory.CreateDirectory(LauncherPathDefine.originHotFixPath);
 
-            File.Copy(hotFixDllManifestSavePath, LauncherPathDefine.originHotFixDllManifest, true);
             File.Copy(hotFixDllManifestSavePath, Path.Combine("../HttpServer", PlatformMappingService.GetPlatformPathSubFolder(), "hotFixDllManifest.json"), true);
 
             foreach (var assembly in HybridCLRSettings.Instance.hotUpdateAssemblyDefinitions)
@@ -182,10 +182,33 @@ namespace Assets.GameMain.Editor.Build
                 var tarName = $"{assembly.name}.dll.bytes";
 
                 File.Copy(src, Path.Combine(serverHotFixDllPath, tarName), true);
-                File.Copy(src, Path.Combine(LauncherPathDefine.originHotFixPath, tarName), true);
             }
             Debug.Log("拷贝HotFixDll 和 Manifest End");
         }
+
+        /// <summary>
+        /// 拷贝HotFixDll到serverData 和 StreamingAssets
+        /// </summary>
+        [MenuItem("BuildTools/Hybridclr/拷贝HotFixDll到StreamingAsset")]
+        public static void CopyHotFixDllToStreamingAsset()
+        {
+            Debug.Log("拷贝HotFixDll到StreamingAsset");
+            if (Directory.Exists(PathDefine.originHotFixPath))
+            {
+                Directory.Delete(PathDefine.originHotFixPath, true);
+            }
+            Directory.CreateDirectory(PathDefine.originHotFixPath);
+
+            File.Copy(hotFixDllManifestSavePath, PathDefine.originHotFixDllManifest, true);
+            foreach (var assembly in HybridCLRSettings.Instance.hotUpdateAssemblyDefinitions)
+            {
+                var src = Path.Combine(hotUpdateDllPath, $"{assembly.name}.dll");
+                var tarName = $"{assembly.name}.dll.bytes";
+
+                File.Copy(src, Path.Combine(PathDefine.originHotFixPath, tarName), true);
+            }
+        }
+
 
         [System.Serializable]
         class AsmdefData

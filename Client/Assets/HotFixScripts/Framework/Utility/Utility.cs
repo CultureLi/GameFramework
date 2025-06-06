@@ -1,4 +1,6 @@
-﻿namespace Framework
+﻿using UnityEngine;
+
+namespace Framework
 {
     /// <summary>
     /// 实用函数集。
@@ -19,6 +21,11 @@
                 return $"{byteSize / (double)KB:F2} KB";
             else
                 return byteSize + "B";
+        }
+
+        public static void Test()
+        {
+            Debug.Log("hhhhhh");
         }
     }
 }

@@ -50,7 +50,7 @@ namespace Assets.GameMain.Editor.Build
 
             if (buildParams.buildHybridclr)
             {
-                BuildHybridclr();
+                BuildHybridclrAll();
             }
 
             if (buildParams.buildAddressable)

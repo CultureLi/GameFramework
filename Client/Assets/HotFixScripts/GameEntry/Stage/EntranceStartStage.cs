@@ -11,7 +11,10 @@ namespace GameEntry.Stage
     {
         protected override void OnEnter()
         {
-            ChangeState<DownloadVersionStage>();
+            GameEntryMgr.I.LoadingSceneHandle = FW.ResourceMgr.LoadSceneAsync("Assets/BundleRes/Scene/Login.unity");
+            GameEntryMgr.I.LoadingSceneHandle.WaitForCompletion();
+
+            ChangeState<DownloadHotfixDllStage>();
         }
     }
 }

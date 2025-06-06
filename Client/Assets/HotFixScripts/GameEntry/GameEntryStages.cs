@@ -13,9 +13,8 @@ namespace GameEntry
             _stageFsm = Fsm.Create("GameEntryFsm", new List<FsmState>()
             {
                 new EntranceStartStage(),
-                new DownloadVersionStage(this),
-                new DownloadCatalogHashStage(this),
-                new ReloadCatalogStage(this),
+                new DownloadHotfixDllStage(this),
+                new DownloadCatalogStage(this),
                 new DownloadBundleStage(this),
                 new EntranceEndStage(),
             });

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
@@ -39,19 +40,18 @@ namespace Framework
             get; set;
         }
 
-
         /// <summary>
         /// 加载本地文件
         /// </summary>
-        /// <param name="relativePath"></param>
+        /// <param name="paths">要搜索的全路径</param>
         /// <param name="completedCb"></param>
         /// <returns></returns>
-        public IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb)
+        public IEnumerator LoadLocalFile(string[] paths, Action<DownloadHandler> completedCb)
         {
-            string[] rootPaths = { Application.persistentDataPath, Application.streamingAssetsPath };
-            foreach (var path in rootPaths)
+            var cnt = paths.Length;
+            for (var idx = 0; idx < cnt; idx++)
             {
-                var url = Path.Combine(path, relativePath);
+                var url = paths[idx];
                 var uwr = UnityWebRequest.Get(url);
                 yield return uwr.SendWebRequest();
                 if (uwr.result == UnityWebRequest.Result.Success)
@@ -61,9 +61,26 @@ namespace Framework
                 }
                 else
                 {
-                    completedCb?.Invoke(null);
+                    if (idx == cnt - 1)
+                        completedCb?.Invoke(null);
                 }
             }
+        }
+
+        /// <summary>
+        /// 加载本地文件
+        /// </summary>
+        /// <param name="relativePath">相对路径</param>
+        /// <param name="completedCb"></param>
+        /// <returns></returns>
+        public IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb)
+        {
+            string[] rootPaths =
+            {
+                Path.Combine(Application.persistentDataPath, relativePath),
+                Path.Combine(Application.streamingAssetsPath, relativePath)
+            };
+            yield return LoadLocalFile(rootPaths, completedCb);
         }
 
         /// <summary>
@@ -74,7 +91,7 @@ namespace Framework
         /// <param name="tryCount">尝试次数</param>
         /// <param name="timeout">超时</param>
         /// <returns></returns>
-        public IEnumerator LoadFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10)
+        public IEnumerator DownloadRemoteFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10)
         {
             for (int i = 0; i < tryCount; i++)
             {
@@ -83,11 +100,22 @@ namespace Framework
                 yield return uwr.SendWebRequest();
                 if (uwr.result == UnityWebRequest.Result.Success)
                 {
-                    completedCb?.Invoke(uwr.downloadHandler);
+                    try
+                    {
+                        completedCb?.Invoke(uwr.downloadHandler);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                     yield break;
                 }
                 else
                 {
+                    if (i == tryCount - 1)
+                    {
+                        Debug.LogWarning($"Download failed: {path} error: {uwr.error}");
+                    }
                     completedCb?.Invoke(null);
                 }
 
@@ -125,7 +153,7 @@ namespace Framework
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public IEnumerator ReloadRemoteCatalog(string url, Action completedCb)
+        public IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null)
         {
             var oldLocators = Addressables.ResourceLocators.ToList();
             IResourceLocator localLocator = oldLocators.Find(e => e is ResourceLocationMap);
@@ -143,7 +171,7 @@ namespace Framework
             CollectRemoteResInfo(localLocator, remoteLocator);
             Addressables.InternalIdTransformFunc = InternalIdTransform;
 
-            completedCb?.Invoke();
+            completedCb?.Invoke(remoteLocator);
         }
 
         public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog)

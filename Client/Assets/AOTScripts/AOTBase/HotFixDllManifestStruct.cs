@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Launcher
+namespace AOTBase
 {
     [System.Serializable]
     public class DllInfo
