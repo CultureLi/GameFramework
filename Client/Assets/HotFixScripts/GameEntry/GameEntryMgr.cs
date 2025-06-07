@@ -6,6 +6,7 @@ using Framework;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace GameEntry
 {
@@ -26,7 +27,7 @@ namespace GameEntry
         public string remoteCatalogHash;
         public string localCatalogHash;
 
-        public AsyncOperationHandle LoadingSceneHandle;
+        public AsyncOperationHandle<SceneInstance> LoadingSceneHandle;
         public HashSet<IResourceLocation> AllLocations = new HashSet<IResourceLocation>();
 
         public bool IsCatalogHashChanged()
