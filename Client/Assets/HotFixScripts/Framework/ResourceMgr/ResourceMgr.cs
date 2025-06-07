@@ -18,7 +18,6 @@ namespace Framework
 {
     internal sealed class ResourceMgr : IResourceMgr, IFramework
     {
-        string remoteBundleUrl;
         //和本地安装时catalog相比下，远端bundle的location,用来做资源location重定向、资源下载大小计算
         Dictionary<string, string> _remoteBundlesLocationMap = new Dictionary<string, string>();
         // 记录所有（非Bundle）的location, 因为Addressables.DownloadDependenciesAsync()
@@ -52,15 +51,18 @@ namespace Framework
             for (var idx = 0; idx < cnt; idx++)
             {
                 var url = paths[idx];
+                Debug.Log($"LoadLocalFile {url}");
                 var uwr = UnityWebRequest.Get(url);
                 yield return uwr.SendWebRequest();
                 if (uwr.result == UnityWebRequest.Result.Success)
                 {
+                    Debug.Log($"LoadLocalFile Success {url}");
                     completedCb?.Invoke(uwr.downloadHandler);
                     yield break;
                 }
                 else
                 {
+                    Debug.Log($"LoadLocalFile Failed {url}");
                     if (idx == cnt - 1)
                         completedCb?.Invoke(null);
                 }
@@ -77,7 +79,7 @@ namespace Framework
         {
             string[] rootPaths =
             {
-                Path.Combine(Application.persistentDataPath, relativePath),
+                "file://" + Path.Combine(Application.persistentDataPath, relativePath),
                 Path.Combine(Application.streamingAssetsPath, relativePath)
             };
             yield return LoadLocalFile(rootPaths, completedCb);
@@ -127,10 +129,9 @@ namespace Framework
         /// 更改bundle加载路径
         /// </summary>
         /// <param name="location"></param>
-        private void ModifyBundleLocation(IResourceLocation location)
+        public void ModifyBundleLocation(string internalId, string location)
         {
-            _remoteBundlesLocationMap[location.InternalId] = Path.Combine(remoteBundleUrl,
-                Path.GetFileName(location.InternalId));
+            _remoteBundlesLocationMap[internalId] = location;
         }
 
         /// <summary>
@@ -148,12 +149,17 @@ namespace Framework
             return location.InternalId;
         }
 
+        public void SetInternalIdTransform(Func<IResourceLocation, string> func = null)
+        {
+            Addressables.InternalIdTransformFunc = func??InternalIdTransform;
+        }
+
         /// <summary>
         /// 加载远端Catalog
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null)
+        /*public IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null)
         {
             var oldLocators = Addressables.ResourceLocators.ToList();
             IResourceLocator localLocator = oldLocators.Find(e => e is ResourceLocationMap);
@@ -283,7 +289,7 @@ namespace Framework
                 Debug.Log("不需要下载任何资源！");
             }
             BundleDownloadCompleted?.Invoke();
-        }
+        }*/
 
         public AsyncOperationHandle<List<string>> CheckForCatalogUpdates(bool autoReleaseHandle = true)
         {

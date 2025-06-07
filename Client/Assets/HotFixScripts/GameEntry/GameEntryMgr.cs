@@ -4,6 +4,8 @@ using System.Collections;
 using System;
 using Framework;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Collections.Generic;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace GameEntry
 {
@@ -25,7 +27,7 @@ namespace GameEntry
         public string localCatalogHash;
 
         public AsyncOperationHandle LoadingSceneHandle;
-
+        public HashSet<IResourceLocation> AllLocations = new HashSet<IResourceLocation>();
 
         public bool IsCatalogHashChanged()
         {

@@ -12,7 +12,7 @@ namespace Framework
         private string _uiAssetRootPath = "Assets/BundleRes/UI";
 
         private readonly Dictionary<int, IUIGroup> _groups;
-        private readonly Dictionary<string, IUIGroup> _viewNameToGroupMap;
+        private readonly Dictionary<string, UIViewWrapper> _viewWrapperMap = new Dictionary<string, UIViewWrapper>();
         private readonly HashSet<string> _loadingUIs;
         private readonly HashSet<string> _toReleaseOnLoading;
         private IResourceMgr _resourceMgr;
@@ -24,7 +24,7 @@ namespace Framework
         public UIManager()
         {
             _groups = new Dictionary<int, IUIGroup>();
-            _viewNameToGroupMap = new Dictionary<string, IUIGroup>();
+            _viewWrapperMap = new Dictionary<string, UIViewWrapper>();
             _loadingUIs = new HashSet<string>();
             _toReleaseOnLoading = new HashSet<string>();
             _resourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
@@ -64,6 +64,7 @@ namespace Framework
                 return false;
             }
             var group = new UIGroup(groupId, groupRoot);
+            group.UIMgr = this;
             _groups.Add(groupId, group);
 
             return true;
@@ -84,6 +85,7 @@ namespace Framework
             {
                 return false;
             }
+            group.UIMgr = this;
             _groups.Add(group.GroupId, group);
 
             return true;
@@ -104,7 +106,7 @@ namespace Framework
         /// </summary>
         /// <param name="groupId">界面组Id。</param>
         /// <returns>要获取的界面组。</returns>
-        public IUIGroup GetUIGroup(int groupId)
+        private IUIGroup GetUIGroup(int groupId)
         {
             return _groups.TryGetValue(groupId, out var group) ? group : null;
         }
@@ -114,9 +116,24 @@ namespace Framework
         /// </summary>
         /// <param name="serialId">界面序列编号。</param>
         /// <returns>是否存在界面。</returns>
-        public bool IsOpened(string name)
+        public bool HasUI(string name)
         {
-            return _viewNameToGroupMap.ContainsKey(name);
+            return _viewWrapperMap.ContainsKey(name);
+        }
+
+        private UIViewWrapper GetViewWrapper(string name)
+        {
+            return _viewWrapperMap.TryGetValue(name,out var viewWrapper) ? viewWrapper : null;
+        }
+
+        private bool AddViewWrapper(string name, UIViewWrapper wrapper)
+        {
+            return _viewWrapperMap.TryAdd(name, wrapper);
+        }
+
+        private bool RemoveViewWrapper(string name)
+        {
+            return _viewWrapperMap.Remove(name);
         }
 
         /// <summary>
@@ -124,7 +141,7 @@ namespace Framework
         /// </summary>
         /// <param name="name">界面资源名称。</param>
         /// <returns>是否正在加载界面。</returns>
-        public bool IsLoadingUI(string name)
+        private bool IsLoadingUI(string name)
         {
             return _loadingUIs.Contains(name);
         }
@@ -150,9 +167,10 @@ namespace Framework
             }
 
             //已经打开，从新聚焦
-            if (IsOpened(name))
+            var wrapper = GetViewWrapper(name);
+            if (wrapper != null)
             {
-                uiGroup.RefocusUI(name, userData);
+                uiGroup.RefocusUI(wrapper);
                 return;
             }
 
@@ -192,8 +210,9 @@ namespace Framework
 
             if (viewGo != null)
             {
-                _viewNameToGroupMap[name] = uiGroup;
-                uiGroup.OpenUI(name, userData, viewGo);
+                var wrapper = UIViewWrapper.Create(uiGroup, name, userData, viewGo);
+                AddViewWrapper(name, wrapper);
+                uiGroup.OpenUI(wrapper);
             }
             else
             {
@@ -204,8 +223,7 @@ namespace Framework
         /// <summary>
         /// 关闭界面。
         /// </summary>
-        /// <param name="uiForm">要关闭的界面。</param>
-        /// <param name="userData">用户自定义数据。</param>
+        /// <param name="name">要关闭的界面。</param>
         public void CloseUI(string name)
         {
             if (IsLoadingUI(name))
@@ -215,25 +233,28 @@ namespace Framework
                 return;
             }
 
-            if (_viewNameToGroupMap.TryGetValue(name, out var uiGroup))
+            var wrapper = GetViewWrapper(name);
+            if (wrapper != null)
             {
-                var viewGo = uiGroup.GetViewGo(name);
-                _viewGoPool.UnSpawn(viewGo);
-                uiGroup.CloseUI(name);
-                _viewNameToGroupMap.Remove(name);
+                wrapper.UIGroup.CloseUI(wrapper);
+                wrapper.UnSpawnView(_viewGoPool);
+                UIViewWrapper.Release(wrapper);
+                RemoveViewWrapper(name);
             }
         }
 
         /// <summary>
         /// 激活界面。
         /// </summary>
-        /// <param name="uiForm">要激活的界面。</param>
+        /// <param name="name">要激活的界面。</param>
         /// <param name="userData">用户自定义数据。</param>
         public void RefocusUI(string name, ViewData userData)
         {
-            if (_viewNameToGroupMap.TryGetValue(name, out var uiGroup))
+            var wrapper = GetViewWrapper(name);
+            if (wrapper != null)
             {
-                uiGroup.RefocusUI(name, userData);
+                wrapper.UpdateViewData(userData);
+                wrapper.UIGroup.RefocusUI(wrapper);
             }
         }
 

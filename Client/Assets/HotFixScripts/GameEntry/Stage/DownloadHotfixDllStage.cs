@@ -1,9 +1,12 @@
 ﻿using AOTBase;
+using Codice.Client.BaseCommands;
 using Framework;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Security.Policy;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -62,6 +65,7 @@ namespace GameEntry.Stage
                 if (handler != null)
                 {
                     _localManifest = JsonUtility.FromJson<HotFixDllManifest>(handler.text);
+                    DumpManifestInfo(_localManifest);
                 }
             });
         }
@@ -81,8 +85,19 @@ namespace GameEntry.Stage
                     Debug.Log("download manifest success!!!");
                     _remoteManifestJsonText = handler.text;
                     _remoteManifest = JsonUtility.FromJson<HotFixDllManifest>(_remoteManifestJsonText);
+                    DumpManifestInfo(_remoteManifest);
                 }
             });
+        }
+
+        void DumpManifestInfo(HotFixDllManifest manifest)
+        {
+            var str = string.Empty;
+            foreach (var item in manifest.item)
+            {
+                str += $"{item.name} {item.hash}\n";
+            }
+            Debug.Log($"ManifestInfo {str}");
         }
 
         /// <summary>
@@ -95,9 +110,6 @@ namespace GameEntry.Stage
 
             if (_remoteManifest == null || _localManifest == null)
                 return needDownloadDlls;
-
-/*            if (_remoteManifest.version.CompareTo(_localManifest.version) <= 0)
-                return needDownloadDlls;*/
 
             foreach (var remoteDll in _remoteManifest.item)
             {
@@ -168,41 +180,53 @@ namespace GameEntry.Stage
 
             Debug.Log($"need download dll total size: {_totalSize}");
 
+            List<UnityWebRequestAsyncOperation> reqOpeList = new List<UnityWebRequestAsyncOperation>();
+
             // 下载文件
-            ulong downloadedSize = 0;
             foreach (var assembly in needDownloadDlls)
             {
                 var url = Path.Combine(PathDefine.remoteHotFixDllPath, $"{assembly.name}.dll.bytes");
                 var savePath = Path.Combine(Application.persistentDataPath, "HotFixDll", $"{assembly.name}.dll.bytes");
-                using (UnityWebRequest req = UnityWebRequest.Get(url))
+                UnityWebRequest req = UnityWebRequest.Get(url);
+
+                Debug.Log($"download dll {assembly.name}");
+                req.downloadHandler = new DownloadHandlerFile(savePath, append: false);
+                var ope = req.SendWebRequest();
+                reqOpeList.Add(ope);
+            }
+
+            bool UpdateProgress()
+            {
+                var isAllDone = true;
+                ulong downloadedSize = 0;
+                foreach (var ope in reqOpeList)
                 {
-                    Debug.Log($"download dll {assembly.name}");
-                    req.downloadHandler = new DownloadHandlerFile(savePath, append: false);
-                    yield return req.SendWebRequest();
-
-                    while (!req.isDone)
+                    if (!ope.isDone)
                     {
-                        // 实时进度更新
-                        string contentLength = req.GetResponseHeader("Content-Length");
-                        ulong fileSize = !string.IsNullOrEmpty(contentLength) ? ulong.Parse(contentLength) : 0;
-                        ulong currentDownloaded = (ulong)(req.downloadProgress * fileSize);
-
-                        ulong totalDownloaded = downloadedSize + currentDownloaded;
-                        float progress = _totalSize > 0 ? (float)totalDownloaded / _totalSize : 0f;
-
-                        yield return null;
-                    }
-
-                    if (req.result != UnityWebRequest.Result.Success)
-                    {
-                        downloadedSize += req.downloadedBytes;
-                        Debug.LogError($"download dll {assembly.name} failed, url: {url} error: {req.error}");
+                        isAllDone = false;
                     }
                     else
                     {
-                        Debug.Log($"download dll {assembly.name} success. samePath: {savePath}");
+                        if (ope.webRequest.result != UnityWebRequest.Result.Success)
+                        {
+                            Debug.LogError($"download dll {ope.webRequest.uri} error: {ope.webRequest.error}");
+                        }
+                        else
+                        {
+                            Debug.Log($"download dll {ope.webRequest.uri} success");
+                        }
                     }
+                    downloadedSize += ope.webRequest.downloadedBytes;
                 }
+                float progress = _totalSize > 0 ? (float)downloadedSize / _totalSize : 0f;
+                var progressEvent = LoadingProgressEvent.Create(progress, $"{Utility.FormatByteSize(downloadedSize)} / {Utility.FormatByteSize(_totalSize)}");
+                FW.EventMgr.BroadcastAsync(progressEvent);
+                return isAllDone;
+            }
+
+            while (!UpdateProgress())
+            {
+                yield return null;
             }
 
             OverrideLocalManifest();
@@ -230,6 +254,7 @@ namespace GameEntry.Stage
         /// </summary>
         public void OverrideLocalManifest()
         {
+            Debug.Log("覆盖本地manifest文件");
             File.WriteAllText(PathDefine.persistentHotFixManifestPath, _remoteManifestJsonText);
         }
 

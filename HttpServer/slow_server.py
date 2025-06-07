@@ -11,7 +11,7 @@ class ThrottledHandler(SimpleHTTPRequestHandler):
                 break
             outputfile.write(buf)
             outputfile.flush()
-            time.sleep(0.0005)  # 每 8KB 等 50ms => 限速大约 160 KB/s
+            time.sleep(0.1)  # 这个越大，越慢
 
 if __name__ == '__main__':
     HOST = '10.23.50.187'  # 👉 改成你自己机器的局域网 IP

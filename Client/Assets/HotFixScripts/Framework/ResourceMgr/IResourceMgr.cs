@@ -34,11 +34,8 @@ namespace Framework
         IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb);
         IEnumerator LoadLocalFile(string[] paths, Action<DownloadHandler> completedCb);
 
-        IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null);
-
-        public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog);
-
-        IEnumerator DownloadBundles();
+        void ModifyBundleLocation(string internalId, string location);
+        void SetInternalIdTransform(Func<IResourceLocation, string> fun = null);
 
         public AsyncOperationHandle<IResourceLocator> InitializeAsync();
         public AsyncOperationHandle<IResourceLocator> LoadContentCatalogAsync(string catalogPath);

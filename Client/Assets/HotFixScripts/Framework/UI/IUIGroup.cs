@@ -7,15 +7,14 @@ namespace Framework
     /// </summary>
     public interface IUIGroup
     {   
+        IUIManager UIMgr {
+            get; set;
+        }
         int GroupId { get; }
+        void OpenUI(UIViewWrapper wrapper);
+        void CloseUI(UIViewWrapper wrapper);
 
-        void OpenUI(string name, ViewData data, GameObject asset);
-
-        void CloseUI(string name);
-
-        void RefocusUI(string name, ViewData data);
-
-        GameObject GetViewGo(string name);
+        void RefocusUI(UIViewWrapper wrapper);
 
         void CloseAll();
 

@@ -16,10 +16,7 @@ namespace Framework
     }
     public abstract class ViewBase : MonoBehaviour
     {
-        public IUIManager UIManager
-        {
-            get;set;
-        }
+        internal UIViewWrapper Wrapper;
 
         public virtual void OnShow(bool isInitShow, ViewData data)
         {
@@ -28,9 +25,10 @@ namespace Framework
         {
         }
 
-        protected void Close()
+        public void Close()
         {
-            //UIManager.CloseUI();
+            Wrapper?.CloseSelf();
+            Wrapper = null;
         }
 
     }

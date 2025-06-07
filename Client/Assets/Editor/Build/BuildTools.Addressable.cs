@@ -27,7 +27,8 @@ namespace Assets.GameMain.Editor.Build
 				Debug.LogWarning("⚠️ 缓存清理失败，可能没有可清理的缓存。");
 		}
 
-		private static void BuildAddressables()
+        [MenuItem("BuildTools/Addressable/BuildAll")]
+        public static void BuildAddressables()
 		{
 			Debug.Log("Addressables Build Start ...");
 			AddressableAssetSettings.CleanPlayerContent();

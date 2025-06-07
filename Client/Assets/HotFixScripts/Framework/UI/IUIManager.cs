@@ -8,8 +8,6 @@ namespace Framework
     public interface IUIManager
     {
         string UIAssetRootPath { get;}
-        bool AddUIGroup(int groupId, Transform groupRoot);
-
         /// <summary>
         /// 获取界面组数量。
         /// </summary>
@@ -17,6 +15,8 @@ namespace Framework
         {
             get;
         }
+
+        bool AddUIGroup(int groupId, Transform groupRoot);
 
         /// <summary>
         /// 是否存在界面组。
@@ -26,25 +26,11 @@ namespace Framework
         bool HasUIGroup(int groupId);
 
         /// <summary>
-        /// 获取界面组。
-        /// </summary>
-        /// <param name="groupId">界面组Id。</param>
-        /// <returns>要获取的界面组。</returns>
-        IUIGroup GetUIGroup(int groupId);
-
-        /// <summary>
         /// 界面是否打开状态，不一定在最上层
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        bool IsOpened(string name);
-
-        /// <summary>
-        /// 是否正在加载界面。
-        /// </summary>
-        /// <param name="name">界面资源名称。</param>
-        /// <returns>是否正在加载界面。</returns>
-        bool IsLoadingUI(string name);
+        bool HasUI(string name);
 
         /// <summary>
         /// 打开界面。
@@ -53,7 +39,6 @@ namespace Framework
         /// <param name="uiGroupName">界面组名称。</param>
         /// <returns>界面的序列编号。</returns>
         void OpenUI(string name, int groupId, ViewData userData = null);
-
 
         /// <summary>
         /// 关闭界面。

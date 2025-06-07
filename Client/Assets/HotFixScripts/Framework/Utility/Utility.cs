@@ -7,7 +7,7 @@ namespace Framework
     /// </summary>
     public static partial class Utility
     {
-        public static string FormatByteSize(long byteSize)
+        public static string FormatByteSize(ulong byteSize)
         {
             const long KB = 1024;
             const long MB = KB * 1024;
