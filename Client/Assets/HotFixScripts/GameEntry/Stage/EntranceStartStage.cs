@@ -3,7 +3,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace GameEntry.Stage
 {
@@ -19,7 +18,6 @@ namespace GameEntry.Stage
                 GameEntryMgr.I.UIRoot = handle.Result.transform;
             }
 
-            var uiRoot = new GameObject("UIRoottemp");
             FW.UIMgr.OpenUI("GameEntry/UIGameEntryProgress", (int)UIGroupType.Normal);
 
             ChangeState<DownloadHotfixDllStage>();

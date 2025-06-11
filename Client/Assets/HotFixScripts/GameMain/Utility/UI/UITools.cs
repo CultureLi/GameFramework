@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace GameMain
 {
-    internal partial class UITools
+    public partial class UITools
     {
         public static void OpenHUD(string name, ViewData uiData = null)
         {

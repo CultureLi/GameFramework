@@ -62,8 +62,8 @@ namespace GameEntry
                 textBtnCancel.text = _uiData.btnCancelText;
             }
 
-            btnOk.onClick.AddListener(OnBtnOkClick);
-            btnCancel.onClick.AddListener(OnBtnCancelClick);
+            btnOk.AddSafeListener(OnBtnOkClick);
+            btnCancel.AddSafeListener(OnBtnCancelClick);
         }
 
         void OnBtnOkClick()

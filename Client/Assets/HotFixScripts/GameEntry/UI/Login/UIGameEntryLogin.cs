@@ -18,7 +18,7 @@ namespace GameEntry
 
         private void Awake()
         {
-            btnLogin.onClick.AddListener(OnBtnLoginClick);
+            btnLogin.AddSafeListener(OnBtnLoginClick);
         }
 
         void OnBtnLoginClick()

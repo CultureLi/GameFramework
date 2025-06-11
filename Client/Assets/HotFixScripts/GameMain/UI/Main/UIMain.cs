@@ -15,7 +15,7 @@ namespace GameMain
 
         private void Awake()
         {
-            btnGotoLogin.onClick.AddListener(OnBtnGotoLoginClick);
+            btnGotoLogin.AddSafeListener(OnBtnGotoLoginClick);
         }
 
         void OnBtnGotoLoginClick()
