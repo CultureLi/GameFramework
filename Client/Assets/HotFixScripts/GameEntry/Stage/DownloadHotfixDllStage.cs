@@ -57,7 +57,7 @@ namespace GameEntry.Stage
                         }
                     }
                 };
-                GameEntry.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
+                FW.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
             }
             else
             {
@@ -72,7 +72,7 @@ namespace GameEntry.Stage
         IEnumerator LoadLocalManifest()
         {
             Debug.Log("load local manifest");
-            yield return GameEntry.ResourceMgr.LoadLocalFile("hotFixDllManifest.json", (handler) =>
+            yield return FW.ResourceMgr.LoadLocalFile("hotFixDllManifest.json", (handler) =>
             {
                 if (handler != null)
                 {
@@ -90,7 +90,7 @@ namespace GameEntry.Stage
         {
             Debug.Log("download manifest start....");
             var url = PathDefine.remoteHotFixDllManifest;
-            yield return GameEntry.ResourceMgr.DownloadRemoteFile(url, (handler) =>
+            yield return FW.ResourceMgr.DownloadRemoteFile(url, (handler) =>
             {
                 if (handler != null)
                 {
@@ -237,7 +237,7 @@ namespace GameEntry.Stage
                 float progress = downloadedProgress / reqOpeList.Count;
                 var progressEvent = LoadingProgressEvent.Create(progress, $"{(progress * 100f):F1}%");
                 
-                GameEntry.EventMgr.BroadcastAsync(progressEvent);
+                FW.EventMgr.BroadcastAsync(progressEvent);
                 return isAllDone;
             }
 

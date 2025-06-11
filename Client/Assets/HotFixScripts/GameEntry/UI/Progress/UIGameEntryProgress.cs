@@ -17,7 +17,7 @@ namespace GameEntry
 
         private void Awake()
         {
-            GameEntry.EventMgr.Subscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
+            FW.EventMgr.Subscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
             slider.value = 0;
             textProgress.text = string.Empty;
         }
@@ -30,7 +30,7 @@ namespace GameEntry
         public override void OnClose()
         {
             base.OnClose();
-            GameEntry.EventMgr.Unsubscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
+            FW.EventMgr.Unsubscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
         }
 
         void OnLoadingProgressEvent(LoadingProgressEvent e)

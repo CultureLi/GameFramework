@@ -17,22 +17,7 @@ namespace GameEntry.Stage
         {
             OverrideCatalogHash();
 
-#if !UNITY_EDITOR
-            var assembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain");
-#else
-            var assembly = System.AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain");
-#endif
-
-            if (assembly == null)
-            {
-                Debug.LogError("没有找到GameMain");
-            }
-            Type entry = assembly?.GetType(" GameMain.GameMainEntry");
-            if (entry == null)
-            {
-                Debug.LogError("没有找到GameMain.GameMainEntry 入口");
-            }
-            entry?.GetMethod("Entry").Invoke(null, null);
+            FW.UIMgr.OpenUI("GameEntry/UIGameEntryLogin", (int)UIGroupType.Normal);
         }
 
         void OverrideCatalogHash()

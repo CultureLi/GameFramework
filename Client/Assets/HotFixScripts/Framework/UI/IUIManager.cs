@@ -47,6 +47,17 @@ namespace Framework
         void CloseUI(string name);
 
         /// <summary>
+        /// //关闭该group下所有UI
+        /// </summary>
+        /// <param name="groupId"></param>
+        void CloseAllUI(int groupId);
+
+        /// <summary>
+        /// 关闭所有UI
+        /// </summary>
+        void CloseAllUI();
+
+        /// <summary>
         /// 激活界面。
         /// </summary>
         /// <param name="uiForm">要激活的界面。</param>

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Framework
@@ -240,6 +241,33 @@ namespace Framework
                 wrapper.UnSpawnView(_viewGoPool);
                 UIViewWrapper.Release(wrapper);
                 RemoveViewWrapper(name);
+            }
+        }
+
+        /// <summary>
+        /// //关闭该group下所有UI
+        /// </summary>
+        /// <param name="groupId"></param>
+        public void CloseAllUI(int groupId)
+        {
+            var keyList = _viewWrapperMap.Where(kv => kv.Value.UIGroup.GroupId == groupId)
+                    .Select(kv => kv.Key)
+                    .ToList();
+            foreach (var key in keyList)
+            {
+                CloseUI(key);
+            }
+        }
+
+        /// <summary>
+        /// 关闭所有UI
+        /// </summary>
+        public void CloseAllUI()
+        {
+            var keyList = _viewWrapperMap.Keys.ToList();
+            foreach (var key in keyList)
+            {
+                CloseUI(key);
             }
         }
 

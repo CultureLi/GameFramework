@@ -38,7 +38,7 @@ namespace GameEntry.Stage
                         }
                     }
                 };
-                GameEntry.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
+                FW.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
             }
             else
             {
@@ -100,7 +100,7 @@ namespace GameEntry.Stage
                     if (status.TotalBytes > 0) // 加一层判断
                     {
                         var progressEvent = LoadingProgressEvent.Create(status.Percent, $"{Utility.FormatByteSize((ulong)status.DownloadedBytes)} / {Utility.FormatByteSize((ulong)status.TotalBytes)}");
-                        GameEntry.EventMgr.BroadcastAsync(progressEvent);
+                        FW.EventMgr.BroadcastAsync(progressEvent);
                     }
                 }
 
@@ -113,7 +113,7 @@ namespace GameEntry.Stage
 
         protected override void OnLeave()
         {
-            GameEntry.ResourceMgr.BundleDownloadCompleted -= OnDownloadCompleted;
+            FW.ResourceMgr.BundleDownloadCompleted -= OnDownloadCompleted;
         }
 
         void OnDownloadCompleted()

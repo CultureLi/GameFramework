@@ -33,32 +33,32 @@ namespace Test.Runtime.EventTest
 
         public void SubscribeHpChangedHandler1()
         {
-            GameEntry.GameEntry.EventMgr.Subscribe<HpChangedEvent>(HpChangedHandler);
+            GameEntry.FW.EventMgr.Subscribe<HpChangedEvent>(HpChangedHandler);
         }
 
         public void SubscribeHpChangedHandler2()
         {
-            GameEntry.GameEntry.EventMgr.Subscribe<HpChangedEvent>(HpChangedHandler2);
+            GameEntry.FW.EventMgr.Subscribe<HpChangedEvent>(HpChangedHandler2);
         }
 
         public void SubscribeCustomEventHandler()
         {
-            GameEntry.GameEntry.EventMgr.Subscribe<CustomEvent>(CustomEventHandler);
+            GameEntry.FW.EventMgr.Subscribe<CustomEvent>(CustomEventHandler);
         }
 
         public void UnSubscribeHpChangedHandler1()
         {
-            GameEntry.GameEntry.EventMgr.Unsubscribe<HpChangedEvent>(HpChangedHandler);
+            GameEntry.FW.EventMgr.Unsubscribe<HpChangedEvent>(HpChangedHandler);
         }
 
         public void UnSubscribeHpChangedHandler2()
         {
-            GameEntry.GameEntry.EventMgr.Unsubscribe<HpChangedEvent>(HpChangedHandler2);
+            GameEntry.FW.EventMgr.Unsubscribe<HpChangedEvent>(HpChangedHandler2);
         }
 
         public void UnSubscribeCustomEventHandler()
         {
-            GameEntry.GameEntry.EventMgr.Unsubscribe<CustomEvent>(CustomEventHandler);
+            GameEntry.FW.EventMgr.Unsubscribe<CustomEvent>(CustomEventHandler);
         }
 
         public void BroadCastEvent()
@@ -67,15 +67,15 @@ namespace Test.Runtime.EventTest
             e.hp = UnityEngine.Random.Range(1, 100);
             if (isSync)
             {
-                GameEntry.GameEntry.EventMgr.Broadcast(e);
+                GameEntry.FW.EventMgr.Broadcast(e);
 
-                GameEntry.GameEntry.EventMgr.Broadcast<CustomEvent>();
+                GameEntry.FW.EventMgr.Broadcast<CustomEvent>();
             }
             else
             {
-                GameEntry.GameEntry.EventMgr.BroadcastAsync(e);
+                GameEntry.FW.EventMgr.BroadcastAsync(e);
 
-                GameEntry.GameEntry.EventMgr.BroadcastAsync<CustomEvent>();
+                GameEntry.FW.EventMgr.BroadcastAsync<CustomEvent>();
             }
         }
 

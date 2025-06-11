@@ -159,6 +159,7 @@ namespace Launcher
                 Debug.LogError("√ª”–’“µΩEntrance");
                 return;
             }
+
             Type entry = entranceAssembly.GetType("GameEntry.GameEntryMgr");
             if (entry == null)
             {

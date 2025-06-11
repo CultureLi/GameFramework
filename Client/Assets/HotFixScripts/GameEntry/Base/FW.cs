@@ -1,9 +1,10 @@
-﻿using Framework;
+﻿using Cysharp.Threading.Tasks;
+using Framework;
 using UnityEngine;
 
 namespace GameEntry
 {
-    public class GameEntry : SingletonMono<GameEntry>
+    public class FW : SingletonMono<FW>
     {
         public static IEventMgr EventMgr { get; private set; }
         public static IFsmMgr FsmMgr { get; private set; }
@@ -33,6 +34,5 @@ namespace GameEntry
         {
             FrameworkMgr.Shutdown();
         }
-
     }
 }

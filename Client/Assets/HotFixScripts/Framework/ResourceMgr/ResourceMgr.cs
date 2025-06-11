@@ -326,9 +326,18 @@ namespace Framework
         }
 
         private Dictionary<Scene, SceneInstance> _sceneInstanceMap = new Dictionary<Scene,SceneInstance>();
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
+        /// <summary>
+        /// 加载场景
+        /// </summary>
+        /// <param name="path">对于"Assets/BundleRes/Scene"的相对路径</param>
+        /// <param name="loadMode"></param>
+        /// <param name="activateOnLoad"></param>
+        /// <param name="priority"></param>
+        /// <returns></returns>
+        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string path, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
-            var handle = Addressables.LoadSceneAsync(key, loadMode, activateOnLoad, priority);
+            var scenePath = $"Assets/BundleRes/Scene/{path}.unity";
+            var handle = Addressables.LoadSceneAsync(scenePath, loadMode, activateOnLoad, priority);
             if (loadMode == LoadSceneMode.Single)
             {
                 handle.AddCompleted(_ =>
