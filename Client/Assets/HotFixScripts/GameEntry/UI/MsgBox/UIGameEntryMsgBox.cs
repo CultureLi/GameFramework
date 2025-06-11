@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GameEntry
@@ -33,9 +34,9 @@ namespace GameEntry
         public TextMeshProUGUI textBtnOk;
 
         private GameEntryMsgBoxData _uiData;
+
         public override void OnShow(bool isInitShow, ViewData data)
         {
-            base.OnShow(isInitShow, data);
             _uiData = data as GameEntryMsgBoxData;
 
             textTitle.text = _uiData.title;
@@ -68,16 +69,18 @@ namespace GameEntry
         void OnBtnOkClick()
         {
             _uiData?.callback?.Invoke(true);
+            Close();
         }
 
         void OnBtnCancelClick()
         {
             _uiData?.callback?.Invoke(false);
+            Close();
         }
 
         public override void OnClose()
         {
-            base.OnClose();
+            
         }
     }
 }

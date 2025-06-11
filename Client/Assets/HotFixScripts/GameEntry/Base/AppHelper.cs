@@ -18,7 +18,7 @@ namespace GameEntry
 #endif
         }
 
-        static void RestartApp()
+        public static void RestartApp()
         {
 #if UNITY_ANDROID
             RestartAppAndroid();

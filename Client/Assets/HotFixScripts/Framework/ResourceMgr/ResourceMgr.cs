@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
 using UnityEngine.Networking;
+using UnityEngine.ResourceManagement;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 using UnityEngine.ResourceManagement.ResourceProviders;
@@ -153,143 +154,6 @@ namespace Framework
         {
             Addressables.InternalIdTransformFunc = func??InternalIdTransform;
         }
-
-        /// <summary>
-        /// 加载远端Catalog
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        /*public IEnumerator ReloadRemoteCatalog(string url, Action<IResourceLocator> completedCb = null)
-        {
-            var oldLocators = Addressables.ResourceLocators.ToList();
-            IResourceLocator localLocator = oldLocators.Find(e => e is ResourceLocationMap);
-
-            var handle = Addressables.LoadContentCatalogAsync(url);
-            yield return handle;
-            var remoteLocator = handle.Result;
-            handle.Release();
-
-            foreach (var locator in oldLocators)
-            {
-                Addressables.RemoveResourceLocator(locator);
-            }
-
-            CollectRemoteResInfo(localLocator, remoteLocator);
-            Addressables.InternalIdTransformFunc = InternalIdTransform;
-
-            completedCb?.Invoke(remoteLocator);
-        }
-
-        public void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog)
-        {
-            _allLocations.Clear();
-            foreach (var key in remoteCatalog.Keys)
-            {
-                if (!remoteCatalog.Locate(key, typeof(object), out var remoteLocations))
-                    continue;
-                foreach (var remoteLoc in remoteLocations)
-                {
-                    // 筛选出 AssetBundle 类型
-                    if (remoteLoc.ResourceType != typeof(IAssetBundleResource))
-                    {
-                        _allLocations.Add(remoteLoc);
-                        continue;
-                    }
-                    // 查看 local 是否也有
-                    bool foundInLocal = localCatalog.Locate(key, typeof(object), out var localLocations);
-
-                    if (!foundInLocal)
-                    {
-                        ModifyBundleLocation(remoteLoc);
-                    }
-                    else
-                    {
-                        var localLoc = localLocations[0]; // 默认只有一个
-                        var localOptions = localLoc.Data as AssetBundleRequestOptions;
-                        var remoteOptions = remoteLoc.Data as AssetBundleRequestOptions;
-
-                        // 检查 hash 是否不同
-                        string localHash = localOptions?.Hash ?? null;
-                        string remoteHash = remoteOptions?.Hash ?? null;
-
-                        if (localHash != remoteHash)
-                        {
-                            ModifyBundleLocation(remoteLoc);
-                        }
-                    }
-                }
-            }
-        }
-
-        public IEnumerator DownloadBundles()
-        {
-            long totalSize = 0;
-            var bundleLocations = new HashSet<IResourceLocation>();
-            foreach (var loc in _allLocations)
-            {
-                if (loc.HasDependencies)
-                {
-                    foreach (var dep in loc.Dependencies)
-                    {
-                        bundleLocations.Add(dep);
-                    }
-                }
-            }
-
-            var downloadLocations = new List<IResourceLocation>();
-            foreach (var location in bundleLocations)
-            {
-                if (location.Data is ILocationSizeData sizeData)
-                {
-                    var size = sizeData.ComputeSize(location, Addressables.ResourceManager);
-                    if (size > 0)
-                    {
-                        downloadLocations.Add(location);
-                        Debug.Log($"需要下载：{location.PrimaryKey}");
-                        totalSize += size;
-                    }
-                }
-            }
-
-            Debug.Log($"需要下载bundle Size: {Utility.FormatByteSize(totalSize)}");
-
-            if (totalSize > 0)
-            {
-                BundleDownloadStart?.Invoke();
-
-                var downloadHandle = Addressables.DownloadDependenciesAsync(downloadLocations, false);
-
-                yield return null;
-
-                var remainingTime = 0f;
-                while (!downloadHandle.IsDone)
-                {
-                    remainingTime -= Time.deltaTime;
-
-                    if (remainingTime <= 0f)
-                    {
-                        remainingTime = .3f;
-
-                        var status = downloadHandle.GetDownloadStatus();
-                        if (status.TotalBytes > 0) // 加一层判断
-                        {
-                            Debug.Log($"📦 下载进度: {Utility.FormatByteSize(status.DownloadedBytes)} / {Utility.FormatByteSize(status.TotalBytes)} ({status.Percent})");
-                            BundleDownloadProgress?.Invoke(status);
-                        }
-                    }
-
-                    yield return null;
-                }
-                //UpdateStatus();
-                Addressables.Release(downloadHandle);
-                Debug.Log("🎉 所有 bundle 下载完成！");
-            }
-            else
-            {
-                Debug.Log("不需要下载任何资源！");
-            }
-            BundleDownloadCompleted?.Invoke();
-        }*/
 
         public AsyncOperationHandle<List<string>> CheckForCatalogUpdates(bool autoReleaseHandle = true)
         {
@@ -461,24 +325,43 @@ namespace Framework
             return Addressables.LoadResourceLocationsAsync(key, type);
         }
 
+        private Dictionary<Scene, SceneInstance> _sceneInstanceMap = new Dictionary<Scene,SceneInstance>();
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
-            return Addressables.LoadSceneAsync(key, loadMode, activateOnLoad, priority);
+            var handle = Addressables.LoadSceneAsync(key, loadMode, activateOnLoad, priority);
+            if (loadMode == LoadSceneMode.Single)
+            {
+                handle.AddCompleted(_ =>
+                {
+                    _sceneInstanceMap[handle.Result.Scene] = handle.Result;
+                    var oldScene = SceneManager.GetActiveScene();
+                    SceneManager.SetActiveScene(handle.Result.Scene);
+
+                    UnloadSceneAsync(oldScene);
+                });
+            }
+            return handle;
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(object key, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100)
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(Scene scene)
         {
-            return Addressables.LoadSceneAsync(key, loadSceneParameters, activateOnLoad, priority);
+            if (_sceneInstanceMap.TryGetValue(scene, out SceneInstance instance))
+            {
+                _sceneInstanceMap.Remove(scene);
+                var handle = Addressables.UnloadSceneAsync(instance, true);
+                handle.AddCompleted((_) =>
+                {
+                    Resources.UnloadUnusedAssets();
+                    GC.Collect();
+                });
+                return handle;
+            }
+            return Addressables.ResourceManager.CreateCompletedOperation<SceneInstance>(default, "Don't Have SceneInstance");
         }
 
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle)
         {
-            return Addressables.LoadSceneAsync(location, loadMode, activateOnLoad, priority);
-        }
-
-        public AsyncOperationHandle<SceneInstance> LoadSceneAsync(IResourceLocation location, LoadSceneParameters loadSceneParameters, bool activateOnLoad = true, int priority = 100)
-        {
-            return Addressables.LoadSceneAsync(location, loadSceneParameters, activateOnLoad, priority);
+            return UnloadSceneAsync(handle.Result.Scene);
         }
 
         public void Release<TObject>(TObject obj)
@@ -516,30 +399,7 @@ namespace Framework
             Addressables.RemoveResourceLocator(locator);
         }
 
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance scene, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
-        {
-            return Addressables.UnloadSceneAsync(scene, unloadOptions, autoReleaseHandle);
-        }
 
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle handle, UnloadSceneOptions unloadOptions, bool autoReleaseHandle = true)
-        {
-            return Addressables.UnloadSceneAsync(handle, unloadOptions, autoReleaseHandle);
-        }
-
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance scene, bool autoReleaseHandle = true)
-        {
-            return Addressables.UnloadSceneAsync(scene, autoReleaseHandle);
-        }
-
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle handle, bool autoReleaseHandle = true)
-        {
-            return Addressables.UnloadSceneAsync(handle, autoReleaseHandle);
-        }
-
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle, bool autoReleaseHandle = true)
-        {
-            return Addressables.UnloadSceneAsync(handle, autoReleaseHandle);
-        }
 
         public AsyncOperationHandle<List<IResourceLocator>> UpdateCatalogs(IEnumerable<string> catalogs = null, bool autoReleaseHandle = true)
         {

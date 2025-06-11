@@ -8,7 +8,7 @@ namespace GameMain
         public static void Entry()
         {
             Utility.Test();
-            Debug.Log(" 急急急 GameMainEntry");
+            Debug.Log(" 慢慢慢 GameMainEntry");
         }
     }
 }

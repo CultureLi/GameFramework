@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace GameEntry
 {
-    public class FW : MonoBehaviour
+    public class GameEntry : SingletonMono<GameEntry>
     {
         public static IEventMgr EventMgr { get; private set; }
         public static IFsmMgr FsmMgr { get; private set; }
@@ -13,13 +13,7 @@ namespace GameEntry
         public static IObjectPoolMgr ObjectPoolMgr { get; private set; }
         public static IUIManager UIMgr { get; private set; }
 
-
-        void Awake()
-        {
-            InitModules();
-        }
-
-        void InitModules()
+        public void Initialize()
         {
             EventMgr = FrameworkMgr.GetModule<IEventMgr>();
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();

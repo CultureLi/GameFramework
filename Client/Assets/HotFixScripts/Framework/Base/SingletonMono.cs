@@ -7,7 +7,7 @@ namespace Framework
         private static T instance;
         private static object locker = new();
 
-        public static T Instance
+        public static T I
         {
             get
             {
@@ -34,10 +34,6 @@ namespace Framework
             {
                 instance = this as T;
                 DontDestroyOnLoad(gameObject);
-            }
-            else if (instance != this)
-            {
-                Destroy(gameObject);
             }
         }
     }

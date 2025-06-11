@@ -38,7 +38,7 @@ namespace GameEntry.Stage
         void OverrideCatalogHash()
         {
             if (GameEntryMgr.I.IsCatalogHashChanged())
-                File.WriteAllText(PathDefine.persistentCatalogHashPath, GameEntryMgr.I.remoteCatalogHash);
+                File.WriteAllText(PathDefine.persistentCatalogHashPath, GameEntryMgr.I.RemoteCatalogHash);
         }
     }
 }

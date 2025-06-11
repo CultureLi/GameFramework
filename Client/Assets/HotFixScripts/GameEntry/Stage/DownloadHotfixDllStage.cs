@@ -42,7 +42,22 @@ namespace GameEntry.Stage
 
             if (needRestart)
             {
-                Debug.Log("需要重启");
+                var uiData = new GameEntryMsgBoxData()
+                {
+                    content = $"Need Restart App",
+                    callback = (result) =>
+                    {
+                        if (result)
+                        {
+                            AppHelper.RestartApp();
+                        }
+                        else
+                        {
+                            AppHelper.QuitGame();
+                        }
+                    }
+                };
+                GameEntry.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
             }
             else
             {
@@ -57,7 +72,7 @@ namespace GameEntry.Stage
         IEnumerator LoadLocalManifest()
         {
             Debug.Log("load local manifest");
-            yield return FW.ResourceMgr.LoadLocalFile("hotFixDllManifest.json", (handler) =>
+            yield return GameEntry.ResourceMgr.LoadLocalFile("hotFixDllManifest.json", (handler) =>
             {
                 if (handler != null)
                 {
@@ -75,7 +90,7 @@ namespace GameEntry.Stage
         {
             Debug.Log("download manifest start....");
             var url = PathDefine.remoteHotFixDllManifest;
-            yield return FW.ResourceMgr.DownloadRemoteFile(url, (handler) =>
+            yield return GameEntry.ResourceMgr.DownloadRemoteFile(url, (handler) =>
             {
                 if (handler != null)
                 {
@@ -154,7 +169,7 @@ namespace GameEntry.Stage
             _totalSize = 0;
 
             //请求头部信息，获取下载大小
-            foreach (var assembly in needDownloadDlls)
+            /*foreach (var assembly in needDownloadDlls)
             {
                 var url = Path.Combine(PathDefine.remoteHotFixDllPath, $"{assembly.name}.dll.bytes");
 
@@ -173,7 +188,7 @@ namespace GameEntry.Stage
                 {
                     Debug.LogError($"request head failed: {url} - {headReq.error}");
                 }
-            }
+            }*/
 
             Debug.Log($"need download dll total size: {_totalSize}");
 
@@ -196,6 +211,7 @@ namespace GameEntry.Stage
             {
                 var isAllDone = true;
                 ulong downloadedSize = 0;
+                float downloadedProgress = 0;
                 foreach (var ope in reqOpeList)
                 {
                     if (!ope.isDone)
@@ -213,11 +229,15 @@ namespace GameEntry.Stage
                             Debug.Log($"download dll {ope.webRequest.uri} success");
                         }
                     }
+                    downloadedProgress += ope.progress;
                     downloadedSize += ope.webRequest.downloadedBytes;
                 }
-                float progress = _totalSize > 0 ? (float)downloadedSize / _totalSize : 0f;
-                var progressEvent = LoadingProgressEvent.Create(progress, $"{Utility.FormatByteSize(downloadedSize)} / {Utility.FormatByteSize(_totalSize)}");
-                FW.EventMgr.BroadcastAsync(progressEvent);
+                /* float progress = _totalSize > 0 ? (float)downloadedSize / _totalSize : 0f;
+                 var progressEvent = LoadingProgressEvent.Create(progress, $"{Utility.FormatByteSize(downloadedSize)} / {Utility.FormatByteSize(_totalSize)}");*/
+                float progress = downloadedProgress / reqOpeList.Count;
+                var progressEvent = LoadingProgressEvent.Create(progress, $"{(progress * 100f):F1}%");
+                
+                GameEntry.EventMgr.BroadcastAsync(progressEvent);
                 return isAllDone;
             }
 

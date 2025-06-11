@@ -31,7 +31,6 @@ namespace GameEntry.Stage
             yield return LoadLocalHash();
             yield return DownloadRemoteHash();
             yield return ReloadCatalog();
-            ChangeState<EntranceEndStage>();
         }
 
         IEnumerator LoadLocalHash()
@@ -41,12 +40,12 @@ namespace GameEntry.Stage
                 PathDefine.originCatalogHashPath,};
 
             //加载本地最新的hash
-            yield return FW.ResourceMgr.LoadLocalFile(hashPaths, (handler) =>
+            yield return GameEntry.ResourceMgr.LoadLocalFile(hashPaths, (handler) =>
             {
                 if (handler != null)
                 {
-                    GameEntryMgr.I.localCatalogHash = handler.text;
-                    Debug.Log($"LocalCatalogHash: {GameEntryMgr.I.localCatalogHash}");
+                    GameEntryMgr.I.LocalCatalogHash = handler.text;
+                    Debug.Log($"LocalCatalogHash: {GameEntryMgr.I.LocalCatalogHash}");
                 }
             });
         }
@@ -54,13 +53,13 @@ namespace GameEntry.Stage
         IEnumerator DownloadRemoteHash()
         {
             //请求远端hash
-            yield return FW.ResourceMgr.DownloadRemoteFile(PathDefine.remoteCatalogHashUrl,
+            yield return GameEntry.ResourceMgr.DownloadRemoteFile(PathDefine.remoteCatalogHashUrl,
                 (handler) =>
                 {
                     if (handler != null)
                     {
                         Debug.Log($"Download CatalogHash Success");
-                        GameEntryMgr.I.remoteCatalogHash = handler.text;
+                        GameEntryMgr.I.RemoteCatalogHash = handler.text;
                     }
                     else
                     {
@@ -71,7 +70,7 @@ namespace GameEntry.Stage
 
         IEnumerator ReloadCatalog()
         {
-            Debug.Log($"local:{GameEntryMgr.I.localCatalogHash} remote:{GameEntryMgr.I.remoteCatalogHash}");
+            Debug.Log($"local:{GameEntryMgr.I.LocalCatalogHash} remote:{GameEntryMgr.I.RemoteCatalogHash}");
 
             if (GameEntryMgr.I.IsCatalogHashChanged())
             {
@@ -92,8 +91,12 @@ namespace GameEntry.Stage
                     //加载本地catalog, 这里是沙盒目录中的
                     yield return ReloadRemoteCatalog(PathDefine.persistentCatalogPath, (catalog) =>
                     {
-
+                        ChangeState<EntranceEndStage>();
                     });
+                }
+                else
+                {
+                    ChangeState<EntranceEndStage>();
                 }
             }
         }
@@ -119,14 +122,14 @@ namespace GameEntry.Stage
             }
 
             CollectRemoteResInfo(localLocator, remoteLocator);
-            FW.ResourceMgr.SetInternalIdTransform();
+            GameEntry.ResourceMgr.SetInternalIdTransform();
 
             completedCb?.Invoke(remoteLocator);
         }
 
         void ModifyLocation(IResourceLocation location)
         {
-            FW.ResourceMgr.ModifyBundleLocation(location.InternalId, Path.Combine(PathDefine.remoteBundleUrl, Path.GetFileName(location.InternalId)));
+            GameEntry.ResourceMgr.ModifyBundleLocation(location.InternalId, Path.Combine(PathDefine.remoteBundleUrl, Path.GetFileName(location.InternalId)));
         }
 
         void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog)

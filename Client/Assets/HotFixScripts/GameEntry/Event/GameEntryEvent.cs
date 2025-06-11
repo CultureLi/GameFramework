@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GameEntry
 {
-    public class LoadingProgressEvent : EventBase
+    internal class LoadingProgressEvent : EventBase
     {
         public float progerss;
         public string progressText;
@@ -19,5 +19,10 @@ namespace GameEntry
             instance.progressText = progressText;
             return instance;
         }
+    }
+
+    internal class EntryMsgBoxEvent : EventBase
+    {
+        public GameEntryMsgBoxData data;
     }
 }

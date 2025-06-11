@@ -10,13 +10,40 @@ namespace GameEntry.Stage
     internal class DownloadBundleStage : FsmState
     {
         MonoBehaviour _runner;
+
+        ulong _totalSize;
+        List<IResourceLocation> _downloadLocations = new List<IResourceLocation>();
         public DownloadBundleStage(MonoBehaviour runner)
         {
             _runner = runner;
         }
         protected override void OnEnter()
         {
-            _runner.StartCoroutine(DoTask());
+            CollectBundleInfo();
+            Debug.Log($"Need download bundle Size: {Utility.FormatByteSize(_totalSize)}");
+            if (_totalSize > 0)
+            {
+                var uiData = new GameEntryMsgBoxData()
+                {
+                    content = $"{Utility.FormatByteSize(_totalSize)}",
+                    callback = (result) =>
+                    {
+                        if (result)
+                        {
+                            _runner.StartCoroutine(DoTask());
+                        }
+                        else
+                        {
+                            AppHelper.QuitGame();
+                        }
+                    }
+                };
+                GameEntry.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
+            }
+            else
+            {
+                ChangeState<EntranceEndStage>();
+            }
         }
 
         IEnumerator DoTask()
@@ -25,9 +52,8 @@ namespace GameEntry.Stage
             ChangeState<EntranceEndStage>();
         }
 
-        IEnumerator DownloadBundles()
+        void CollectBundleInfo()
         {
-            ulong totalSize = 0;
             var bundleLocations = new HashSet<IResourceLocation>();
             foreach (var loc in GameEntryMgr.I.AllLocations)
             {
@@ -40,7 +66,6 @@ namespace GameEntry.Stage
                 }
             }
 
-            var downloadLocations = new List<IResourceLocation>();
             foreach (var location in bundleLocations)
             {
                 if (location.Data is ILocationSizeData sizeData)
@@ -48,55 +73,48 @@ namespace GameEntry.Stage
                     var size = (ulong)sizeData.ComputeSize(location, Addressables.ResourceManager);
                     if (size > 0)
                     {
-                        downloadLocations.Add(location);
-                        Debug.Log($"需要下载：{location.PrimaryKey}");
-                        totalSize += size;
+                        _downloadLocations.Add(location);
+                        Debug.Log($"Need download location：{location.PrimaryKey}");
+                        _totalSize += size;
                     }
                 }
             }
+        }
 
-            Debug.Log($"需要下载bundle Size: {Utility.FormatByteSize(totalSize)}");
+        IEnumerator DownloadBundles()
+        {
+            var downloadHandle = Addressables.DownloadDependenciesAsync(_downloadLocations, false);
 
-            if (totalSize > 0)
+            yield return null;
+
+            var remainingTime = 0f;
+            while (!downloadHandle.IsDone)
             {
-                var downloadHandle = Addressables.DownloadDependenciesAsync(downloadLocations, false);
+                remainingTime -= Time.deltaTime;
+
+                if (remainingTime <= 0f)
+                {
+                    remainingTime = .3f;
+
+                    var status = downloadHandle.GetDownloadStatus();
+                    if (status.TotalBytes > 0) // 加一层判断
+                    {
+                        var progressEvent = LoadingProgressEvent.Create(status.Percent, $"{Utility.FormatByteSize((ulong)status.DownloadedBytes)} / {Utility.FormatByteSize((ulong)status.TotalBytes)}");
+                        GameEntry.EventMgr.BroadcastAsync(progressEvent);
+                    }
+                }
 
                 yield return null;
-
-                var remainingTime = 0f;
-                while (!downloadHandle.IsDone)
-                {
-                    remainingTime -= Time.deltaTime;
-
-                    if (remainingTime <= 0f)
-                    {
-                        remainingTime = .3f;
-
-                        var status = downloadHandle.GetDownloadStatus();
-                        if (status.TotalBytes > 0) // 加一层判断
-                        {
-                            var progressEvent = LoadingProgressEvent.Create(status.Percent, $"{Utility.FormatByteSize((ulong)status.DownloadedBytes)} / {Utility.FormatByteSize((ulong)status.TotalBytes)}");
-                            FW.EventMgr.BroadcastAsync(progressEvent);
-                        }
-                    }
-
-                    yield return null;
-                }
-                //UpdateStatus();
-                Addressables.Release(downloadHandle);
-                Debug.Log("🎉 所有 bundle 下载完成！");
             }
-            else
-            {
-                Debug.Log("不需要下载任何资源！");
-            }
+
+            Addressables.Release(downloadHandle);
+            Debug.Log("All bundle download finished！");
         }
 
         protected override void OnLeave()
         {
-            FW.ResourceMgr.BundleDownloadCompleted -= OnDownloadCompleted;
+            GameEntry.ResourceMgr.BundleDownloadCompleted -= OnDownloadCompleted;
         }
-
 
         void OnDownloadCompleted()
         {

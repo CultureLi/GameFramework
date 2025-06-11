@@ -10,14 +10,16 @@ using UnityEngine.UI;
 
 namespace GameEntry
 {
-    internal class UILoading : ViewBase
+    internal class UIGameEntryProgress : ViewBase
     {
         public Slider slider;
         public TextMeshProUGUI textProgress;
 
         private void Awake()
         {
-            FW.EventMgr.Subscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
+            GameEntry.EventMgr.Subscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
+            slider.value = 0;
+            textProgress.text = string.Empty;
         }
 
         public override void OnShow(bool isInitShow, ViewData data)
@@ -28,11 +30,11 @@ namespace GameEntry
         public override void OnClose()
         {
             base.OnClose();
+            GameEntry.EventMgr.Unsubscribe<LoadingProgressEvent>(OnLoadingProgressEvent);
         }
 
         void OnLoadingProgressEvent(LoadingProgressEvent e)
         {
-            Debug.Log($"OnLoadingProgressEvent {e.progerss}  {e.progressText}");
             slider.value = e.progerss;
             textProgress.text = e.progressText;
         }

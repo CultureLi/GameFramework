@@ -25,11 +25,11 @@ namespace Test.Runtime.NetTest
         {
             //FW.NetMgr.Create("10.23.50.187", 8888); //Company
             //FW.NetMgr.Create("10.1.2.144", 8888); Home
-            FW.NetMgr.Create("127.0.0.1", 8888); //local
-            await FW.NetMgr.ConnectAsync();
+            GameEntry.GameEntry.NetMgr.Create("127.0.0.1", 8888); //local
+            await GameEntry.GameEntry.NetMgr.ConnectAsync();
 
-            FW.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
-            FW.NetMgr.RegisterMsg<ServerPublicKey>(OnServerPublicKey);
+            GameEntry.GameEntry.NetMgr.RegisterMsg<MonsterInfoAck>(OnMonsterInfoAck);
+            GameEntry.GameEntry.NetMgr.RegisterMsg<ServerPublicKey>(OnServerPublicKey);
         }
 
         private void OnServerPublicKey(ServerPublicKey msg)
@@ -47,7 +47,7 @@ namespace Test.Runtime.NetTest
                 Id = 5,
             };
 
-            FW.NetMgr.SendMsg(msg);
+            GameEntry.GameEntry.NetMgr.SendMsg(msg);
         }
 
         private void OnMonsterInfoAck(MonsterInfoAck ack)
