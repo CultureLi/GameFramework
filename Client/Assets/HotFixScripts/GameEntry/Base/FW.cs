@@ -1,5 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
-using Framework;
+﻿using Framework;
 using UnityEngine;
 
 namespace GameEntry
@@ -14,8 +13,11 @@ namespace GameEntry
         public static IObjectPoolMgr ObjectPoolMgr { get; private set; }
         public static IUIManager UIMgr { get; private set; }
 
+        public static IConfigMgr CfgMgr { get; private set; }
+
         public void Initialize()
         {
+            base.Awake();
             EventMgr = FrameworkMgr.GetModule<IEventMgr>();
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();
             ResourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
@@ -23,6 +25,7 @@ namespace GameEntry
             NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
             ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
             UIMgr = FrameworkMgr.GetModule<IUIManager>();
+            CfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
         }
 
         void Update()

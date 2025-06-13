@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Luban
+namespace Framework
 {
     public static class StringUtil
     {

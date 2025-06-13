@@ -1,5 +1,5 @@
 
-namespace Luban
+namespace Framework
 {
     public abstract class BeanBase : ITypeId
     {

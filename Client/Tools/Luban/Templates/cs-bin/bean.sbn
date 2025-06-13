@@ -1,4 +1,4 @@
-﻿using Luban;
+﻿using Framework;
 {{
     parent_def_type = __bean.parent_def_type
     export_fields = __bean.export_fields
@@ -65,7 +65,7 @@ end
 {{~if __bean.is_value_type~}}
 public partial struct {{__name}}
 {{~else~}}
-public {{class_modifier __bean}} partial class {{__name}} : {{if parent_def_type}}{{__bean.parent}}{{else}}Luban.BeanBase{{end}}
+public {{class_modifier __bean}} partial class {{__name}} : {{if parent_def_type}}{{__bean.parent}}{{else}}Framework.BeanBase{{end}}
 {{~end~}}
 {
     public {{__name}}(ByteBuf _buf) {{if parent_def_type}} : base(_buf) {{end}}

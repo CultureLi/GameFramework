@@ -7,24 +7,26 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-using Luban;
+using Framework;
 
 
-namespace cfg.demo
+namespace cfg.Item
 {
-public sealed partial class item : Luban.BeanBase
+public sealed partial class ItemSummary : Framework.BeanBase
 {
-    public item(ByteBuf _buf) 
+    public ItemSummary(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
         Name = _buf.ReadString();
         Desc = _buf.ReadString();
         Count = _buf.ReadInt();
+        Quality = _buf.ReadInt();
+        Idx = _buf.ReadInt();
     }
 
-    public static item Deserializeitem(ByteBuf _buf)
+    public static ItemSummary DeserializeItemSummary(ByteBuf _buf)
     {
-        return new demo.item(_buf);
+        return new Item.ItemSummary(_buf);
     }
 
     /// <summary>
@@ -43,13 +45,19 @@ public sealed partial class item : Luban.BeanBase
     /// 个数
     /// </summary>
     public readonly int Count;
+    /// <summary>
+    /// 品质
+    /// </summary>
+    public readonly int Quality;
+    /// <summary>
+    /// idx
+    /// </summary>
+    public readonly int Idx;
    
-    public const int __ID__ = 750578750;
+    public const int __ID__ = -350760264;
     public override int GetTypeId() => __ID__;
 
-    public  void ResolveRef(Tables tables)
-    {
-    }
+
 
     public override string ToString()
     {
@@ -58,6 +66,8 @@ public sealed partial class item : Luban.BeanBase
         + "name:" + Name + ","
         + "desc:" + Desc + ","
         + "count:" + Count + ","
+        + "quality:" + Quality + ","
+        + "idx:" + Idx + ","
         + "}";
     }
 }

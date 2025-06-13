@@ -1,4 +1,4 @@
-﻿namespace Luban
+﻿namespace Framework
 {
     public interface ITypeId
     {
