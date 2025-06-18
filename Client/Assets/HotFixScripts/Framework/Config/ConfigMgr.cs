@@ -32,7 +32,7 @@ namespace Framework
                 return t as T;
             }
 
-            var buf = _loader("item_tbitemsummary");
+            var buf = _loader(typeof(T).Name);
             var table = new T();
             table.Initialize(buf);
             _tableMap[typeof(T)] = table;

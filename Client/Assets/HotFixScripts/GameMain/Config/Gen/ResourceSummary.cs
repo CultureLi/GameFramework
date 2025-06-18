@@ -10,23 +10,21 @@
 using Framework;
 
 
-namespace cfg.Item
+namespace cfg
 {
-public sealed partial class ItemSummary : Framework.BeanBase
+public sealed partial class ResourceSummary : Framework.BeanBase
 {
-    public ItemSummary(ByteBuf _buf) 
+    public ResourceSummary(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
         Name = _buf.ReadString();
         Desc = _buf.ReadString();
         Count = _buf.ReadInt();
-        Quality = _buf.ReadInt();
-        Idx = _buf.ReadInt();
     }
 
-    public static ItemSummary DeserializeItemSummary(ByteBuf _buf)
+    public static ResourceSummary DeserializeResourceSummary(ByteBuf _buf)
     {
-        return new Item.ItemSummary(_buf);
+        return new ResourceSummary(_buf);
     }
 
     /// <summary>
@@ -45,19 +43,9 @@ public sealed partial class ItemSummary : Framework.BeanBase
     /// 个数
     /// </summary>
     public readonly int Count;
-    /// <summary>
-    /// 品质
-    /// </summary>
-    public readonly int Quality;
-    /// <summary>
-    /// idx
-    /// </summary>
-    public readonly int Idx;
    
-    public const int __ID__ = -350760264;
+    public const int __ID__ = 2075273112;
     public override int GetTypeId() => __ID__;
-
-
 
     public override string ToString()
     {
@@ -66,8 +54,6 @@ public sealed partial class ItemSummary : Framework.BeanBase
         + "name:" + Name + ","
         + "desc:" + Desc + ","
         + "count:" + Count + ","
-        + "quality:" + Quality + ","
-        + "idx:" + Idx + ","
         + "}";
     }
 }

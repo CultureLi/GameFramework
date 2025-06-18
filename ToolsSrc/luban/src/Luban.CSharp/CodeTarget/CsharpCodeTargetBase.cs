@@ -38,6 +38,17 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
     public override void Handle(GenerationContext ctx, OutputFileManifest manifest)
     {
         var tasks = new List<Task<OutputFile>>();
+
+        foreach (var table in ctx.ExportTables)
+        {
+            tasks.Add(Task.Run(() =>
+            {
+                var writer = new CodeWriter();
+                GenerateTable(ctx, table, writer);
+                return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(table.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
+            }));
+        }
+
         foreach (var bean in ctx.ExportBeans)
         {
             tasks.Add(Task.Run(() =>

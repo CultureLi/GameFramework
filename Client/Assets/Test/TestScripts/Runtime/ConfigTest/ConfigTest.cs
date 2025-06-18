@@ -1,5 +1,4 @@
 using cfg;
-using cfg.Item;
 using GameEntry;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,8 +15,16 @@ public class ConfigTest : MonoBehaviour
 
     private void OnEnable()
     {
-        var cfgList = FW.CfgMgr.GetTable<TbItemSummary>();
-        foreach (var item in cfgList.DataList)
+        var itemTable = FW.CfgMgr.GetTable<TbItemSummary>();
+        foreach (var item in itemTable.DataList)
+        {
+            Debug.Log(item.ToString());
+        }
+
+        Debug.Log(itemTable.Get(1004).ToString());
+
+        var localizeTable = FW.CfgMgr.GetTable<Tbi18n>();
+        foreach (var item in localizeTable.DataList)
         {
             Debug.Log(item.ToString());
         }
