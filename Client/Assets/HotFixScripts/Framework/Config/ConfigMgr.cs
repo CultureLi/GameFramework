@@ -39,6 +39,20 @@ namespace Framework
             return table;
         }
 
+        public T GetTable<T>(string fileName) where T : TableBase, new()
+        {
+            if (_tableMap.TryGetValue(typeof(T), out var t))
+            {
+                return t as T;
+            }
+
+            var buf = _loader(fileName);
+            var table = new T();
+            table.Initialize(buf);
+            _tableMap[typeof(T)] = table;
+            return table;
+        }
+
         private ByteBuf LoadByteBuf(string file)
         {
             var handle = _resourceMgr.LoadAssetAsync<TextAsset>($"Assets/BundleRes/Config/{file}.bytes");
@@ -48,7 +62,8 @@ namespace Framework
 
         public void Shutdown()
         {
-
+            _loader = null;
+            _tableMap.Clear();
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

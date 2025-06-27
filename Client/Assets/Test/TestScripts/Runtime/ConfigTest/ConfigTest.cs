@@ -23,11 +23,15 @@ public class ConfigTest : MonoBehaviour
 
         Debug.Log(itemTable.Get(1004).ToString());
 
-        var localizeTable = FW.CfgMgr.GetTable<Tbi18n>();
+        var localizeTable = FW.CfgMgr.GetTable<TbResourceSummary>();
         foreach (var item in localizeTable.DataList)
         {
             Debug.Log(item.ToString());
         }
+
+        FW.LocalizationMgr.Language = "en";
+        Debug.Log($"±¾µØ»¯ {FW.LocalizationMgr.Get("LC_UI_Open")}");
+
     }
 
     // Update is called once per frame

@@ -32,6 +32,7 @@ public class BinaryDataTarget : DataTargetBase
 
     public void WriteAsArrayI18n(List<Record> datas, ByteBuf buffer, BinaryDataVisitor dataVisitor, int valueIdx)
     {
+        buffer.WriteSize(datas.Count);
         foreach (var d in datas)
         {
             var type = d.Data;

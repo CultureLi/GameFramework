@@ -42,6 +42,10 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
+            if (table.FullName.Contains("i18n"))
+            {
+                continue;
+            }
             tasks.Add(Task.Run(() =>
             {
                 var writer = new CodeWriter();
@@ -52,6 +56,10 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var bean in ctx.ExportBeans)
         {
+            if (bean.FullName.Contains("i18n"))
+            {
+                continue;
+            }
             tasks.Add(Task.Run(() =>
             {
                 var writer = new CodeWriter();

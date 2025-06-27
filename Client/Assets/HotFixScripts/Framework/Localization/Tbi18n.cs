@@ -1,0 +1,31 @@
+namespace Framework
+{
+    public partial class Tbi18n : TableBase
+    {
+        private System.Collections.Generic.Dictionary<string, i18n> _dataMap;
+        private System.Collections.Generic.List<i18n> _dataList;
+
+        public override void Initialize(ByteBuf _buf)
+        {
+            _dataMap = new System.Collections.Generic.Dictionary<string, i18n>();
+            _dataList = new System.Collections.Generic.List<i18n>();
+
+            for (int n = _buf.ReadSize(); n > 0; --n)
+            {
+                i18n _v;
+                _v = i18n.Deserializei18n(_buf);
+                _dataList.Add(_v);
+                _dataMap.Add(_v.Key, _v);
+            }
+        }
+
+        public System.Collections.Generic.Dictionary<string, i18n> DataMap => _dataMap;
+        public System.Collections.Generic.List<i18n> DataList => _dataList;
+
+        public i18n GetOrDefault(string key) => _dataMap.TryGetValue(key, out var v) ? v : null;
+        public i18n Get(string key) => _dataMap[key];
+        public i18n this[string key] => _dataMap[key];
+
+    }
+}
+
