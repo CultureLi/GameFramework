@@ -74,7 +74,25 @@ internal static class Program
 
     private static void Main(string[] args)
     {
-        CommandOptions opts = ParseArgs(args);
+        var customArgs = args;
+        var debug = false;
+        if (debug)
+        {
+            customArgs = new string[]
+            {
+            "-t", "client",
+            "-c", "cs-bin",
+            "-d", "bin",
+            "--conf", "E:\\Work\\GameFramework\\Client\\DataTables\\luban.conf",
+            "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
+            "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\BundleRes\\Config",
+            "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
+            "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates"
+            };
+        }
+
+
+        CommandOptions opts = ParseArgs(customArgs);
         SetupApp(opts);
 
         if (opts.WatchDirs != null && opts.WatchDirs.Any())

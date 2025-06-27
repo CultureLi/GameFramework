@@ -70,6 +70,21 @@ public class DefField
         this.RawField = f;
     }
 
+    public DefField(DefField other, string name)
+    {
+        HostType = other.HostType;
+        Name = name;
+        Alias = other.Alias;
+        Type = other.Type;
+        Comment = other.Comment;
+        Tags = other.Tags;
+        Variants = other.Variants;
+        IgnoreNameValidation = other.IgnoreNameValidation;
+        this.Groups = other.Groups;
+        this.RawField = other.RawField;
+        CType = other.CType;
+    }
+
     public override string ToString()
     {
         return $"{HostType.FullName}.{Name}";

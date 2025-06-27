@@ -1,6 +1,7 @@
 using Luban.CodeFormat;
 using Luban.CodeTarget;
 using Luban.CSharp.TemplateExtensions;
+using Luban.Defs;
 using Scriban;
 using System.Threading.Tasks;
 
@@ -54,7 +55,19 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
             tasks.Add(Task.Run(() =>
             {
                 var writer = new CodeWriter();
-                GenerateBean(ctx, bean, writer);
+                var customBean = bean;
+                if (bean.FullName.Contains("i18n"))
+                {
+                    customBean = new Defs.DefBean(bean);
+                    var keyField = customBean.Fields[0];
+                    var valueField = new DefField(customBean.Fields[1],"value");
+
+                    customBean.Fields.Clear();
+                    customBean.Fields.Add(keyField);
+                    customBean.Fields.Add(valueField);
+                }
+
+                GenerateBean(ctx, customBean, writer);
                 return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(bean.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
             }));
         }

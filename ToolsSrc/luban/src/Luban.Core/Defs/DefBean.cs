@@ -96,6 +96,25 @@ public class DefBean : DefTypeBase
         TypeMappers = b.TypeMappers is { Count: > 0 } ? b.TypeMappers : null;
     }
 
+    public DefBean(DefBean b)
+    {
+        Name = b.Name;
+        Namespace = b.Namespace;
+        Parent = b.Parent;
+        Id = TypeUtil.ComputeCfgHashIdByName(FullName);
+        Comment = b.Comment;
+        Tags = b.Tags;
+        foreach (var field in b.Fields)
+        {
+            Fields.Add(field);
+        }
+        Alias = b.Alias;
+        Sep = b.Sep;
+        IsValueType = b.IsValueType;
+        Groups = b.Groups;
+        TypeMappers = b.TypeMappers is { Count: > 0 } ? b.TypeMappers : null;
+    }
+
     protected DefField CreateField(RawField f, int idOffset)
     {
         return new DefField(this, f, idOffset);

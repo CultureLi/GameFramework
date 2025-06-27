@@ -31,4 +31,12 @@ public class OutputFileManifest
             _dataFiles.Add(file);
         }
     }
+
+    public void AddFiles(List<OutputFile> files)
+    {
+        lock (this)
+        {
+            _dataFiles.AddRange(files);
+        }
+    }
 }
