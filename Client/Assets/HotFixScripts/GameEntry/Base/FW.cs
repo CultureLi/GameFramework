@@ -12,9 +12,11 @@ namespace GameEntry
         public static INetworkMgr NetMgr { get; private set; }
         public static IObjectPoolMgr ObjectPoolMgr { get; private set; }
         public static IUIManager UIMgr { get; private set; }
-
         public static IConfigMgr CfgMgr { get; private set; }
+        public static ILocalizationMgr LocalizationMgr
+        { get; private set; }
 
+        
         public void Initialize()
         {
             base.Awake();
@@ -26,6 +28,7 @@ namespace GameEntry
             ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
             UIMgr = FrameworkMgr.GetModule<IUIManager>();
             CfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
+            LocalizationMgr = FrameworkMgr.GetModule<ILocalizationMgr>();
         }
 
         void Update()
