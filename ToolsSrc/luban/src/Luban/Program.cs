@@ -68,6 +68,9 @@ internal static class Program
 
         [Option('v', "verbose", Required = false, HelpText = "verbose")]
         public bool Verbose { get; set; }
+
+        [Option("i18nTable", Required = false, HelpText = "i18n table name")]
+        public string I18nTableName { get; set; }
     }
 
     private static ILogger s_logger;
@@ -87,7 +90,8 @@ internal static class Program
             "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
             "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\BundleRes\\Config",
             "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
-            "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates"
+            "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates",
+            "--i18nTable", "i18n"
             };
         }
 
@@ -309,6 +313,7 @@ internal static class Program
             ExcludeTags = opts.ExcludeTags?.ToList() ?? new List<string>(),
             Variants = ParseVariants(opts.Variants),
             TimeZone = opts.TimeZone,
+            I18nTableName = opts.I18nTableName
         };
     }
 

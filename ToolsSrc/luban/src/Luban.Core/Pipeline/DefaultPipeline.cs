@@ -53,7 +53,7 @@ public class DefaultPipeline : IPipeline
         s_logger.Debug("prepare generation context");
         _genCtx = new GenerationContext();
         _defAssembly = new DefAssembly(_rawAssembly, _args.Target, _args.OutputTables, _config.Groups, _args.Variants);
-
+        _defAssembly.I18nTableName = _args.I18nTableName;
         var generationCtxBuilder = new GenerationContextBuilder
         {
             Assembly = _defAssembly,

@@ -27,6 +27,23 @@ public class DefTable : DefTypeBase
         _outputFile = b.OutputFile;
     }
 
+    public DefTable(DefTable b, string name)
+    {
+        Name = $"{b.Name}_{name}";
+        Namespace = b.Namespace;
+        Index = b.Index;
+        ValueType = b.ValueType;
+        Mode = b.Mode;
+        InputFiles = b.InputFiles;
+        Groups = b.Groups;
+        Comment = b.Comment;
+        ReadSchemaFromFile = b.ReadSchemaFromFile;
+        Tags = b.Tags;
+        _outputFile = $"{b.Name}_{name}";
+        ValueType = b.ValueType;
+        ValueTType = b.ValueTType;
+    }
+
     public string Index { get; private set; }
 
     public string ValueType { get; }

@@ -16,14 +16,7 @@ public abstract class DataExporterBase : IDataExporter
             {
                 var tasks = tables.Select(table => Task.Run(() =>
                 {
-                    if (table.FullName.Contains("i18n"))
-                    {
-                        manifest.AddFiles(dataTarget.ExportTableEx(table, ctx.GetTableExportDataList(table)));
-                    }
-                    else
-                    {
-                        manifest.AddFile(dataTarget.ExportTable(table, ctx.GetTableExportDataList(table)));
-                    }
+                    manifest.AddFile(dataTarget.ExportTable(table, ctx.GetTableExportDataList(table)));
                 })).ToArray();
                 Task.WaitAll(tasks);
                 break;

@@ -1,7 +1,6 @@
 using Luban.CodeFormat;
 using Luban.CodeTarget;
 using Luban.CSharp.TemplateExtensions;
-using Luban.Defs;
 using Scriban;
 using System.Threading.Tasks;
 
@@ -42,7 +41,7 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
-            if (table.FullName.Contains("i18n"))
+            if (table.ValueTType.DefBean.Name.Equals(ctx.Assembly.I18nTableName))
             {
                 continue;
             }
@@ -56,26 +55,14 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var bean in ctx.ExportBeans)
         {
-            if (bean.FullName.Contains("i18n"))
+            if (bean.FullName.Equals(ctx.Assembly.I18nTableName))
             {
                 continue;
             }
             tasks.Add(Task.Run(() =>
             {
                 var writer = new CodeWriter();
-                var customBean = bean;
-                if (bean.FullName.Contains("i18n"))
-                {
-                    customBean = new Defs.DefBean(bean);
-                    var keyField = customBean.Fields[0];
-                    var valueField = new DefField(customBean.Fields[1],"value");
-
-                    customBean.Fields.Clear();
-                    customBean.Fields.Add(keyField);
-                    customBean.Fields.Add(valueField);
-                }
-
-                GenerateBean(ctx, customBean, writer);
+                GenerateBean(ctx, bean, writer);
                 return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(bean.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
             }));
         }

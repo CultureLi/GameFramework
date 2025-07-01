@@ -40,6 +40,14 @@ public abstract class SchemaCollectorBase : ISchemaCollector
         }
     }
 
+    public void Remove(RawTable table)
+    {
+        lock (this)
+        {
+            _tables.Remove(table);
+        }
+    }
+
     public void Add(RawBean bean)
     {
         lock (this)

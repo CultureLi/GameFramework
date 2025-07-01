@@ -27,4 +27,6 @@ public class PipelineArguments
     public Dictionary<string, object> CustomArgs { get; set; }
 
     public Dictionary<string, string> Variants { get; set; }
+
+    public string I18nTableName { get; set; }
 }

@@ -45,7 +45,65 @@ public class DataLoaderManager
         {
             records.AddRange(task.Result);
         }
-        ctx.AddDataTable(table, records, null);
+        
+
+        if (table.ValueTType.DefBean.Name.Equals(ctx.Assembly.I18nTableName))
+        {
+            ctx.Assembly.RemoveTable(table);
+            ctx.RemoveDataTable(table);
+            ctx.Assembly.RemoveType(table);
+
+            var variants = new List<string>();
+            foreach (var field in table.ValueTType.DefBean.ExportFields)
+            {
+                if (field.Name == table.IndexField.Name)
+                {
+                    continue;
+                }
+                variants.Add(field.Name);
+            }
+
+            Dictionary<string, List<Record>> recordsMap = new Dictionary<string, List<Record>>();
+
+
+            foreach (var record in records)
+            {
+                foreach (var variant in variants)
+                {
+                    var newBean = new DBean(record.Data);
+                    var keyField = newBean.GetField(table.IndexField.Name);
+                    var valueField = newBean.GetField(variant);
+                    newBean.Fields.Clear();
+                    newBean.Fields.Add(keyField);
+                    newBean.Fields.Add(valueField);
+
+                    if (!recordsMap.TryGetValue(variant, out var recordList))
+                    {
+                        recordList = new List<Record>();
+                        recordsMap[variant] = recordList;
+                    }
+                    recordList.Add(new Record(newBean, record.Source, record.Tags));
+                }
+            }
+            
+
+            for (int i = 0; i < variants.Count; i++)
+            {
+                var variantName = variants[i];
+                var newTable = new DefTable(table, variantName);
+                ctx.Assembly.AddCfgTable(newTable);
+                var newRecords = recordsMap[variantName];
+
+                ctx.AddDataTable(newTable, newRecords, null);
+                ctx.Assembly.AddExportTable(newTable);
+                ctx.Assembly.AddType(newTable);
+            }
+        }
+        else
+        {
+            ctx.AddDataTable(table, records, null);
+        }
+
     }
 
     public List<Record> LoadTableFile(DefTable table, string file, string subAssetName, Dictionary<string, string> options)

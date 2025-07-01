@@ -20,6 +20,8 @@ public class DefAssembly
 
     private readonly List<RawTarget> _targets;
 
+    public string I18nTableName { get; set; }
+
     public RawTarget Target { get; }
 
     public IReadOnlyList<RawTarget> Targets => _targets;
@@ -89,6 +91,16 @@ public class DefAssembly
             var table = new DefTable(p);
             AddType(table);
             AddCfgTable(table);
+            //if (table.FullName.Contains("i18n"))
+            //{
+            //    var table2 = new DefTable(table,"en2");
+            //    AddType(table2);
+            //    AddCfgTable(table2);
+
+            //    table2 = new DefTable(table, "cn2");
+            //    AddType(table2);
+            //    AddCfgTable(table2);
+            //}
         }
 
         _targets.AddRange(assembly.Targets);
@@ -170,6 +182,18 @@ public class DefAssembly
             throw new Exception($"table:'{table.FullName} 与 table:'{TablesByName[table.Name].FullName}' 的表名重复(不同模块下也不允许定义同名表，将来可能会放开限制)");
         }
     }
+    
+    public void RemoveTable(DefTable table)
+    {
+        TablesByFullName.Remove(table.FullName);
+        TablesByName.Remove(table.Name);
+        _exportTables.Remove(table);
+    }
+
+    public void AddExportTable(DefTable table)
+    {
+        _exportTables.Add(table);
+    }
 
     public DefTable GetCfgTable(string name)
     {
@@ -217,6 +241,12 @@ public class DefAssembly
 
         Types.Add(fullName, type);
         TypeList.Add(type);
+    }
+
+    public void RemoveType(DefTypeBase type)
+    {
+        Types.Remove(type.FullName);
+        TypeList.Remove(type);
     }
 
     public DefTypeBase GetDefType(string fullName)

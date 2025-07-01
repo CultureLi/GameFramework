@@ -187,6 +187,11 @@ public class GenerationContext
             patchRecords != null ? patchRecords.Where(r => r.IsNotFiltered(IncludeTags, ExcludeTags)).ToList() : null);
     }
 
+    public void RemoveDataTable(DefTable table)
+    {
+        _recordsByTables.TryRemove(table.FullName, out var _);
+    }
+
     public List<Record> GetTableAllDataList(DefTable table)
     {
         return _recordsByTables[table.FullName].FinalRecords;

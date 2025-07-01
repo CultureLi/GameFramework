@@ -24,6 +24,14 @@ public class DBean : DType
         this.Fields = fields;
     }
 
+    public DBean(DBean other)
+    {
+        this.TType = other.TType;
+        this.ImplType = other.ImplType;
+        this.Fields = new List<DType>();
+        this.Fields.AddRange(other.Fields);
+    }
+
     public override bool Equals(object obj)
     {
         return obj is DBean d && string.Equals(ImplType?.FullName, d.ImplType?.FullName) && DataUtil.IsCollectionEqual(Fields, d.Fields);

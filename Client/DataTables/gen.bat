@@ -9,6 +9,6 @@ dotnet %LUBAN_DLL% ^
     --conf %CONF_ROOT%\luban.conf ^
     -x outputCodeDir=%WORKSPACE%\Assets\HotFixScripts\GameMain\Config\Gen ^
     -x outputDataDir=%WORKSPACE%\Assets\BundleRes\Config ^
-    -x pathValidator.rootDir=%WORKSPACE%\Client
-
+    -x pathValidator.rootDir=%WORKSPACE%\Client ^
+    --i18nTable i18n
 pause

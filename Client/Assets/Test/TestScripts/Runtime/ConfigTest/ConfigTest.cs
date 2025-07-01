@@ -29,7 +29,7 @@ public class ConfigTest : MonoBehaviour
             Debug.Log(item.ToString());
         }
 
-        FW.LocalizationMgr.Language = "en";
+        FW.LocalizationMgr.Language = "tw";
         Debug.Log($"±¾µØ»¯ {FW.LocalizationMgr.Get("LC_UI_Open")}");
 
     }
