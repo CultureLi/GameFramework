@@ -30,7 +30,7 @@ namespace Framework
 
         public string Get(string key)
         {
-            var table = _cfgMgr.GetTable<Tbi18n>(_tbName);
+            var table = _cfgMgr.GetTable<TbI18nNew>(_tbName);
             return table.Get(key).Value;
         }
 

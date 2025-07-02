@@ -1,17 +1,17 @@
 
 namespace Framework
 {
-    public sealed partial class i18n : BeanBase
+    public sealed partial class I18nNew : BeanBase
     {
-        public i18n(ByteBuf _buf)
+        public I18nNew(ByteBuf _buf)
         {
             Key = _buf.ReadString();
             Value = _buf.ReadString();
         }
 
-        public static i18n Deserializei18n(ByteBuf _buf)
+        public static I18nNew Deserializei18n(ByteBuf _buf)
         {
-            return new i18n(_buf);
+            return new I18nNew(_buf);
         }
 
         public readonly string Key;
