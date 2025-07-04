@@ -14,6 +14,7 @@ public class DefTable : DefTypeBase
 
     public DefTable(RawTable b)
     {
+        PureName = b.PureName;
         Name = b.Name;
         Namespace = b.Namespace;
         Index = b.Index;
@@ -29,6 +30,7 @@ public class DefTable : DefTypeBase
 
     public DefTable(DefTable b, string name)
     {
+        PureName = b.PureName;
         Name = $"{b.Name}_{name}";
         Namespace = b.Namespace;
         Index = b.Index;
@@ -42,8 +44,10 @@ public class DefTable : DefTypeBase
         _outputFile = $"{b.Name}_{name}";
         ValueType = b.ValueType;
         ValueTType = b.ValueTType;
+        Assembly = b.Assembly;
     }
 
+    public string PureName { get; set; }
     public string Index { get; private set; }
 
     public string ValueType { get; }
@@ -82,7 +86,9 @@ public class DefTable : DefTypeBase
 
     public List<ITableValidator> Validators { get; } = new();
 
-    public string OutputDataFile => string.IsNullOrWhiteSpace(_outputFile) ? FullName.Replace('.', '_').ToLower() : _outputFile;
+    public string OutputDataFile => string.IsNullOrWhiteSpace(_outputFile) ? FullName.Replace('.', '_') : _outputFile;
+
+    public bool useOffset { get; set; }
 
     public override void Compile()
     {

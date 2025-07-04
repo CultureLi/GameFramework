@@ -22,6 +22,8 @@ public class DefAssembly
 
     public string I18nTableName { get; set; }
 
+    public List<string> GenOffsetTables { get; set; }
+
     public RawTarget Target { get; }
 
     public IReadOnlyList<RawTarget> Targets => _targets;
@@ -61,7 +63,7 @@ public class DefAssembly
         return _variants.TryGetValue("default", out variantName);
     }
 
-    public DefAssembly(RawAssembly assembly, string target, List<string> outputTables, List<RawGroup> groupDefs, Dictionary<string, string> variants)
+    public DefAssembly(RawAssembly assembly, string target, List<string> outputTables, List<RawGroup> groupDefs, Dictionary<string, string> variants, List<string> genOffsetTables = default)
     {
         _targets = assembly.Targets;
         Target = GetTarget(target);
@@ -89,18 +91,12 @@ public class DefAssembly
         foreach (var p in assembly.Tables)
         {
             var table = new DefTable(p);
+            if (genOffsetTables.Contains(table.PureName))
+            {
+                table.useOffset = true;
+            }
             AddType(table);
             AddCfgTable(table);
-            //if (table.FullName.Contains("i18n"))
-            //{
-            //    var table2 = new DefTable(table,"en2");
-            //    AddType(table2);
-            //    AddCfgTable(table2);
-
-            //    table2 = new DefTable(table, "cn2");
-            //    AddType(table2);
-            //    AddCfgTable(table2);
-            //}
         }
 
         _targets.AddRange(assembly.Targets);

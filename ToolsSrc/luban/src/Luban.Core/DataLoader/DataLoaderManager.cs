@@ -47,7 +47,7 @@ public class DataLoaderManager
         }
         
 
-        if (table.ValueTType.DefBean.Name.Equals(ctx.Assembly.I18nTableName))
+        if (table.PureName.Equals(ctx.Assembly.I18nTableName))
         {
             ctx.Assembly.RemoveTable(table);
             ctx.RemoveDataTable(table);

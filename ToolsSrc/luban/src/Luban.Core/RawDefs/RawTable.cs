@@ -8,6 +8,8 @@ public class RawTable
 
     public string Name { get; set; }
 
+    public string PureName { get; set; }
+
     public string Index { get; set; }
 
     public string ValueType { get; set; }

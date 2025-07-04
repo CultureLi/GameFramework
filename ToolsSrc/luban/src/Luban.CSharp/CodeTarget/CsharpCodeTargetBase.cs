@@ -41,7 +41,7 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
-            if (table.ValueTType.DefBean.Name.Equals(ctx.Assembly.I18nTableName))
+            if (table.PureName.Equals(ctx.Assembly.I18nTableName))
             {
                 continue;
             }

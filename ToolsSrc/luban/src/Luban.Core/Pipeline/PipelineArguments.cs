@@ -29,4 +29,6 @@ public class PipelineArguments
     public Dictionary<string, string> Variants { get; set; }
 
     public string I18nTableName { get; set; }
+
+    public List<string> GenOffsetTables { get; set; }
 }

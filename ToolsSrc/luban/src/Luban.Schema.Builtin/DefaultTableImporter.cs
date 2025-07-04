@@ -60,6 +60,7 @@ public class DefaultTableImporter : ITableImporter
             {
                 Namespace = tableNamespace,
                 Name = tableName,
+                PureName = rawTableName,
                 Index = "",
                 ValueType = valueTypeFullName,
                 ReadSchemaFromFile = true,

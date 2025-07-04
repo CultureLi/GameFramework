@@ -8,6 +8,10 @@ namespace Framework
 
     public abstract class TableBase
     {
+        public virtual bool UseOffset
+        {
+            get; private set;
+        }
         public abstract void Initialize(ByteBuf buf);
     }
 
@@ -34,6 +38,12 @@ namespace Framework
 
             var buf = _loader(typeof(T).Name);
             var table = new T();
+
+            if (table.UseOffset)
+            {
+                
+            }
+
             table.Initialize(buf);
             _tableMap[typeof(T)] = table;
             return table;

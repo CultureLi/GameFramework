@@ -14,7 +14,8 @@ namespace cfg
 {
 public partial class TbItemSummary : TableBase
 {
-    private System.Collections.Generic.Dictionary<int, ItemSummary> _dataMap;
+        public override bool UseOffset => true;
+        private System.Collections.Generic.Dictionary<int, ItemSummary> _dataMap;
     private System.Collections.Generic.List<ItemSummary> _dataList;
     
     public override void Initialize(ByteBuf _buf)

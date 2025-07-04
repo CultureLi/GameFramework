@@ -36,6 +36,7 @@ using Framework;
 {{~end~}}
 public partial class {{__name}} : TableBase
 {
+    public bool useOffset = {{__useOffset}};
     {{~if __table.is_map_table ~}}
     private System.Collections.Generic.Dictionary<{{declaring_type_name key_type}}, {{declaring_type_name value_type}}> _dataMap;
     private System.Collections.Generic.List<{{declaring_type_name value_type}}> _dataList;

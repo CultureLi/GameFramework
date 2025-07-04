@@ -78,6 +78,7 @@ public abstract class TemplateCodeTargetBase : CodeTargetBase
             { "__key_type", table.KeyTType},
             { "__value_type", table.ValueTType},
             { "__code_style", CodeStyle},
+            { "__useOffset", table.useOffset },
         };
         tplCtx.PushGlobal(extraEnvs);
         writer.Write(template.Render(tplCtx));

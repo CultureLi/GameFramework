@@ -14,6 +14,7 @@ namespace cfg
 {
 public partial class TbResourceSummary : TableBase
 {
+    public bool useOffset = true;
     private System.Collections.Generic.Dictionary<int, ResourceSummary> _dataMap;
     private System.Collections.Generic.List<ResourceSummary> _dataList;
     
