@@ -5,6 +5,8 @@ using Luban.Schema;
 using Luban.Tmpl;
 using Luban.Utils;
 using NLog;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Luban;
@@ -78,6 +80,7 @@ internal static class Program
 
     private static ILogger s_logger;
 
+
     private static void Main(string[] args)
     {
         var customArgs = args;
@@ -91,8 +94,9 @@ internal static class Program
             "-d", "bin", "bin-offset",
             "--conf", "E:\\Work\\GameFramework\\Client\\DataTables\\luban.conf",
             "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
-            "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\BundleRes\\Config",
-            "-x", "bin-offset.outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\BundleRes\\Config",
+            "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
+            "-x", "bin-offset.outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
+            "-x", "bin-offset.cleanUpOutputDir=false",
             "--genOffsetTables", "ItemSummary","ResourceSummary",
             "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
             "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates",

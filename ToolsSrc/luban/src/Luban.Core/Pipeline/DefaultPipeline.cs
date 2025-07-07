@@ -8,6 +8,10 @@ using Luban.RawDefs;
 using Luban.Schema;
 using Luban.Validator;
 using NLog;
+using System;
+using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
 
 namespace Luban.Pipeline;
 
@@ -37,7 +41,83 @@ public class DefaultPipeline : IPipeline
         LoadSchema();
         PrepareGenerationContext();
         ProcessTargets();
+        CompressDataToZip();
     }
+
+    private void CompressDataToZip()
+    {
+        var dataDir = EnvManager.Current.GetOptionRaw(BuiltinOptionNames.OutputDataDir);
+        var dataZipFile = $"{dataDir}/configData.zip";
+        var i18nZipFile = $"{dataDir}/i18n.zip";
+        var hashFile = $"{dataDir}/configHash.hash";
+
+
+        if (File.Exists(dataZipFile))
+        {
+            File.Delete(dataZipFile);
+        }
+        if (File.Exists(i18nZipFile))
+        {
+            File.Delete(i18nZipFile);
+        }
+        if (File.Exists(hashFile))
+        {
+            File.Delete(hashFile);
+        }
+
+        var files = Directory.GetFiles(dataDir, "*.bytes", SearchOption.AllDirectories)
+                                 .OrderBy(f => f); // 保证顺序一致
+
+        // 开始压缩
+        using (FileStream dataZipOpen = new FileStream(dataZipFile, FileMode.Create))
+        using (FileStream i18nZipToOpen = new FileStream(i18nZipFile, FileMode.Create))
+        using (ZipArchive dataArchive = new ZipArchive(dataZipOpen, ZipArchiveMode.Create))
+        using (ZipArchive i18nArchive = new ZipArchive(i18nZipToOpen, ZipArchiveMode.Create))
+        {
+            foreach (var file in files)
+            {
+                var relativePath = Path.GetRelativePath(dataDir, file);
+
+                var archive = file.Contains("I18n") ? i18nArchive : dataArchive;
+                var entry = archive.CreateEntry(relativePath, CompressionLevel.Fastest);
+
+                // 固定时间戳，写在 entry 打开前
+                entry.LastWriteTime = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+                // 手动写入内容
+                using (var entryStream = entry.Open())
+                using (var fileStream = File.OpenRead(file))
+                {
+                    fileStream.CopyTo(entryStream);
+                }
+
+                File.Delete(file);
+            }
+        }
+
+        // 计算hash
+        var hashCodeLength = 4;
+        var dataHash = string.Empty;
+        using (FileStream stream = File.OpenRead(dataZipFile))
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashBytes = sha256.ComputeHash(stream);
+            dataHash = BitConverter.ToString(hashBytes, 0, hashCodeLength).Replace("-", "").ToLowerInvariant();
+        }
+
+        var i18nHash = string.Empty;
+        using (FileStream stream = File.OpenRead(i18nZipFile))
+        using (SHA256 sha256 = SHA256.Create())
+        {
+            byte[] hashBytes = sha256.ComputeHash(stream);
+            i18nHash = BitConverter.ToString(hashBytes, 0, hashCodeLength).Replace("-", "").ToLowerInvariant();
+        }
+
+
+        File.WriteAllText(hashFile, $"{{configData.zip:{dataHash}, i18n.zip:{i18nHash}}}");
+
+    }
+
 
     protected void LoadSchema()
     {
