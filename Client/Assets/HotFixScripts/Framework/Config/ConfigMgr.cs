@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using UnityEngine;
 
 namespace Framework
@@ -12,21 +13,28 @@ namespace Framework
         {
             get; private set;
         }
-        public abstract void Initialize(ByteBuf buf);
+        public virtual void Initialize(ByteBuf buf) { }
+        public virtual void Initialize(ByteBuf _buf, System.Func<string, int, int, ByteBuf> byteBufLoader) { }
     }
 
     public class ConfigMgr : IConfigMgr, IFramework
     {
-        IResourceMgr _resourceMgr;
-        System.Func<string, ByteBuf> _loader;
 
         Dictionary<Type, TableBase> _tableMap;
+        Dictionary<string, FileStream> _fileStreams;
+        private static byte[] BUFFER = new byte[1024 * 1024 * 10];
 
+        private Dictionary<string, ZipArchive> _zipArchiveMap = new Dictionary<string, ZipArchive>();
+        private Dictionary<string, FileStream> _tableStreamMap = new Dictionary<string, FileStream>();
         public ConfigMgr()
         {
-            _resourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
-            _loader = new System.Func<string, ByteBuf>(LoadByteBuf);
             _tableMap = new Dictionary<Type, TableBase>();
+            _fileStreams = new Dictionary<string, FileStream>();
+        }
+
+        public void AddZipArchive(string name, ZipArchive archive)
+        {
+            _zipArchiveMap[name] = archive;
         }
 
         public T GetTable<T>() where T : TableBase, new()
@@ -36,15 +44,11 @@ namespace Framework
                 return t as T;
             }
 
-            var buf = _loader(typeof(T).Name);
             var table = new T();
 
-            if (table.UseOffset)
-            {
-                
-            }
-
+            var buf = LoadByteBuf(typeof(T).Name);
             table.Initialize(buf);
+
             _tableMap[typeof(T)] = table;
             return table;
         }
@@ -56,7 +60,7 @@ namespace Framework
                 return t as T;
             }
 
-            var buf = _loader(fileName);
+            var buf = LoadByteBuf(fileName);
             var table = new T();
             table.Initialize(buf);
             _tableMap[typeof(T)] = table;
@@ -65,14 +69,27 @@ namespace Framework
 
         private ByteBuf LoadByteBuf(string file)
         {
-            var handle = _resourceMgr.LoadAssetAsync<TextAsset>($"Assets/BundleRes/Config/{file}.bytes");
-            handle.WaitForCompletion();
-            return new ByteBuf(handle.Result.bytes);
+            ByteBuf buf = null;
+            
+
+            return buf;
+        }
+
+        private ByteBuf OffsetByteBufLoader(string file, int offset, int length)
+        {
+            if (!_fileStreams.TryGetValue(file, out var fs))
+            {
+                fs = new FileStream($"{Application.streamingAssetsPath}/Config/bin/{file}.bytes", FileMode.Open);
+                _fileStreams.Add(file, fs);
+            }
+            fs.Seek(offset, SeekOrigin.Begin);
+            fs.Read(BUFFER, 0, length);
+            var buf = new ByteBuf(BUFFER, 0, length);
+            return buf;
         }
 
         public void Shutdown()
         {
-            _loader = null;
             _tableMap.Clear();
         }
 

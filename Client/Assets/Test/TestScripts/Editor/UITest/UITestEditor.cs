@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
+using TestRuntime;
 
-namespace Test.Inspector.UITest
+namespace TestEditor
 {
-    [CustomEditor(typeof(Runtime.UITest.UITest))]
+    [CustomEditor(typeof(UITest))]
     internal class UITestEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -17,7 +18,7 @@ namespace Test.Inspector.UITest
             base.OnInspectorGUI();
 
             // 获取目标对象引用
-            var myScript = (Runtime.UITest.UITest)target;
+            var myScript = (UITest)target;
 
             // 添加按钮
             if (GUILayout.Button("OpenMail"))

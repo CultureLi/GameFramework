@@ -1,0 +1,108 @@
+﻿using AOTBase;
+using Framework;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Text;
+using Unity.Plastic.Newtonsoft.Json;
+using UnityEngine;
+
+namespace GameEntry.Stage
+{
+    internal class DownloadConfigDataStage : FsmState
+    {
+        MonoBehaviour _runner;
+        public DownloadConfigDataStage(MonoBehaviour runner)
+        {
+            _runner = runner;
+        }
+
+        protected override void OnEnter()
+        {
+            _runner.StartCoroutine(DoTask());
+        }
+
+        IEnumerator DoTask()
+        {
+            var localHash = string.Empty;
+            yield return FW.ResourceMgr.LoadLocalFileRelative(Path.Combine(PathDefine.originConfigDataPath, "configHash.hash"), handler =>
+            {
+                if (handler != null)
+                {
+                    localHash = handler.text;
+                }
+            });
+
+            Debug.Log($"localHash: {localHash}");
+            
+            var localHashMap = JsonConvert.DeserializeObject<Dictionary<string, string>>(localHash);
+
+            var remoteHash = string.Empty;
+            yield return FW.ResourceMgr.DownloadRemoteFile(Path.Combine(PathDefine.remoteConfigDataPath,"configHash.hash"), handler =>
+            {
+                if (handler != null)
+                {
+                    remoteHash = handler.text;
+                }
+            });
+
+            var remoteHashMap = JsonConvert.DeserializeObject<Dictionary<string, string>>(remoteHash);
+            var needDownloadZip = new List<string>();
+
+            foreach ((var key, var hash) in remoteHashMap)
+            {
+                if (localHashMap.TryGetValue(key, out var hash2))
+                {
+                    if (!string.Equals(hash, hash2))
+                    {
+                        needDownloadZip.Add(key);
+                    }
+                }
+                else
+                {
+                    needDownloadZip.Add(key);
+                }
+            }
+
+            if (needDownloadZip.Count > 0)
+            {
+                var remoteHashUrl = Path.Combine(PathDefine.remoteConfigDataPath, "configHash.hash");
+                if (!Directory.Exists(PathDefine.persistentConfigDataPath))
+                {
+                    Directory.CreateDirectory(PathDefine.persistentConfigDataPath);
+                }
+
+                var hashFileTarDir = Path.Combine(PathDefine.persistentConfigDataPath, "configHash.hash");
+
+                foreach (var name in needDownloadZip)
+                {
+                    var remoteFile = Path.Combine(PathDefine.remoteConfigDataPath, name);
+                    var tarFile = Path.Combine(PathDefine.persistentConfigDataPath, name);
+
+                    yield return FW.ResourceMgr.DownloadRemoteFile(remoteFile, (loader) =>
+                    {
+                        using (MemoryStream zipStream = new MemoryStream(loader.data))
+                        using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read))
+                        {
+                            foreach (var entry in archive.Entries)
+                            {
+                                string filePath = Path.Combine(PathDefine.persistentConfigDataPath, entry.FullName);
+                                using (var entryStream = entry.Open())
+                                using (var fileStream = File.Create(filePath))
+                                {
+                                    entryStream.CopyTo(fileStream);
+                                }
+                            }
+                        }
+                    });
+                }
+
+                File.WriteAllText(hashFileTarDir, remoteHash);
+            }
+
+            ChangeState<EntranceEndStage>();
+        }
+    }
+}

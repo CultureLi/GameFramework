@@ -31,8 +31,8 @@ namespace Framework
         }
 
         IEnumerator DownloadRemoteFile(string path, Action<DownloadHandler> completedCb, int tryCount = 3, int timeout = 10);
-        IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb);
-        IEnumerator LoadLocalFile(string[] paths, Action<DownloadHandler> completedCb);
+        IEnumerator LoadLocalFileRelative(string relativePath, Action<DownloadHandler> completedCb);
+        IEnumerator LoadLocalFile(string[] searchPaths, Action<DownloadHandler> completedCb);
 
         void ModifyBundleLocation(string internalId, string location);
         void SetInternalIdTransform(Func<IResourceLocation, string> fun = null);

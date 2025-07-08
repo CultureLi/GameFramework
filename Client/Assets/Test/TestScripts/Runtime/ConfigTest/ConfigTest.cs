@@ -4,39 +4,43 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ConfigTest : MonoBehaviour
+namespace TestRuntime
 {
-    // Start is called before the first frame update
-    void Awake()
-    {
-        FW.I.Initialize();
-       
-    }
 
-    private void OnEnable()
+    public class ConfigTest : MonoBehaviour
     {
-        var itemTable = FW.CfgMgr.GetTable<TbItemSummary>();
-        foreach (var item in itemTable.DataList)
+        // Start is called before the first frame update
+        void Awake()
         {
-            Debug.Log(item.ToString());
+            FW.I.Initialize();
+
         }
 
-        Debug.Log(itemTable.Get(1004).ToString());
-
-        var localizeTable = FW.CfgMgr.GetTable<TbResourceSummary>();
-        foreach (var item in localizeTable.DataList)
+        private void OnEnable()
         {
-            Debug.Log(item.ToString());
+            /*var itemTable = FW.CfgMgr.GetTable<TbItemSummary>();
+            foreach (var item in itemTable.DataList)
+            {
+                Debug.Log(item.ToString());
+            }
+
+            Debug.Log(itemTable.Get(1004).ToString());*/
+
+            var localizeTable = FW.CfgMgr.GetTable<TbResourceSummary>();
+            foreach (var item in localizeTable.DataList)
+            {
+                Debug.Log(item.ToString());
+            }
+
+            FW.LocalizationMgr.Language = "tw";
+            Debug.Log($"本地化 {FW.LocalizationMgr.Get("LC_UI_Open")}");
+
         }
 
-        FW.LocalizationMgr.Language = "tw";
-        Debug.Log($"本地化 {FW.LocalizationMgr.Get("LC_UI_Open")}");
+        // Update is called once per frame
+        void Update()
+        {
 
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        }
     }
 }

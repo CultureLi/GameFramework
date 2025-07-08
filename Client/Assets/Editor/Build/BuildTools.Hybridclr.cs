@@ -11,7 +11,7 @@ using UnityEditor.Build.Pipeline.Utilities;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace Assets.GameMain.Editor.Build
+namespace Assets.Editor.Build
 {
     public partial class BuildTools
     {

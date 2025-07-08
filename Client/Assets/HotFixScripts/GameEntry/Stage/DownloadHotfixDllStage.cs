@@ -57,7 +57,7 @@ namespace GameEntry.Stage
                         }
                     }
                 };
-                FW.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", 0, uiData);
+                FW.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", (int)UIGroupType.MsgBox, uiData);
             }
             else
             {
@@ -72,7 +72,7 @@ namespace GameEntry.Stage
         IEnumerator LoadLocalManifest()
         {
             Debug.Log("load local manifest");
-            yield return FW.ResourceMgr.LoadLocalFile("hotFixDllManifest.json", (handler) =>
+            yield return FW.ResourceMgr.LoadLocalFileRelative("hotFixDllManifest.json", (handler) =>
             {
                 if (handler != null)
                 {

@@ -1,13 +1,21 @@
 ﻿using Framework;
+using System.Collections;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace GameEntry.Stage
 {
     internal class EntranceStartStage : FsmState
     {
+        MonoBehaviour _runner;
+        public EntranceStartStage(MonoBehaviour runner)
+        {
+            _runner = runner;
+        }
+
         protected override void OnEnter()
         {
             if (GameEntryMgr.I.UIRoot == null)

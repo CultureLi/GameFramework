@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEditor;
+using TestRuntime;
 
-namespace Test.Inspector.EventTest
+namespace TestEditor
 {
-    [CustomEditor(typeof(Runtime.EventTest.EventTest))]
+    [CustomEditor(typeof(EventTest))]
     internal class EventTestEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -17,7 +18,7 @@ namespace Test.Inspector.EventTest
             base.OnInspectorGUI();
 
             // 获取目标对象引用
-            var myScript = (Runtime.EventTest.EventTest)target;
+            var myScript = (EventTest)target;
 
             // 添加按钮
             if (GUILayout.Button("SubscribeHpChangedHandler1"))

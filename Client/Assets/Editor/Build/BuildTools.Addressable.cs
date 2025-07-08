@@ -9,7 +9,7 @@ using UnityEngine.AddressableAssets;
 using UnityEngine;
 using System.IO;
 
-namespace Assets.GameMain.Editor.Build
+namespace Assets.Editor.Build
 {
     public partial class BuildTools
     {

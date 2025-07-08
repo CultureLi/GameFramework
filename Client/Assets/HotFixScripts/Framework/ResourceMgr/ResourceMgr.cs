@@ -43,15 +43,15 @@ namespace Framework
         /// <summary>
         /// 加载本地文件
         /// </summary>
-        /// <param name="paths">要搜索的全路径</param>
+        /// <param name="searchPaths">要搜索的全路径</param>
         /// <param name="completedCb"></param>
         /// <returns></returns>
-        public IEnumerator LoadLocalFile(string[] paths, Action<DownloadHandler> completedCb)
+        public IEnumerator LoadLocalFile(string[] searchPaths, Action<DownloadHandler> completedCb)
         {
-            var cnt = paths.Length;
+            var cnt = searchPaths.Length;
             for (var idx = 0; idx < cnt; idx++)
             {
-                var url = paths[idx];
+                var url = searchPaths[idx];
                 Debug.Log($"LoadLocalFile {url}");
                 var uwr = UnityWebRequest.Get(url);
                 yield return uwr.SendWebRequest();
@@ -76,7 +76,7 @@ namespace Framework
         /// <param name="relativePath">相对路径</param>
         /// <param name="completedCb"></param>
         /// <returns></returns>
-        public IEnumerator LoadLocalFile(string relativePath, Action<DownloadHandler> completedCb)
+        public IEnumerator LoadLocalFileRelative(string relativePath, Action<DownloadHandler> completedCb)
         {
             string[] rootPaths =
             {

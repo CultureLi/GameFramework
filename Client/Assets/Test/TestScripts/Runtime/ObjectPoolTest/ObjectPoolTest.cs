@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Test.Runtime.ObjectPoolTest
+namespace TestRuntime
 {
     public class ObjectPoolTest : MonoBehaviour
     {

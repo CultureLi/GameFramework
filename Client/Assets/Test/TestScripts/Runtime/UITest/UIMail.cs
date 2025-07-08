@@ -8,7 +8,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Test.Runtime.UITest
+namespace TestRuntime
 {
     internal class UIMail : ViewBase
     {

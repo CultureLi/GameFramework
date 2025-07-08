@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Test.Runtime.NetTest
+namespace TestRuntime
 {
     public class ClientNet : MonoBehaviour
     {

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestRuntime;
 using UnityEditor;
 using UnityEngine;
 
 namespace Test.Inspector.NetTest
 {
-    [CustomEditor(typeof(Runtime.NetTest.ClientNet))]
+    [CustomEditor(typeof(ClientNet))]
     public class NetClientEditor : Editor
     {
         public override void OnInspectorGUI()
@@ -17,7 +18,7 @@ namespace Test.Inspector.NetTest
             base.OnInspectorGUI();
 
             // 获取目标对象引用
-            var myScript = (Runtime.NetTest.ClientNet)target;
+            var myScript = (ClientNet)target;
 
             // 添加按钮
             if (GUILayout.Button("Send"))

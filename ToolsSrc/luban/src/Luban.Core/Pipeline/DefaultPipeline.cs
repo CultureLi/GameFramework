@@ -12,6 +12,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace Luban.Pipeline;
 
@@ -113,8 +114,13 @@ public class DefaultPipeline : IPipeline
             i18nHash = BitConverter.ToString(hashBytes, 0, hashCodeLength).Replace("-", "").ToLowerInvariant();
         }
 
+        var hashMap = new Dictionary<string, string>()
+        {
+            ["configData.zip"] = dataHash,
+            ["i18n.zip"] = i18nHash,
+        };
 
-        File.WriteAllText(hashFile, $"{{configData.zip:{dataHash}, i18n.zip:{i18nHash}}}");
+        File.WriteAllText(hashFile, JsonSerializer.Serialize<Dictionary<string,string>>(hashMap));
 
     }
 

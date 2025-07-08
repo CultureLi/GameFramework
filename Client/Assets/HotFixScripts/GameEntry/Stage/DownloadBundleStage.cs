@@ -42,14 +42,14 @@ namespace GameEntry.Stage
             }
             else
             {
-                ChangeState<EntranceEndStage>();
+                ChangeState<DownloadConfigDataStage>();
             }
         }
 
         IEnumerator DoTask()
         {
             yield return DownloadBundles();
-            ChangeState<EntranceEndStage>();
+            ChangeState<DownloadConfigDataStage>();
         }
 
         void CollectBundleInfo()

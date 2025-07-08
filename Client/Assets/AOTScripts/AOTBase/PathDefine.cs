@@ -46,5 +46,11 @@ namespace AOTBase
         public static readonly string originHotFixPath = Path.Combine(Application.streamingAssetsPath, "HotFixDll");
 
         public static readonly string persistentHotFixPath = Path.Combine(Application.persistentDataPath, "HotFixDll");
+
+        public static readonly string persistentConfigDataPath = Path.Combine(Application.persistentDataPath, "Config");
+
+        public static readonly string remoteConfigDataPath = Path.Combine(remoteUrl, "Config");
+
+        public static readonly string originConfigDataPath = Path.Combine(Application.streamingAssetsPath, "Config");
     }
 }

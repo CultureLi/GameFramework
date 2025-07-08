@@ -91,12 +91,12 @@ namespace GameEntry.Stage
                     //加载本地catalog, 这里是沙盒目录中的
                     yield return ReloadRemoteCatalog(PathDefine.persistentCatalogPath, (catalog) =>
                     {
-                        ChangeState<EntranceEndStage>();
+                        ChangeState<DownloadConfigDataStage>();
                     });
                 }
                 else
                 {
-                    ChangeState<EntranceEndStage>();
+                    ChangeState<DownloadConfigDataStage>();
                 }
             }
         }

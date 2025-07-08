@@ -15,7 +15,7 @@ using HybridCLR.Editor.Commands;
 using HybridCLR.Editor.MethodBridge;
 using Unity.Plastic.Newtonsoft.Json;
 
-namespace Assets.GameMain.Editor.Build
+namespace Assets.Editor.Build
 {
     public class BuildParams
     {
@@ -66,6 +66,8 @@ namespace Assets.GameMain.Editor.Build
             {
                 BuildPlayer();
             }
+
+            CopyConfigDataToServer();
         }
 
         private static void Init()

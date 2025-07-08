@@ -10,10 +10,8 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-namespace Test.Runtime.NetTest
+namespace TestRuntime
 {
-    
-
     public class ClientPacket : SCPacket
     {
         public uint connectId;
