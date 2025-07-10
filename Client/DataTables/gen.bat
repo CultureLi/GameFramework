@@ -11,4 +11,6 @@ dotnet %LUBAN_DLL% ^
     -x outputDataDir=%WORKSPACE%\Assets\StreamingAssets\Config ^
     --genOffsetTables ItemSummary ResourceSummary ^
     -x pathValidator.rootDir=%WORKSPACE%\Client ^
-    --i18nTable i18n
+    --i18nTable I18n
+
+pause
