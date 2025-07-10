@@ -7,6 +7,7 @@ public class LocalFileSaver : OutputSaverBase
 {
     private static readonly NLog.Logger s_logger = NLog.LogManager.GetCurrentClassLogger();
 
+    static HashSet<string> CleanDirs = new HashSet<string>();
     protected override void BeforeSave(OutputFileManifest outputFileManifest, string outputDir)
     {
         /*if (!EnvManager.Current.GetBoolOptionOrDefault($"{BuiltinOptionNames.OutputSaver}.{outputFileManifest.TargetName}", BuiltinOptionNames.CleanUpOutputDir,
@@ -15,7 +16,21 @@ public class LocalFileSaver : OutputSaverBase
         {
             return;
         }
+        if (CleanDirs.Contains(outputDir))
+        {
+            return;
+        }
+
+        CleanDirs.Add(outputDir);
+        s_logger.Info($"ClearFolder : {outputFileManifest.TargetName} {outputDir}");
         FileCleaner.Clean(outputDir, outputFileManifest.DataFiles.Select(f => f.File).ToList());
+
+/*        if (Directory.Exists(outputDir))
+        {
+            Directory.Delete(outputDir, true);
+        }
+
+        Directory.CreateDirectory(outputDir);*/
     }
 
     public override void SaveFile(OutputFileManifest fileManifest, string outputDir, OutputFile outputFile)

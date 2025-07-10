@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+
 namespace Framework
 {
     public partial class TbI18n : TableBase
@@ -5,26 +8,34 @@ namespace Framework
         private System.Collections.Generic.Dictionary<string, I18n> _dataMap;
         private System.Collections.Generic.List<I18n> _dataList;
 
-        public override void Initialize(ByteBuf _buf)
+        private Func<string, MemoryStream> _streamLoader;
+        private string _fileName;
+        public override void Initialize(string name, Func<string, MemoryStream> streamLoader)
         {
+            _fileName = name;
+            _streamLoader = streamLoader;
             _dataMap = new System.Collections.Generic.Dictionary<string, I18n>();
             _dataList = new System.Collections.Generic.List<I18n>();
+            LoadAll();
+        }
 
-            for (int n = _buf.ReadSize(); n > 0; --n)
+        private void LoadAll()
+        {
+            var stream = _streamLoader?.Invoke($"{_fileName}.bytes");
+            var byteBuf = new ByteBuf(stream.ToArray());
+            for (int n = byteBuf.ReadSize(); n > 0; --n)
             {
-                I18n _v;
-                _v = I18n.Deserializei18n(_buf);
-                _dataList.Add(_v);
-                _dataMap.Add(_v.Key, _v);
+                I18n v;
+                v = I18n.Deserialize(byteBuf);
+                _dataList.Add(v);
+                _dataMap.Add(v.Key, v);
             }
         }
 
         public System.Collections.Generic.Dictionary<string, I18n> DataMap => _dataMap;
         public System.Collections.Generic.List<I18n> DataList => _dataList;
 
-        public I18n GetOrDefault(string key) => _dataMap.TryGetValue(key, out var v) ? v : null;
-        public I18n Get(string key) => _dataMap[key];
-        public I18n this[string key] => _dataMap[key];
+        public I18n Get(string key) => _dataMap.TryGetValue(key, out var v) ? v : default;
 
     }
 }

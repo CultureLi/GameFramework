@@ -56,7 +56,8 @@ public class FileCleaner
         var fullRootPath = Path.GetFullPath(dir);
         s_logger.Trace("full path:{path}", fullRootPath);
 
-        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+        var files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories);
+        foreach (var file in files)
         {
             s_logger.Trace("file:{file}", file);
             string fullSubFilePath = Path.GetFullPath(file);

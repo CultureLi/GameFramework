@@ -77,10 +77,9 @@ public class DefaultPipeline : IPipeline
         {
             foreach (var file in files)
             {
-                var relativePath = Path.GetRelativePath(dataDir, file);
-
+                var fileName = Path.GetFileName(file);
                 var archive = file.Contains("I18n") ? i18nArchive : dataArchive;
-                var entry = archive.CreateEntry(relativePath, CompressionLevel.Fastest);
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Fastest);
 
                 // 固定时间戳，写在 entry 打开前
                 entry.LastWriteTime = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -91,8 +90,6 @@ public class DefaultPipeline : IPipeline
                 {
                     fileStream.CopyTo(entryStream);
                 }
-
-                File.Delete(file);
             }
         }
 
@@ -122,6 +119,15 @@ public class DefaultPipeline : IPipeline
 
         File.WriteAllText(hashFile, JsonSerializer.Serialize<Dictionary<string,string>>(hashMap));
 
+        foreach (var file in files)
+        {
+            File.Delete(file);
+        }
+        /*foreach(var str in _args.DataTargets)
+        {
+            var dirPath = EnvManager.Current.GetOptionRaw($"{str}.outputDataDir");
+            Directory.Delete(dirPath, true);
+        }*/
     }
 
 
@@ -176,16 +182,16 @@ public class DefaultPipeline : IPipeline
 
     protected void ProcessTargets()
     {
-        var tasks = new List<Task>();
-        tasks.Add(Task.Run(() =>
+        foreach (string target in _args.CodeTargets)
         {
-            foreach (string target in _args.CodeTargets)
+            var task = Task.Run(() =>
             {
                 // code target doesn't support run in parallel
                 ICodeTarget m = CodeTargetManager.Ins.CreateCodeTarget(target);
                 ProcessCodeTarget(target, m);
-            }
-        }));
+            });
+            task.Wait();
+        }
 
         if (_args.ForceLoadTableDatas || _args.DataTargets.Count > 0)
         {
@@ -199,11 +205,14 @@ public class DefaultPipeline : IPipeline
             IDataExporter dataExporter = DataTargetManager.Ins.CreateDataExporter(dataExporterName);
             foreach (string mission in _args.DataTargets)
             {
-                IDataTarget dataTarget = DataTargetManager.Ins.CreateDataTarget(mission);
-                tasks.Add(Task.Run(() => ProcessDataTarget(mission, dataExporter, dataTarget)));
+                var task = Task.Run(() =>
+                {
+                    IDataTarget dataTarget = DataTargetManager.Ins.CreateDataTarget(mission);
+                    ProcessDataTarget(mission, dataExporter, dataTarget);
+                });
+                task.Wait();
             }
         }
-        Task.WaitAll(tasks.ToArray());
     }
 
     protected void ProcessCodeTarget(string name, ICodeTarget codeTarget)

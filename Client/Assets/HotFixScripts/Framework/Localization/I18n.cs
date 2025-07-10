@@ -9,7 +9,7 @@ namespace Framework
             Value = _buf.ReadString();
         }
 
-        public static I18n Deserializei18n(ByteBuf _buf)
+        public static I18n Deserialize(ByteBuf _buf)
         {
             return new I18n(_buf);
         }

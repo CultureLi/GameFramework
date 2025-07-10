@@ -8,38 +8,46 @@
 //------------------------------------------------------------------------------
 
 using Framework;
-
+using System;
+using System.IO;
 
 namespace cfg
 {
-public partial class TbBuildingSummary : TableBase
-{
-    public bool useOffset = false;
-    private System.Collections.Generic.Dictionary<int, BuildingSummary> _dataMap;
-    private System.Collections.Generic.List<BuildingSummary> _dataList;
-    
-    public override void Initialize(ByteBuf _buf)
+    public partial class TbBuildingSummary : TableBase
     {
-        _dataMap = new System.Collections.Generic.Dictionary<int, BuildingSummary>();
-        _dataList = new System.Collections.Generic.List<BuildingSummary>();
-        
-        for(int n = _buf.ReadSize() ; n > 0 ; --n)
+        private System.Collections.Generic.Dictionary<int, BuildingSummary> _dataMap;
+        private System.Collections.Generic.List<BuildingSummary> _dataList;
+        private Func<string, MemoryStream> _streamLoader;
+        private string _fileName;
+    
+        public override void Initialize(string name, Func<string, MemoryStream> streamLoader)
         {
-            BuildingSummary _v;
-            _v = global::cfg.BuildingSummary.DeserializeBuildingSummary(_buf);
-            _dataList.Add(_v);
-            _dataMap.Add(_v.Id, _v);
+            _fileName = name;
+            _streamLoader = streamLoader;
+            _dataMap = new System.Collections.Generic.Dictionary<int, BuildingSummary>();
+            _dataList = new System.Collections.Generic.List<BuildingSummary>();
+            LoadAll();
         }
+
+        private void LoadAll()
+        {
+            var stream = _streamLoader?.Invoke($"{_fileName}.bytes");
+            var byteBuf = new ByteBuf(stream.ToArray());
+            for (int n = byteBuf.ReadSize(); n > 0; --n)
+            {
+                BuildingSummary v;
+                v = global::cfg.BuildingSummary.DeserializeBuildingSummary(byteBuf);
+                _dataList.Add(v);
+                _dataMap.Add(v.Id, v);
+            }
+        }
+    
+        public System.Collections.Generic.Dictionary<int, BuildingSummary> DataMap => _dataMap;
+        public System.Collections.Generic.List<BuildingSummary> DataList => _dataList;
+    
+        public BuildingSummary Get(int key) => _dataMap.TryGetValue(key, out var v) ? v : null;
+    
     }
-
-    public System.Collections.Generic.Dictionary<int, BuildingSummary> DataMap => _dataMap;
-    public System.Collections.Generic.List<BuildingSummary> DataList => _dataList;
-
-    public BuildingSummary GetOrDefault(int key) => _dataMap.TryGetValue(key, out var v) ? v : null;
-    public BuildingSummary Get(int key) => _dataMap[key];
-    public BuildingSummary this[int key] => _dataMap[key];
-
-}
 
 }
 

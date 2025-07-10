@@ -19,7 +19,7 @@ namespace Framework
             set
             {
                 _language = value;
-                _tbName = $"tbi18n_{value}";
+                _tbName = $"TbI18n_{value}";
             }
         }
 

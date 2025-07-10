@@ -8,38 +8,80 @@
 //------------------------------------------------------------------------------
 
 using Framework;
+using System;
+using System.IO;
 
 
 namespace cfg
 {
-public partial class TbResourceSummary : TableBase
-{
-    public bool useOffset = true;
-    private System.Collections.Generic.Dictionary<int, ResourceSummary> _dataMap;
-    private System.Collections.Generic.List<ResourceSummary> _dataList;
-    
-    public override void Initialize(ByteBuf _buf)
+    public partial class TbResourceSummary : TableBase
     {
-        _dataMap = new System.Collections.Generic.Dictionary<int, ResourceSummary>();
-        _dataList = new System.Collections.Generic.List<ResourceSummary>();
-        
-        for(int n = _buf.ReadSize() ; n > 0 ; --n)
+        public override bool UseOffset => true;
+        private Func<string, MemoryStream> _streamLoader;
+        private System.Func<string, int, int, ByteBuf> _byteBufLoader;
+        private string _fileName;
+
+        private System.Collections.Generic.Dictionary<int, ResourceSummary> _dataMap;
+        private System.Collections.Generic.Dictionary<int, int> _offsetMap;
+        private System.Collections.Generic.Dictionary<int, int> _lengthMap;
+
+        private readonly System.Collections.Generic.List<ResourceSummary> _dataList;
+
+        public override void Initialize(string name, Func<string, MemoryStream> streamLoader, System.Func<string, int, int, ByteBuf> byteBufLoader)
         {
-            ResourceSummary _v;
-            _v = global::cfg.ResourceSummary.DeserializeResourceSummary(_buf);
-            _dataList.Add(_v);
-            _dataMap.Add(_v.Id, _v);
+            _dataMap = new System.Collections.Generic.Dictionary<int, ResourceSummary>();
+            _offsetMap = new System.Collections.Generic.Dictionary<int, int>();
+            _lengthMap = new System.Collections.Generic.Dictionary<int, int>();
+            _byteBufLoader = byteBufLoader;
+            _streamLoader = streamLoader;
+            _fileName = name;
+
+            InitOffset();
         }
+
+        private void InitOffset()
+        {
+            var stream = _streamLoader?.Invoke($"{_fileName}_offset.bytes");
+            var byteBuf = new ByteBuf(stream.ToArray());
+            for (int n = byteBuf.ReadSize(); n > 0; --n)
+            {
+                int key;
+                key = byteBuf.ReadInt();
+                int offset = byteBuf.ReadInt();
+                int length = byteBuf.ReadInt();
+                _offsetMap.Add(key, offset);
+                _lengthMap.Add(key, length);
+            }
+        } 
+
+        public void LoadAll(System.Action<int,ResourceSummary> onLoad = null)
+        {
+            foreach(var key in _offsetMap.Keys)
+		    {
+                var value = this.Get(key);
+                if (value != null)
+			    {
+				    onLoad?.Invoke(key, value);
+			    }
+		    }
+        }
+
+        public ResourceSummary Get(int key)
+        {
+            if (_dataMap.TryGetValue(key, out var v))
+            {
+                return v;
+            }
+            int offset = _offsetMap[key];
+            int length = _lengthMap[key];
+            ByteBuf buf = this._byteBufLoader($"{_fileName}.bytes", offset, length);
+            v = global::cfg.ResourceSummary.DeserializeResourceSummary(buf);;
+            _dataMap[key] = v;
+            return v;
+        }
+
+
     }
-
-    public System.Collections.Generic.Dictionary<int, ResourceSummary> DataMap => _dataMap;
-    public System.Collections.Generic.List<ResourceSummary> DataList => _dataList;
-
-    public ResourceSummary GetOrDefault(int key) => _dataMap.TryGetValue(key, out var v) ? v : null;
-    public ResourceSummary Get(int key) => _dataMap[key];
-    public ResourceSummary this[int key] => _dataMap[key];
-
-}
 
 }
 

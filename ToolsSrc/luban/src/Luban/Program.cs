@@ -84,19 +84,17 @@ internal static class Program
     private static void Main(string[] args)
     {
         var customArgs = args;
-        var debug = true;
+        var debug = false;
         if (debug)
         {
             customArgs = new string[]
             {
             "-t", "client",
-            "-c", "cs-bin",
-            "-d", "bin", "bin-offset",
+            "-c", "cs-bin","cs-lazyload-bin",
+            "-d", "bin", "bin-offsetlength",
             "--conf", "E:\\Work\\GameFramework\\Client\\DataTables\\luban.conf",
             "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
             "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
-            "-x", "bin-offset.outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
-            "-x", "bin-offset.cleanUpOutputDir=false",
             "--genOffsetTables", "ItemSummary","ResourceSummary",
             "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
             "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates",

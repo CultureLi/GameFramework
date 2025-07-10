@@ -1,11 +1,11 @@
-using Luban.CodeTarget;
+﻿using Luban.CodeTarget;
 using Luban.CSharp.TemplateExtensions;
 using Scriban;
 
 namespace Luban.CSharp.CodeTarget;
 
-[CodeTarget("cs-bin")]
-public class CsharpBinCodeTarget : CsharpCodeTargetBase
+[CodeTarget("cs-lazyload-bin")]
+public class CsharpLazyLoadBinCodeTarget : CsharpCodeTargetBase
 {
     protected override void OnCreateTemplateContext(TemplateContext ctx)
     {
@@ -24,7 +24,7 @@ public class CsharpBinCodeTarget : CsharpCodeTargetBase
                 continue;
             }
 
-            if (table.useOffset)
+            if (!table.useOffset)
             {
                 continue;
             }
@@ -34,30 +34,6 @@ public class CsharpBinCodeTarget : CsharpCodeTargetBase
                 var writer = new CodeWriter();
                 GenerateTable(ctx, table, writer);
                 return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(table.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
-            }));
-        }
-
-        foreach (var bean in ctx.ExportBeans)
-        {
-            if (bean.FullName.Equals(ctx.Assembly.I18nTableName))
-            {
-                continue;
-            }
-            tasks.Add(Task.Run(() =>
-            {
-                var writer = new CodeWriter();
-                GenerateBean(ctx, bean, writer);
-                return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(bean.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
-            }));
-        }
-
-        foreach (var @enum in ctx.ExportEnums)
-        {
-            tasks.Add(Task.Run(() =>
-            {
-                var writer = new CodeWriter();
-                GenerateEnum(ctx, @enum, writer);
-                return CreateOutputFile($"{GetFileNameWithoutExtByTypeName(@enum.FullName)}.{FileSuffixName}", writer.ToResult(FileHeader));
             }));
         }
 

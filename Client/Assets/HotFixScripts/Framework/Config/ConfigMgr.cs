@@ -6,30 +6,31 @@ using UnityEngine;
 
 namespace Framework
 {
-
     public abstract class TableBase
     {
         public virtual bool UseOffset
         {
             get; private set;
         }
-        public virtual void Initialize(ByteBuf buf) { }
-        public virtual void Initialize(ByteBuf _buf, System.Func<string, int, int, ByteBuf> byteBufLoader) { }
+        public virtual void Initialize(string name, Func<string, MemoryStream> streamLoader, System.Func<string, int, int, ByteBuf> byteBufLoader)
+        {
+        }
+        public virtual void Initialize(string name, Func<string, MemoryStream> streamLoader)
+        {
+        }
     }
 
     public class ConfigMgr : IConfigMgr, IFramework
     {
-
+        private static byte[] BUFFER = new byte[1024 * 1024 * 5]; //来个5MB
         Dictionary<Type, TableBase> _tableMap;
-        Dictionary<string, FileStream> _fileStreams;
-        private static byte[] BUFFER = new byte[1024 * 1024 * 10];
-
-        private Dictionary<string, ZipArchive> _zipArchiveMap = new Dictionary<string, ZipArchive>();
-        private Dictionary<string, FileStream> _tableStreamMap = new Dictionary<string, FileStream>();
+        private Dictionary<string, ZipArchive> _zipArchiveMap;
+        private Dictionary<string, MemoryStream> _tableStreamMap;
         public ConfigMgr()
         {
+            _zipArchiveMap = new Dictionary<string, ZipArchive>();
             _tableMap = new Dictionary<Type, TableBase>();
-            _fileStreams = new Dictionary<string, FileStream>();
+            _tableStreamMap = new Dictionary<string, MemoryStream>();
         }
 
         public void AddZipArchive(string name, ZipArchive archive)
@@ -37,7 +38,7 @@ namespace Framework
             _zipArchiveMap[name] = archive;
         }
 
-        public T GetTable<T>() where T : TableBase, new()
+        public T GetTable<T>(string customFileName = null) where T : TableBase, new()
         {
             if (_tableMap.TryGetValue(typeof(T), out var t))
             {
@@ -45,51 +46,67 @@ namespace Framework
             }
 
             var table = new T();
+            var fileName = string.IsNullOrEmpty(customFileName) ? typeof(T).Name : customFileName;
 
-            var buf = LoadByteBuf(typeof(T).Name);
-            table.Initialize(buf);
-
+            if (table.UseOffset)
+            {
+                table.Initialize(fileName, TableStreamLoader, OffsetByteBufLoader);
+            }
+            else
+            {
+                table.Initialize(fileName, TableStreamLoader);
+            }
             _tableMap[typeof(T)] = table;
             return table;
         }
 
-        public T GetTable<T>(string fileName) where T : TableBase, new()
+        MemoryStream TableStreamLoader(string name)
         {
-            if (_tableMap.TryGetValue(typeof(T), out var t))
+            if (_tableStreamMap.TryGetValue(name, out var stream))
             {
-                return t as T;
+                return stream;
             }
 
-            var buf = LoadByteBuf(fileName);
-            var table = new T();
-            table.Initialize(buf);
-            _tableMap[typeof(T)] = table;
-            return table;
-        }
-
-        private ByteBuf LoadByteBuf(string file)
-        {
-            ByteBuf buf = null;
-            
-
-            return buf;
+            foreach ((var _, var zipArchive) in _zipArchiveMap)
+            {
+                var entry = zipArchive.GetEntry(name);
+                if (entry != null)
+                {
+                    stream = new MemoryStream(new byte[entry.Length]); 
+                    using (var entryStream = entry.Open()) 
+                    {
+                        entryStream.CopyTo(stream);
+                        _tableStreamMap[name] = stream;
+                        return stream;
+                    }
+                }
+            }
+            return null;
         }
 
         private ByteBuf OffsetByteBufLoader(string file, int offset, int length)
         {
-            if (!_fileStreams.TryGetValue(file, out var fs))
-            {
-                fs = new FileStream($"{Application.streamingAssetsPath}/Config/bin/{file}.bytes", FileMode.Open);
-                _fileStreams.Add(file, fs);
-            }
-            fs.Seek(offset, SeekOrigin.Begin);
-            fs.Read(BUFFER, 0, length);
+            var stream = TableStreamLoader(file);
+            stream.Seek(offset, SeekOrigin.Begin);
+            stream.Read(BUFFER, 0, length);
             var buf = new ByteBuf(BUFFER, 0, length);
             return buf;
         }
 
         public void Shutdown()
         {
+            foreach ((var _, var zipArchive) in _zipArchiveMap)
+            {
+                zipArchive.Dispose();
+            }
+            _zipArchiveMap.Clear();
+
+            foreach ((var _, var stream) in _tableStreamMap)
+            {
+                stream.Dispose();
+            }
+            _tableStreamMap.Clear();
+
             _tableMap.Clear();
         }
 

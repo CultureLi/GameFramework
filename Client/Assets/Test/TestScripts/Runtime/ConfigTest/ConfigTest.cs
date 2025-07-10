@@ -1,12 +1,14 @@
 using cfg;
+using Framework;
 using GameEntry;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using UnityEngine;
 
 namespace TestRuntime
 {
-
     public class ConfigTest : MonoBehaviour
     {
         // Start is called before the first frame update
@@ -14,23 +16,27 @@ namespace TestRuntime
         {
             FW.I.Initialize();
 
+            foreach (var zipName in new string[] { "configData.zip", "i18n.zip" })
+            {
+                var stream = new FileStreamEx(Path.Combine(Application.streamingAssetsPath, $"Config/{zipName}"));
+
+                ZipArchive archive = new ZipArchive(stream.Stream, ZipArchiveMode.Read);
+
+                FW.CfgMgr.AddZipArchive(zipName, archive);
+            }
+            
         }
 
         private void OnEnable()
         {
-            /*var itemTable = FW.CfgMgr.GetTable<TbItemSummary>();
-            foreach (var item in itemTable.DataList)
-            {
-                Debug.Log(item.ToString());
-            }
 
-            Debug.Log(itemTable.Get(1004).ToString());*/
+            var buildTable = FW.CfgMgr.GetTable<TbBuildingSummary>();
+            Debug.Log(buildTable.Get(5).ToString());
 
-            var localizeTable = FW.CfgMgr.GetTable<TbResourceSummary>();
-            foreach (var item in localizeTable.DataList)
-            {
-                Debug.Log(item.ToString());
-            }
+            //lazyLoad
+            var resTable = FW.CfgMgr.GetTable<TbResourceSummary>();
+            Debug.Log(resTable.Get(1002).ToString());
+
 
             FW.LocalizationMgr.Language = "tw";
             Debug.Log($"±¾µØ»¯ {FW.LocalizationMgr.Get("LC_UI_Open")}");
