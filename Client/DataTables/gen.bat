@@ -9,8 +9,9 @@ dotnet %LUBAN_DLL% ^
     --conf %CONF_ROOT%\luban.conf ^
     -x outputCodeDir=%WORKSPACE%\Assets\HotFixScripts\GameMain\Config\Gen ^
     -x outputDataDir=%WORKSPACE%\Assets\StreamingAssets\Config ^
-    --genOffsetTables ItemSummary ResourceSummary ^
     -x pathValidator.rootDir=%WORKSPACE%\Client ^
-    --i18nTable I18n
+    --genOffsetTables ItemSummaryCfg ResourceSummaryCfg ^
+    --i18nTable I18nCfg ^
+    --genCodeExclude I18nCfg LanguageCfg
 
 pause

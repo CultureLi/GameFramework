@@ -19,7 +19,7 @@ public class CsharpLazyLoadBinCodeTarget : CsharpCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
-            if (table.PureName.Equals(ctx.Assembly.I18nTableName))
+            if (ctx.Assembly.GenCodeExclude.Contains(table.PureName))
             {
                 continue;
             }

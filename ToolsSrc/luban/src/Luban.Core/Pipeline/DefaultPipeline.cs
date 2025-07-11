@@ -146,6 +146,7 @@ public class DefaultPipeline : IPipeline
         _genCtx = new GenerationContext();
         _defAssembly = new DefAssembly(_rawAssembly, _args.Target, _args.OutputTables, _config.Groups, _args.Variants, _args.GenOffsetTables);
         _defAssembly.I18nTableName = _args.I18nTableName;
+        _defAssembly.GenCodeExclude = _args.GenCodeExclude;
         _defAssembly.GenOffsetTables = _args.GenOffsetTables;
         var generationCtxBuilder = new GenerationContextBuilder
         {

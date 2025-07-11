@@ -23,6 +23,7 @@ public class DefAssembly
     public string I18nTableName { get; set; }
 
     public List<string> GenOffsetTables { get; set; }
+    public List<string> GenCodeExclude { get; set; }
 
     public RawTarget Target { get; }
 

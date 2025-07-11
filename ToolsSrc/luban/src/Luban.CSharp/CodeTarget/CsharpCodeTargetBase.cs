@@ -41,7 +41,7 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
-            if (table.PureName.Equals(ctx.Assembly.I18nTableName))
+            if (ctx.Assembly.GenCodeExclude.Contains(table.PureName))
             {
                 continue;
             }
@@ -55,7 +55,7 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
         foreach (var bean in ctx.ExportBeans)
         {
-            if (bean.FullName.Equals(ctx.Assembly.I18nTableName))
+            if (ctx.Assembly.GenCodeExclude.Contains(bean.FullName))
             {
                 continue;
             }

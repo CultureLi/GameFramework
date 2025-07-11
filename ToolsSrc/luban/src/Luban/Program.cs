@@ -74,6 +74,9 @@ internal static class Program
         [Option("i18nTable", Required = false, HelpText = "i18n table name")]
         public string I18nTableName { get; set; }
 
+        [Option("genCodeExclude", Required = false, HelpText = "genCodeExclude")]
+        public IEnumerable<string> GenCodeExclude { get; set; }
+
         [Option("genOffsetTables", Required = false, HelpText = "gen offset tables")]
         public IEnumerable<string> GenOffsetTables { get; set; }
     }
@@ -95,10 +98,11 @@ internal static class Program
             "--conf", "E:\\Work\\GameFramework\\Client\\DataTables\\luban.conf",
             "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
             "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
-            "--genOffsetTables", "ItemSummary","ResourceSummary",
             "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
             "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates",
-            "--i18nTable", "I18n"
+            "--i18nTable", "I18nCfg",
+            "--genCodeExclude", "I18nCfg","LanguageCfg",
+            "--genOffsetTables", "ItemSummaryCfg","ResourceSummaryCfg",
             };
         }
 
@@ -321,7 +325,8 @@ internal static class Program
             Variants = ParseVariants(opts.Variants),
             TimeZone = opts.TimeZone,
             I18nTableName = opts.I18nTableName,
-            GenOffsetTables = opts.GenOffsetTables?.ToList() ?? new List<string>()
+            GenOffsetTables = opts.GenOffsetTables?.ToList() ?? new List<string>(),
+            GenCodeExclude = opts.GenCodeExclude?.ToList() ?? new List<string>()
         };
     }
 

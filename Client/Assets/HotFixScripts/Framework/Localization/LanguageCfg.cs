@@ -12,19 +12,19 @@ using Framework;
 
 namespace cfg
 {
-public sealed partial class ResourceSummary : Framework.BeanBase
+public sealed partial class LanguageCfg : Framework.BeanBase
 {
-    public ResourceSummary(ByteBuf _buf) 
+    public LanguageCfg(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
-        Name = _buf.ReadString();
         Desc = _buf.ReadString();
-        Count = _buf.ReadInt();
+        Name = _buf.ReadString();
+        Code = _buf.ReadString();
     }
 
-    public static ResourceSummary DeserializeResourceSummary(ByteBuf _buf)
+    public static LanguageCfg DeserializeLanguageCfg(ByteBuf _buf)
     {
-        return new ResourceSummary(_buf);
+        return new LanguageCfg(_buf);
     }
 
     /// <summary>
@@ -32,28 +32,25 @@ public sealed partial class ResourceSummary : Framework.BeanBase
     /// </summary>
     public readonly int Id;
     /// <summary>
-    /// 名称
-    /// </summary>
-    public readonly string Name;
-    /// <summary>
     /// 描述
     /// </summary>
     public readonly string Desc;
     /// <summary>
-    /// 个数
+    /// 名称
     /// </summary>
-    public readonly int Count;
+    public readonly string Name;
+    public readonly string Code;
    
-    public const int __ID__ = 2075273112;
+    public const int __ID__ = 491994572;
     public override int GetTypeId() => __ID__;
 
     public override string ToString()
     {
         return "{ "
         + "id:" + Id + ","
-        + "name:" + Name + ","
         + "desc:" + Desc + ","
-        + "count:" + Count + ","
+        + "name:" + Name + ","
+        + "code:" + Code + ","
         + "}";
     }
 }

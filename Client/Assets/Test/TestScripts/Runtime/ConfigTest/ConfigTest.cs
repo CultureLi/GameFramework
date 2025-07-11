@@ -24,22 +24,27 @@ namespace TestRuntime
 
                 FW.CfgMgr.AddZipArchive(zipName, archive);
             }
-            
+
+            FW.LocalizationMgr.InitLanguage();
+
+
         }
 
         private void OnEnable()
         {
 
-            var buildTable = FW.CfgMgr.GetTable<TbBuildingSummary>();
+            var buildTable = FW.CfgMgr.GetTable<TbBuildingSummaryCfg>();
             Debug.Log(buildTable.Get(5).ToString());
 
             //lazyLoad
-            var resTable = FW.CfgMgr.GetTable<TbResourceSummary>();
+            var resTable = FW.CfgMgr.GetTable<TbResourceSummaryCfg>();
             Debug.Log(resTable.Get(1002).ToString());
 
 
-            FW.LocalizationMgr.Language = "tw";
+            //FW.LocalizationMgr.Language = "tw";
             Debug.Log($"本地化 {FW.LocalizationMgr.Get("LC_UI_Open")}");
+
+            Debug.Log($"本地化 {FW.LocalizationMgr.Format("LC_Mail_GetItem", FW.LocalizationMgr.Get("LC_Item_Food"))}");
 
         }
 

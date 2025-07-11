@@ -14,22 +14,22 @@ using System.IO;
 
 namespace cfg
 {
-    public partial class TbResourceSummary : TableBase
+    public partial class TbResourceSummaryCfg : TableBase
     {
         public override bool UseOffset => true;
         private Func<string, MemoryStream> _streamLoader;
         private System.Func<string, int, int, ByteBuf> _byteBufLoader;
         private string _fileName;
 
-        private System.Collections.Generic.Dictionary<int, ResourceSummary> _dataMap;
+        private System.Collections.Generic.Dictionary<int, ResourceSummaryCfg> _dataMap;
         private System.Collections.Generic.Dictionary<int, int> _offsetMap;
         private System.Collections.Generic.Dictionary<int, int> _lengthMap;
 
-        private readonly System.Collections.Generic.List<ResourceSummary> _dataList;
+        private readonly System.Collections.Generic.List<ResourceSummaryCfg> _dataList;
 
         public override void Initialize(string name, Func<string, MemoryStream> streamLoader, System.Func<string, int, int, ByteBuf> byteBufLoader)
         {
-            _dataMap = new System.Collections.Generic.Dictionary<int, ResourceSummary>();
+            _dataMap = new System.Collections.Generic.Dictionary<int, ResourceSummaryCfg>();
             _offsetMap = new System.Collections.Generic.Dictionary<int, int>();
             _lengthMap = new System.Collections.Generic.Dictionary<int, int>();
             _byteBufLoader = byteBufLoader;
@@ -54,7 +54,7 @@ namespace cfg
             }
         } 
 
-        public void LoadAll(System.Action<int,ResourceSummary> onLoad = null)
+        public void LoadAll(System.Action<int,ResourceSummaryCfg> onLoad = null)
         {
             foreach(var key in _offsetMap.Keys)
 		    {
@@ -66,7 +66,7 @@ namespace cfg
 		    }
         }
 
-        public ResourceSummary Get(int key)
+        public ResourceSummaryCfg Get(int key)
         {
             if (_dataMap.TryGetValue(key, out var v))
             {
@@ -75,7 +75,7 @@ namespace cfg
             int offset = _offsetMap[key];
             int length = _lengthMap[key];
             ByteBuf buf = this._byteBufLoader($"{_fileName}.bytes", offset, length);
-            v = global::cfg.ResourceSummary.DeserializeResourceSummary(buf);;
+            v = global::cfg.ResourceSummaryCfg.DeserializeResourceSummaryCfg(buf);;
             _dataMap[key] = v;
             return v;
         }

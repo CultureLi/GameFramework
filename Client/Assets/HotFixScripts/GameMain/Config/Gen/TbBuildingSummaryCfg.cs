@@ -13,10 +13,10 @@ using System.IO;
 
 namespace cfg
 {
-    public partial class TbBuildingSummary : TableBase
+    public partial class TbBuildingSummaryCfg : TableBase
     {
-        private System.Collections.Generic.Dictionary<int, BuildingSummary> _dataMap;
-        private System.Collections.Generic.List<BuildingSummary> _dataList;
+        private System.Collections.Generic.Dictionary<int, BuildingSummaryCfg> _dataMap;
+        private System.Collections.Generic.List<BuildingSummaryCfg> _dataList;
         private Func<string, MemoryStream> _streamLoader;
         private string _fileName;
     
@@ -24,8 +24,8 @@ namespace cfg
         {
             _fileName = name;
             _streamLoader = streamLoader;
-            _dataMap = new System.Collections.Generic.Dictionary<int, BuildingSummary>();
-            _dataList = new System.Collections.Generic.List<BuildingSummary>();
+            _dataMap = new System.Collections.Generic.Dictionary<int, BuildingSummaryCfg>();
+            _dataList = new System.Collections.Generic.List<BuildingSummaryCfg>();
             LoadAll();
         }
 
@@ -35,17 +35,17 @@ namespace cfg
             var byteBuf = new ByteBuf(stream.ToArray());
             for (int n = byteBuf.ReadSize(); n > 0; --n)
             {
-                BuildingSummary v;
-                v = global::cfg.BuildingSummary.DeserializeBuildingSummary(byteBuf);
+                BuildingSummaryCfg v;
+                v = global::cfg.BuildingSummaryCfg.DeserializeBuildingSummaryCfg(byteBuf);
                 _dataList.Add(v);
                 _dataMap.Add(v.Id, v);
             }
         }
     
-        public System.Collections.Generic.Dictionary<int, BuildingSummary> DataMap => _dataMap;
-        public System.Collections.Generic.List<BuildingSummary> DataList => _dataList;
+        public System.Collections.Generic.Dictionary<int, BuildingSummaryCfg> DataMap => _dataMap;
+        public System.Collections.Generic.List<BuildingSummaryCfg> DataList => _dataList;
     
-        public BuildingSummary Get(int key) => _dataMap.TryGetValue(key, out var v) ? v : null;
+        public BuildingSummaryCfg Get(int key) => _dataMap.TryGetValue(key, out var v) ? v : null;
     
     }
 

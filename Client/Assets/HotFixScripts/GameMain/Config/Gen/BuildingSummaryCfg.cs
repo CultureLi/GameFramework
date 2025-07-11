@@ -12,9 +12,9 @@ using Framework;
 
 namespace cfg
 {
-public sealed partial class BuildingSummary : Framework.BeanBase
+public sealed partial class BuildingSummaryCfg : Framework.BeanBase
 {
-    public BuildingSummary(ByteBuf _buf) 
+    public BuildingSummaryCfg(ByteBuf _buf) 
     {
         Id = _buf.ReadInt();
         BuildingId = _buf.ReadInt();
@@ -24,9 +24,9 @@ public sealed partial class BuildingSummary : Framework.BeanBase
         UpLvCost = _buf.ReadInt();
     }
 
-    public static BuildingSummary DeserializeBuildingSummary(ByteBuf _buf)
+    public static BuildingSummaryCfg DeserializeBuildingSummaryCfg(ByteBuf _buf)
     {
-        return new BuildingSummary(_buf);
+        return new BuildingSummaryCfg(_buf);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ public sealed partial class BuildingSummary : Framework.BeanBase
     /// </summary>
     public readonly int UpLvCost;
    
-    public const int __ID__ = 1217606194;
+    public const int __ID__ = -1587588910;
     public override int GetTypeId() => __ID__;
 
     public override string ToString()

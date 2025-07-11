@@ -19,7 +19,7 @@ public class CsharpBinCodeTarget : CsharpCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
-            if (table.PureName.Equals(ctx.Assembly.I18nTableName))
+            if (ctx.Assembly.I18nTableName.Contains(table.PureName))
             {
                 continue;
             }
@@ -39,7 +39,7 @@ public class CsharpBinCodeTarget : CsharpCodeTargetBase
 
         foreach (var bean in ctx.ExportBeans)
         {
-            if (bean.FullName.Equals(ctx.Assembly.I18nTableName))
+            if (ctx.Assembly.GenCodeExclude.Contains(bean.FullName))
             {
                 continue;
             }
