@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AOTBase;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -31,9 +32,31 @@ namespace Framework
             _zipArchiveMap = new Dictionary<string, ZipArchive>();
             _tableMap = new Dictionary<Type, TableBase>();
             _tableStreamMap = new Dictionary<string, MemoryStream>();
+            Initialize();
         }
 
-        public void AddZipArchive(string name, ZipArchive archive)
+        /// <summary>
+        /// 初始化，加载最新的zip文件
+        /// </summary>
+        public void Initialize()
+        {
+            Shutdown();
+            foreach (var zipName in new string[] { "configData.zip", "i18n.zip" })
+            {
+                var zipPath = Path.Combine(PathDefine.persistentConfigDataPath, zipName);
+                if (!File.Exists(zipPath))
+                {
+                    zipPath = Path.Combine(PathDefine.originConfigDataPath, zipName);
+                }
+                var stream = new FileStreamEx(zipPath);
+
+                ZipArchive archive = new ZipArchive(stream.Stream, ZipArchiveMode.Read);
+
+                AddZipArchive(zipName, archive);
+            }
+        }
+
+        void AddZipArchive(string name, ZipArchive archive)
         {
             _zipArchiveMap[name] = archive;
         }
@@ -60,6 +83,11 @@ namespace Framework
             return table;
         }
 
+        /// <summary>
+        /// 加载配置表数据流
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         MemoryStream TableStreamLoader(string name)
         {
             if (_tableStreamMap.TryGetValue(name, out var stream))
@@ -83,7 +111,13 @@ namespace Framework
             }
             return null;
         }
-
+        /// <summary>
+        /// 加载流中某条数据
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="offset"></param>
+        /// <param name="length"></param>
+        /// <returns></returns>
         private ByteBuf OffsetByteBufLoader(string file, int offset, int length)
         {
             var stream = TableStreamLoader(file);

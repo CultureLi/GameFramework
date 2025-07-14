@@ -1,12 +1,12 @@
 ﻿using AOTBase;
 using Framework;
+using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using Unity.Plastic.Newtonsoft.Json;
 using UnityEngine;
 
 namespace GameEntry.Stage
@@ -100,6 +100,7 @@ namespace GameEntry.Stage
                 }
 
                 File.WriteAllText(hashFileTarDir, remoteHash);
+                FW.CfgMgr.Initialize();
             }
 
             ChangeState<EntranceEndStage>();

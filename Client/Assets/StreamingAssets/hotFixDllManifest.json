@@ -1,0 +1,47 @@
+{
+    "item": [
+        {
+            "name": "Framework",
+            "hash": "31996ff7e4450d22bb0d3a89b35a678f",
+            "dependencies": []
+        },
+        {
+            "name": "GameEntry",
+            "hash": "875f38d51ef47a99f556c180dfea38c9",
+            "dependencies": [
+                "Framework"
+            ]
+        },
+        {
+            "name": "Config",
+            "hash": "fa1610eccece5309ec69fc7d0c14cb85",
+            "dependencies": [
+                "Framework"
+            ]
+        },
+        {
+            "name": "GameMain",
+            "hash": "7881ac96040d6efb12c0689c8bcd6a12",
+            "dependencies": [
+                "Framework",
+                "GameEntry"
+            ]
+        },
+        {
+            "name": "Protos",
+            "hash": "222e4f00a9b60ce1d89351f1eaefa0d9",
+            "dependencies": []
+        },
+        {
+            "name": "Test.Runtime",
+            "hash": "4bb2eff3d996597adeb7ee32f10f3ae5",
+            "dependencies": [
+                "Framework",
+                "GameEntry",
+                "GameMain",
+                "Protos",
+                "Config"
+            ]
+        }
+    ]
+}

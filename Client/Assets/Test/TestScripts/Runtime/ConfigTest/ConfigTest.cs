@@ -1,6 +1,7 @@
 using cfg;
 using Framework;
 using GameEntry;
+using Newtonsoft.Json;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -15,19 +16,6 @@ namespace TestRuntime
         void Awake()
         {
             FW.I.Initialize();
-
-            foreach (var zipName in new string[] { "configData.zip", "i18n.zip" })
-            {
-                var stream = new FileStreamEx(Path.Combine(Application.streamingAssetsPath, $"Config/{zipName}"));
-
-                ZipArchive archive = new ZipArchive(stream.Stream, ZipArchiveMode.Read);
-
-                FW.CfgMgr.AddZipArchive(zipName, archive);
-            }
-
-            FW.LocalizationMgr.InitLanguage();
-
-
         }
 
         private void OnEnable()

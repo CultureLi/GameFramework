@@ -13,7 +13,7 @@ namespace Framework
         string Format(string key, object arg0, object arg1);
         string Format(string key, object arg0, object arg1, object arg2);
         string Format(string key, params object[] args);
-        void InitLanguage();
+        void Initialize();
         bool SetLanguage(string isoCode);
     }
 }

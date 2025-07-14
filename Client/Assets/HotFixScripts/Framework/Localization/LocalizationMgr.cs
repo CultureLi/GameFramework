@@ -28,6 +28,7 @@ namespace Framework
         public LocalizationMgr()
         {
             _cfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
+            Initialize();
         }
 
         /// <summary>
@@ -100,7 +101,7 @@ namespace Framework
         /// <summary>
         /// 初始化设置本地语言
         /// </summary>
-        public void InitLanguage()
+        public void Initialize()
         {
             var language = SystemLanguage.Unknown;
             if (PlayerPrefs.HasKey(kLanguageKey))
@@ -155,39 +156,42 @@ namespace Framework
 
             //华为手机安卓9以上获取系统多语言出错, 手机切换为繁体时，Application.systemLanguage返回的依然是简体
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (lang == SystemLanguage.ChineseSimplified || lang == SystemLanguage.ChineseTraditional || lang == SystemLanguage.Chinese)
+            if (language == SystemLanguage.ChineseSimplified ||
+                language == SystemLanguage.ChineseTraditional ||
+                language == SystemLanguage.Chinese)
             {
                 using (var unityClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
                 {
-                    using (var unityContext = unityClass.GetStatic<AndroidJavaObject>("currentActivity"))
+                    using (var curActivity = unityClass.GetStatic<AndroidJavaObject>("currentActivity"))
                     {
-                        AndroidJavaObject locale;
+                        AndroidJavaObject locale = curActivity.Call<AndroidJavaObject>("getResources")
+                                .Call<AndroidJavaObject>("getConfiguration").Get<AndroidJavaObject>("locale");
+
                         if (AndroidVersion.SDK_INT >= 24)
                         {
-                            locale = unityContext.Call<AndroidJavaObject>("getResources")
+                            locale = curActivity.Call<AndroidJavaObject>("getResources")
                                 .Call<AndroidJavaObject>("getConfiguration").Call<AndroidJavaObject>("getLocales")
                                 .Call<AndroidJavaObject>("get", 0);
                         }
-                        else
-                        {
-                            locale = unityContext.Call<AndroidJavaObject>("getResources")
-                                .Call<AndroidJavaObject>("getConfiguration").Get<AndroidJavaObject>("locale");
-                        }
+                        var lang = locale.Call<string>("getLanguage");
+                        var tag = locale.Call<string>("toLanguageTag").ToLower();
+                        var country = locale.Call<string>("getCountry");
 
-                        Debug.LogFormat("[CommonSettingsMgr] getLanguage {0} toLanguageTag {1} getCountry {2}", locale.Call<string>("getLanguage"), locale.Call<string>("toLanguageTag"), locale.Call<string>("getCountry"));
-                        if (locale.Call<string>("getLanguage").Equals("zh"))
+                        Debug.Log($"lang:{lang} tag:{tag} country:{country}");
+
+                        if (lang.Equals("zh"))
                         {
-                            if (locale.Call<string>("toLanguageTag").ToLower().Contains("zh-hans"))
+                            if (tag.Contains("zh-hans"))
                             {
                                 language = SystemLanguage.ChineseSimplified;
                             }
-                            else if (locale.Call<string>("toLanguageTag").ToLower().Contains("zh-hant"))
+                            else if (country.ToLower().Contains("zh-hant"))
                             {
                                 language = SystemLanguage.ChineseTraditional;
                             }
                             else
                             {
-                                language = locale.Call<string>("getCountry").Equals("CN")
+                                language = country.Equals("CN")
                                     ? SystemLanguage.ChineseSimplified
                                     : SystemLanguage.ChineseTraditional;
                             }

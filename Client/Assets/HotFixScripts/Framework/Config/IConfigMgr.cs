@@ -9,7 +9,7 @@ namespace Framework
 {
     public interface IConfigMgr
     {
-        void AddZipArchive(string name, ZipArchive archive);
+        void Initialize();
         T GetTable<T>(string fileName=null) where T : TableBase, new();
     }
 }

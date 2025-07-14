@@ -1,0 +1,5 @@
+使用了luban配置表导出工具
+支持了不同xlsx表，导出一般bin文件，或bin+offset文件
+通过--genOffsetTables ItemSummaryCfg ResourceSummaryCfg 设置要导出offset文件的表格
+本地化未使用luban自带，自己添加了新的方式，将多语言表，根据语言类型导出为不同bin文件，根据用户语言设置加载对应文件
+支持了不导出code，勇于自定义配置表代码结构，比如本地化只包含key,value固定字段
