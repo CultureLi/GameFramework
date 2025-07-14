@@ -15,6 +15,8 @@ namespace GameEntry
         public static async UniTaskVoid Entry()
         {
             FW.I.Initialize();
+            AppConfig.Initialize();
+
             FW.UIMgr.CloseAllUI();
             Debug.Log("加载Login场景");
             //不能在completed回调中调用handler.WaitForCompletion(),会报错：

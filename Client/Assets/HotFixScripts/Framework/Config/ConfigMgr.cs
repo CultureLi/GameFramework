@@ -43,10 +43,10 @@ namespace Framework
             Shutdown();
             foreach (var zipName in new string[] { "configData.zip", "i18n.zip" })
             {
-                var zipPath = Path.Combine(PathDefine.persistentConfigDataPath, zipName);
+                var zipPath = Path.Combine(Application.persistentDataPath, "Config", zipName);
                 if (!File.Exists(zipPath))
                 {
-                    zipPath = Path.Combine(PathDefine.originConfigDataPath, zipName);
+                    zipPath = Path.Combine(Application.streamingAssetsPath, "Config", zipName);
                 }
                 var stream = new FileStreamEx(zipPath);
 

@@ -11,6 +11,10 @@ using UnityEngine;
 
 namespace GameEntry.Stage
 {
+    /// <summary>
+    /// 下载配置表，因为配置表很独立，没有相互依赖，且没有依赖任何unity资源
+    /// 单独拿出来更新，不用构建bundle，更新便捷
+    /// </summary>
     internal class DownloadConfigDataStage : FsmState
     {
         MonoBehaviour _runner;

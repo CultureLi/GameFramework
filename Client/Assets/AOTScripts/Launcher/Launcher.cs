@@ -90,7 +90,7 @@ namespace Launcher
             Debug.Log($"加载所有HotFixDll count:{sortedList.Count}");
             foreach (var info in sortedList)
             {
-                var dllPath = Path.Combine(PathDefine.persistentHotFixPath, $"{info.name}.dll.bytes");
+                var dllPath = Path.Combine(Application.persistentDataPath, "HotFixDll", $"{info.name}.dll.bytes");
                 Debug.Log($"presistent dllPath: {dllPath}");
 
                 if (File.Exists(dllPath))
@@ -102,7 +102,7 @@ namespace Launcher
                 }
 
                 //StreamingAssets中的文件没办法用File.Exists判断
-                dllPath = Path.Combine(PathDefine.originHotFixPath, $"{info.name}.dll.bytes");
+                dllPath = Path.Combine(Application.streamingAssetsPath, "HotFixDll", $"{info.name}.dll.bytes");
                 Debug.Log($"streamingAsset dllPath: {dllPath}");
                 var request = UnityWebRequest.Get(dllPath);
                 yield return request.SendWebRequest();

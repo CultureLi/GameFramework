@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
-namespace AOTBase
+namespace GameEntry
 {
     public partial class PathDefine
     {
         public static string platformSubFolder = PlatformMappingService.GetPlatformPathSubFolder();
-
-        public static readonly string remoteUrl = "http://10.23.50.187:7888/";
+        public static string remoteUrl => AppConfig.GetResUpdateUrl();
         public static readonly string remoteBundleUrl = Path.Combine(remoteUrl, platformSubFolder, platformSubFolder);
 
         public static readonly string remoteCatalogUrl = Path.Combine(remoteUrl, platformSubFolder, "catalog.json");

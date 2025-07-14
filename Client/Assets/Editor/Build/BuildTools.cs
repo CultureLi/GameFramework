@@ -4,16 +4,6 @@ using UnityEditor.Build.Reporting;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
-using UnityEditor.AddressableAssets.Settings;
-using UnityEngine.AddressableAssets;
-using UnityEditor.Build.Pipeline.Utilities;
-using System.Net;
-using UnityEngine.Networking;
-using UnityEditor.AddressableAssets;
-using System.Collections.Generic;
-using HybridCLR.Editor.Commands;
-using HybridCLR.Editor.MethodBridge;
-using Unity.Plastic.Newtonsoft.Json;
 
 namespace Assets.Editor.Build
 {
