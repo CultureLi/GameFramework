@@ -32,6 +32,9 @@ namespace GameEntry
 
         public static string GetUrl(string key)
         {
+            if (_data == null)
+                return string.Empty;
+
             return _data.url.TryGetValue(key, out var url) ? url : string.Empty;
         }
 

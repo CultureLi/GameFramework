@@ -1,8 +1,6 @@
-﻿using AOTBase;
-using Framework;
+﻿using Framework;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -23,31 +21,30 @@ namespace GameEntry.Stage
 
         protected override void OnEnter()
         {
-            _runner.StartCoroutine(DoTasks());
+            var oldLocators = Addressables.ResourceLocators.ToList();
+            IResourceLocator localLocator = oldLocators.Find(e => e is ResourceLocationMap);
+            if (localLocator == null)
+            {
+                ChangeState<DownloadConfigDataStage>();
+            }
+            else
+            {
+                _runner.StartCoroutine(DoTasks());
+            }
         }
 
         IEnumerator DoTasks()
         {
-            yield return LoadLocalHash();
+            LoadLocalHash();
             yield return DownloadRemoteHash();
             yield return ReloadCatalog();
         }
 
-        IEnumerator LoadLocalHash()
+        void LoadLocalHash()
         {
-            var hashPaths = new string[]{
-                PathDefine.persistentCatalogPath,
-                PathDefine.originCatalogHashPath,};
+            var localHash = FileUtility.ReadAllText(new string[] { PathDefine.persistentCatalogHashPath, PathDefine.originCatalogHashPath });
 
-            //加载本地最新的hash
-            yield return FW.ResourceMgr.LoadLocalFile(hashPaths, (handler) =>
-            {
-                if (handler != null)
-                {
-                    GameEntryMgr.I.LocalCatalogHash = handler.text;
-                    Debug.Log($"LocalCatalogHash: {GameEntryMgr.I.LocalCatalogHash}");
-                }
-            });
+            GameEntryMgr.I.LocalCatalogHash = localHash;
         }
 
         IEnumerator DownloadRemoteHash()

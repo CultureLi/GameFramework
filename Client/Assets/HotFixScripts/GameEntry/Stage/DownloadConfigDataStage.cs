@@ -25,21 +25,19 @@ namespace GameEntry.Stage
 
         protected override void OnEnter()
         {
+
             _runner.StartCoroutine(DoTask());
         }
 
         IEnumerator DoTask()
         {
-            var localHash = string.Empty;
-            yield return FW.ResourceMgr.LoadLocalFileRelative(Path.Combine(PathDefine.originConfigDataPath, "configHash.hash"), handler =>
+            var localHash = FileUtility.ReadAllText(Path.Combine(PathDefine.persistentConfigDataPath, "configHash.hash"));
+            if (string.IsNullOrEmpty(localHash))
             {
-                if (handler != null)
-                {
-                    localHash = handler.text;
-                }
-            });
+                localHash = FileUtility.ReadAllText(Path.Combine(PathDefine.originConfigDataPath, "configHash.hash"));
+            }
 
-            Debug.Log($"localHash: {localHash}");
+            Debug.Log($"localConfigHash: {localHash}");
             
             var localHashMap = JsonConvert.DeserializeObject<Dictionary<string, string>>(localHash);
 
@@ -52,6 +50,8 @@ namespace GameEntry.Stage
                 }
             });
 
+            Debug.Log($"remoteConfigHash: {remoteHash}");
+
             var remoteHashMap = JsonConvert.DeserializeObject<Dictionary<string, string>>(remoteHash);
             var needDownloadZip = new List<string>();
 
@@ -62,6 +62,7 @@ namespace GameEntry.Stage
                     if (!string.Equals(hash, hash2))
                     {
                         needDownloadZip.Add(key);
+                        Debug.Log($"need download zip {key}");
                     }
                 }
                 else

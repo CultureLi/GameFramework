@@ -46,7 +46,7 @@ namespace Framework
         /// <param name="searchPaths">要搜索的全路径</param>
         /// <param name="completedCb"></param>
         /// <returns></returns>
-        public IEnumerator LoadLocalFile(string[] searchPaths, Action<DownloadHandler> completedCb)
+        /*public IEnumerator LoadLocalFile(string[] searchPaths, Action<DownloadHandler> completedCb)
         {
             var cnt = searchPaths.Length;
             for (var idx = 0; idx < cnt; idx++)
@@ -63,12 +63,12 @@ namespace Framework
                 }
                 else
                 {
-                    Debug.Log($"LoadLocalFile Failed {url}");
+                    Debug.LogError($"LoadLocalFile Failed {url}");
                     if (idx == cnt - 1)
                         completedCb?.Invoke(null);
                 }
             }
-        }
+        }*/
 
         /// <summary>
         /// 加载本地文件
@@ -76,7 +76,7 @@ namespace Framework
         /// <param name="relativePath">相对路径</param>
         /// <param name="completedCb"></param>
         /// <returns></returns>
-        public IEnumerator LoadLocalFileRelative(string relativePath, Action<DownloadHandler> completedCb)
+        /*public IEnumerator LoadLocalFileRelative(string relativePath, Action<DownloadHandler> completedCb)
         {
             string[] rootPaths =
             {
@@ -84,7 +84,7 @@ namespace Framework
                 Path.Combine(Application.streamingAssetsPath, relativePath)
             };
             yield return LoadLocalFile(rootPaths, completedCb);
-        }
+        }*/
 
         /// <summary>
         /// 加载本地、远端文件

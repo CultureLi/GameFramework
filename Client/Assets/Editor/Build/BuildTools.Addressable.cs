@@ -43,6 +43,8 @@ namespace Assets.Editor.Build
 
 			Debug.Log("Addressables Build Finished !!! ");
 
+			AssetDatabase.Refresh();
+
 			CopyBundlesToServer();
 			
 		}
@@ -53,18 +55,34 @@ namespace Assets.Editor.Build
 			Debug.Log("Addressables CopyBundles Start ...");
 			try
 			{
-				/*            var settings = AddressableAssetSettingsDefaultObject.Settings;
-                            var valName = settings.profileSettings.GetValueByName(settings.activeProfileId, "Remote.BuildPath");
-                            var remoteBuildPath = settings.profileSettings.EvaluateString(settings.activeProfileId, valName);*/
+                if (!Directory.Exists(buildParams.platformDir))
+                {
+                    Directory.CreateDirectory(buildParams.platformDir);
+                }
+                
+                var bundleDir = Path.Combine(buildParams.platformDir, "Bundles");
+                if (Directory.Exists(bundleDir))
+                {
+                    Directory.Delete(bundleDir, true);
+                }
+                Directory.CreateDirectory(bundleDir);
 
-				var remoteBuildPath = Path.Combine("../HttpServer", PlatformMappingService.GetPlatformPathSubFolder());
-				if (Directory.Exists(remoteBuildPath))
+				var files = Directory.GetFiles(Addressables.BuildPath, "*.bundle", SearchOption.AllDirectories);
+				foreach (var file in files)
 				{
-					Directory.Delete(remoteBuildPath, true);
+					var name = Path.GetFileName(file);
+					File.Copy(file, Path.Combine(bundleDir, name), true);
 				}
 
-				FileUtil.CopyFileOrDirectory(Addressables.BuildPath, remoteBuildPath);
-				Debug.Log("Addressables CopyBundles Completed ...");
+                files = Directory.GetFiles(Addressables.BuildPath, "catalog.*");
+                foreach (var file in files)
+                {
+                    var name = Path.GetFileName(file);
+                    File.Copy(file, Path.Combine(buildParams.platformDir, name), true);
+                }
+
+                //FileUtil.CopyFileOrDirectory(Addressables.BuildPath, remoteBuildPath);
+                Debug.Log("Addressables CopyBundles Completed ...");
 			}
 			catch (Exception e)
 			{

@@ -4,12 +4,14 @@ using UnityEditor.Build.Reporting;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using UnityEngine.AddressableAssets;
 
 namespace Assets.Editor.Build
 {
     public class BuildParams
     {
-        public string targetPlatform;
+        public string targetPlatform = "Android";
+        public string platformDir = Path.Combine("../HttpServer", "Android");
         public bool buildAddressable;
         public bool buildPlayer;
         public bool buildHybridclr;
@@ -33,7 +35,7 @@ namespace Assets.Editor.Build
             buildParams.buildHybridclr = true;
             buildParams.date = Time.time.ToString();
             buildParams.targetPlatform = "Android";
-
+            buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
             Init();
 
             SwitchToTarget();
@@ -64,6 +66,12 @@ namespace Assets.Editor.Build
         {
             if (!Directory.Exists(OutputPath))
                 Directory.CreateDirectory(OutputPath);
+
+            if (Directory.Exists(buildParams.platformDir))
+            {
+                Directory.Delete(buildParams.platformDir, true);
+            }
+            Directory.CreateDirectory(buildParams.platformDir);
         }
 
         private static void CollectBuildParams()

@@ -13,7 +13,7 @@ namespace GameEntry
     {
         public static string platformSubFolder = PlatformMappingService.GetPlatformPathSubFolder();
         public static string remoteUrl => AppConfig.GetResUpdateUrl();
-        public static readonly string remoteBundleUrl = Path.Combine(remoteUrl, platformSubFolder, platformSubFolder);
+        public static readonly string remoteBundleUrl = Path.Combine(remoteUrl, platformSubFolder, "Bundles");
 
         public static readonly string remoteCatalogUrl = Path.Combine(remoteUrl, platformSubFolder, "catalog.json");
         public static readonly string remoteCatalogHashUrl = remoteCatalogUrl.Replace(".json", ".hash");
@@ -25,11 +25,10 @@ namespace GameEntry
         public static readonly string originCatalogPath = Path.Combine(Addressables.RuntimePath, "catalog.json");
         public static readonly string originCatalogHashPath = originCatalogPath.Replace(".json", ".hash");
 
-        public static readonly string persistentBundlePath = Path.Combine(Application.persistentDataPath, "com.unity.addressables/bundles");
+        public static readonly string persistentBundlePath = Path.Combine(Application.persistentDataPath, "Bundles");
         //经过热更后下载的最新Catalog
         public static readonly string persistentCatalogPath = Path.Combine(Application.persistentDataPath, "catalog.json");
         public static readonly string persistentCatalogHashPath = persistentCatalogPath.Replace(".json", ".hash");
-        public static readonly string tempCalalogHashPath = persistentCatalogPath.Replace("catalog.json", "catalogTemp.hash");
 
         public static readonly string remoteHotFixDllPath = Path.Combine(remoteUrl, platformSubFolder, "HotFixDll");
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
@@ -359,6 +360,7 @@ namespace Framework
             _currentState.OnLeave();
             _currentStateTime = 0f;
             _currentState = state;
+            Debug.Log($"-----EnterState----- {_currentState.GetType().Name}");
             _currentState.OnEnter();
         }
     }

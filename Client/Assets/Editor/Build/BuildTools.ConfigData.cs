@@ -1,11 +1,7 @@
 ﻿using GameEntry;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,8 +30,8 @@ namespace Assets.Editor.Build
 
                 foreach (var file in files)
                 {
-
-                    File.Copy(file, Path.Combine(remoteConfigPath, Path.GetRelativePath(PathDefine.originConfigDataPath, file)));
+                    var name = Path.GetFileName(file);
+                    File.Copy(file, Path.Combine(remoteConfigPath, name));
                 }
                 Debug.Log("Config CopyConfigData Completed ...");
             }

@@ -166,6 +166,10 @@ namespace Assets.Editor.Build
         [MenuItem("BuildTools/Hybridclr/拷贝HotFixDll到HttpServer")]
         public static void CopyHotFixDllToServer()
         {
+            if (!Directory.Exists(buildParams.platformDir))
+            {
+                Directory.CreateDirectory(buildParams.platformDir);
+            }
             Debug.Log("拷贝HotFixDll到HttpServer");
             if (Directory.Exists(serverHotFixDllPath))
             {

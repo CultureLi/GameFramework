@@ -36,7 +36,7 @@ namespace GameEntry.Stage
 
         IEnumerator DoHotFixTasks()
         {
-            yield return LoadLocalManifest();
+            LoadLocalManifest();
             yield return DownloadRemoteManifest();
             yield return DownloadHotFixDlls();
 
@@ -69,17 +69,17 @@ namespace GameEntry.Stage
         /// 加载本地manifest
         /// </summary>
         /// <returns></returns>
-        IEnumerator LoadLocalManifest()
+        void LoadLocalManifest()
         {
             Debug.Log("load local manifest");
-            yield return FW.ResourceMgr.LoadLocalFileRelative("hotFixDllManifest.json", (handler) =>
+            var text = FileUtility.ReadAllTextWithRelativePath("hotFixDllManifest.json");
+            if (text == null)
             {
-                if (handler != null)
-                {
-                    _localManifest = JsonUtility.FromJson<HotFixDllManifest>(handler.text);
-                    DumpManifestInfo(_localManifest);
-                }
-            });
+                Debug.LogError("local manifest text is null");
+                return;
+            }
+            _localManifest = JsonUtility.FromJson<HotFixDllManifest>(text);
+            DumpManifestInfo(_localManifest);
         }
 
         /// <summary>
