@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.UI;
 
-namespace GameMain
+namespace GameMain.UI
 {
     internal class UIMain : ViewBase
     {
@@ -31,6 +31,16 @@ namespace GameMain
         public override void OnClose()
         {
             base.OnClose();
+        }
+
+        public void OpenRole()
+        {
+            FW.UIMgr.OpenUI("Role/UIRole", (int)UIGroupType.Normal);
+        }
+
+        public void OpenMail()
+        {
+            FW.UIMgr.OpenUI("Mail/UIMail", (int)UIGroupType.Normal);
         }
     }
 }

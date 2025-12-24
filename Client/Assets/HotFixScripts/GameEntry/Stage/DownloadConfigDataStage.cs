@@ -25,7 +25,11 @@ namespace GameEntry.Stage
 
         protected override void OnEnter()
         {
-
+            if (!GameConfig.I.checkHotUpdate)
+            {
+                ChangeState<EntranceEndStage>();
+                return;
+            }
             _runner.StartCoroutine(DoTask());
         }
 

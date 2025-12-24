@@ -9,13 +9,13 @@ namespace GameEntry
 {
     internal class LoadingProgressEvent : EventBase
     {
-        public float progerss;
+        public float progress;
         public string progressText;
 
         public static LoadingProgressEvent Create(float progress, string progressText)
         {
             var instance = ReferencePool.Acquire<LoadingProgressEvent>();
-            instance.progerss = progress;
+            instance.progress = progress;
             instance.progressText = progressText;
             return instance;
         }

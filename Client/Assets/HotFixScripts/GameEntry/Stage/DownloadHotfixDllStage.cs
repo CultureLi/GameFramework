@@ -31,6 +31,11 @@ namespace GameEntry.Stage
         }
         protected override void OnEnter()
         {
+            if (!GameConfig.I.checkHotUpdate)
+            {
+                ChangeState<DownloadCatalogStage>();
+                return;
+            }
             _runner.StartCoroutine(DoHotFixTasks());
         }
 

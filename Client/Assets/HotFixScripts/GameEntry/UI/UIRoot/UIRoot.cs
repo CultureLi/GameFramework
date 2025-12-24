@@ -11,18 +11,13 @@ namespace GameEntry
 {
     internal class UIRoot : MonoBehaviour
     {
-        public Transform HUDRoot;
-        public Transform NormalRoot;
-        public Transform MsgBoxRoot;
-        public Transform TipsRoot;
-
-
         protected void Awake()
         {
-            FW.UIMgr.AddUIGroup((int)UIGroupType.HUD, HUDRoot);
-            FW.UIMgr.AddUIGroup((int)UIGroupType.Normal, NormalRoot);
-            FW.UIMgr.AddUIGroup((int)UIGroupType.MsgBox, MsgBoxRoot);
-            FW.UIMgr.AddUIGroup((int)UIGroupType.Tips, TipsRoot);
+            for (var i = UIGroupType.HUD; i <= UIGroupType.Tips; i++)
+            {
+                var name = Enum.GetName(typeof(UIGroupType), i);
+                FW.UIMgr.AddUIGroup((int)i, transform.Find(name));
+            }
         }
     }
 }

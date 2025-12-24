@@ -21,6 +21,12 @@ namespace GameEntry.Stage
 
         protected override void OnEnter()
         {
+            if (!GameConfig.I.checkHotUpdate)
+            {
+                ChangeState<DownloadConfigDataStage>();
+                return;
+            }
+
             var oldLocators = Addressables.ResourceLocators.ToList();
             IResourceLocator localLocator = oldLocators.Find(e => e is ResourceLocationMap);
             if (localLocator == null)

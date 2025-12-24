@@ -10,6 +10,7 @@ namespace GameEntry
     {
         HUD = 1,
         Normal,
+        Popup,
         MsgBox,
         Tips,
     }

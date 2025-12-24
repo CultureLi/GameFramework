@@ -35,7 +35,7 @@ namespace GameEntry
 
         void OnLoadingProgressEvent(LoadingProgressEvent e)
         {
-            slider.value = e.progerss;
+            slider.value = e.progress;
             textProgress.text = e.progressText;
         }
     }
