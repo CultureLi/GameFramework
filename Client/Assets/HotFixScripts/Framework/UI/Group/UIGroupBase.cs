@@ -15,7 +15,7 @@ namespace Framework
         private int _groupLayer;
         public EUIGroupType GroupType => _groupType;
 
-        private readonly LinkedList<UIViewWrapper> _viewWrappers = new LinkedList<UIViewWrapper>();
+        private readonly List<UIViewWrapper> _viewWrappers = new List<UIViewWrapper>();
         private Dictionary<string, UIViewWrapper> _viewWrapperMap = new Dictionary<string, UIViewWrapper>();
 
         // 正在接在的ui
@@ -28,21 +28,20 @@ namespace Framework
             _uiMgr = uiMgr;
             _root = root;
             _groupType = groupType;
-            _groupLayer = (int)_groupType * 1000;
+            _groupLayer = (int)_groupType * 10000;
         }
 
         /// <summary>
-        /// 计算层级
+        /// 计算层级, 如果在预制体中提前设置了SortingOrder，就用预制体中的值，否则根据打开顺序计算
         /// </summary>
         /// <returns></returns>
-        private int CalculateOrder()
-        {
-            int cnt = _viewWrappers.Count;
-            return CalculateOrder(cnt);
-        }
-
         private int CalculateOrder(int idx)
         {
+            var wrapper = _viewWrappers[idx];
+            if (wrapper.CustomSortingOrder != 0)
+            {
+                return _groupLayer + wrapper.CustomSortingOrder;
+            }
             return _groupLayer + idx * 10;
         }
 
@@ -132,10 +131,9 @@ namespace Framework
         public virtual void DoOpenUI(UIViewWrapper wrapper)
         {
             wrapper.SetParent(_root);
-            _viewWrappers.AddFirst(wrapper);
+            _viewWrappers.Add(wrapper);
             _viewWrapperMap[wrapper.Name] = wrapper;
-            int layer = CalculateOrder();
-            wrapper.SetSortingOrder(layer);
+            wrapper.SetSortingOrder(CalculateOrder(_viewWrappers.Count - 1));
             wrapper.DoShow();
         }
 
@@ -170,15 +168,17 @@ namespace Framework
         /// </summary>
         private void RefreshSortingOrder()
         {
-            var idx = _viewWrappers.Count;
-            foreach (var wrapper in _viewWrappers)
+            var cnt = _viewWrappers.Count;
+            for (var idx = 0; idx < cnt; idx ++)
             {
-                var layer = CalculateOrder(idx);
-                wrapper.SetSortingOrder(layer);
-                idx--;
+                _viewWrappers[idx].SetSortingOrder(CalculateOrder(idx));
             }
         }
 
+        /// <summary>
+        /// 激活组内最上层UI
+        /// </summary>
+        /// <returns></returns>
         public bool RefocusTopUI()
         {
             if (_viewWrappers.Count == 0)

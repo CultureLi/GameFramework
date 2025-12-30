@@ -16,7 +16,10 @@ namespace Framework
         private Canvas _canvas;
         private ViewData _data;
         private bool _initShow = true;
-
+        public int CustomSortingOrder
+        {
+            get; private set;
+        }
         public static UIViewWrapper Create(IUIGroup group, string name, ViewData data, ViewBase view)
         {
             var info = ReferencePool.Acquire<UIViewWrapper>();
@@ -25,8 +28,8 @@ namespace Framework
             info._data = data;
             info._view = view;
             info._view.Wrapper = info;
-
             info._canvas = view.GetComponent<Canvas>();
+            info.CustomSortingOrder = info._canvas.sortingOrder;
             return info;
         }
 
@@ -70,7 +73,7 @@ namespace Framework
         }
         public void DoClose()
         {
-            DoHide();
+            _view.gameObject.SetActive(false);
             _view.OnClose();
         }
 

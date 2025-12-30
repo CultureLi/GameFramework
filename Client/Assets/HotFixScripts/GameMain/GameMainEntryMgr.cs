@@ -16,8 +16,6 @@ namespace GameMain
             var handle = FW.ResourceMgr.LoadSceneAsync("Main");
             await handle.ToUniTask();
 
-            FW.UIMgr.CloseAll();
-
             await UniTask.NextFrame();
             new GameObject("GameMainEntryStages").AddComponent<GameMainEntryStages>();
         }

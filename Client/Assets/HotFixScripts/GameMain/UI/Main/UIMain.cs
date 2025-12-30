@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.UI;
+using static GameMain.Event.Event;
 
 namespace GameMain.UI
 {
@@ -31,6 +33,11 @@ namespace GameMain.UI
         public void OpenRole()
         {
             FW.UIMgr.OpenView("Role/UIRole");
+        }
+
+        public void ShowTips()
+        {
+            FW.EventMgr.Broadcast(CommonTipsEvent.Create(Time.deltaTime.ToString()));
         }
     }
 }

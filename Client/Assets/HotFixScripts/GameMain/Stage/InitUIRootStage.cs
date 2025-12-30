@@ -19,6 +19,7 @@ namespace GameMain
         }
         protected override async void OnEnter()
         {
+            FW.UIMgr.OpenTips("Common/Tips/UICommonTips");
             FW.UIMgr.OpenHud("Main/UIMain");
         }
     }

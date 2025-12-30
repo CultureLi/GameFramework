@@ -30,7 +30,8 @@ namespace GameEntry
             CfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
             LocalizationMgr = FrameworkMgr.GetModule<ILocalizationMgr>();
 
-            Application.quitting += OnApplicationQuit;
+            Application.quitting -= OnApplicationShutdown;
+            Application.quitting += OnApplicationShutdown;
         }
 
         void Update()
@@ -38,7 +39,7 @@ namespace GameEntry
             FrameworkMgr.Update(Time.deltaTime, Time.unscaledDeltaTime);
         }
 
-        void OnApplicationQuit()
+        void OnApplicationShutdown()
         {
             FrameworkMgr.Shutdown();
         }
