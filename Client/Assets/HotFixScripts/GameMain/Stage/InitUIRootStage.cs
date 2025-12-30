@@ -19,7 +19,7 @@ namespace GameMain
         }
         protected override async void OnEnter()
         {
-            UITools.OpenHUD("Main/UIMain");
+            FW.UIMgr.OpenHud("Main/UIMain");
         }
     }
 }

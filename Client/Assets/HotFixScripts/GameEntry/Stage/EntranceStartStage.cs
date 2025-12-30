@@ -26,7 +26,7 @@ namespace GameEntry.Stage
                 GameEntryMgr.I.UIRoot = handle.Result.transform;
             }
 
-            FW.UIMgr.OpenUI("GameEntry/UIGameEntryProgress", (int)UIGroupType.Normal);
+            FW.UIMgr.OpenView("GameEntry/UIGameEntryProgress");
 
             ChangeState<DownloadHotfixDllStage>();
         }

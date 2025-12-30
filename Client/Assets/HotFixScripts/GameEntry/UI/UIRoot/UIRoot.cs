@@ -11,12 +11,16 @@ namespace GameEntry
 {
     internal class UIRoot : MonoBehaviour
     {
+        public GameObject template;
         protected void Awake()
         {
-            for (var i = UIGroupType.HUD; i <= UIGroupType.Tips; i++)
+            template.SetActive(false);
+            for (var type = EUIGroupType.HUD; type <= EUIGroupType.Tips; type++)
             {
-                var name = Enum.GetName(typeof(UIGroupType), i);
-                FW.UIMgr.AddUIGroup((int)i, transform.Find(name));
+                var groupRoot = GameObject.Instantiate(template, transform);
+                groupRoot.SetActive(true);
+                groupRoot.name = Enum.GetName(typeof(EUIGroupType), type);
+                FW.UIMgr.AddGroup(type, groupRoot.transform);
             }
         }
     }

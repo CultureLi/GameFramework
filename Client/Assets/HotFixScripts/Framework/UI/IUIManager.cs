@@ -7,23 +7,20 @@ namespace Framework
     /// </summary>
     public interface IUIManager
     {
+        /// <summary>
+        /// UI资源根路径。
+        /// </summary>
         string UIAssetRootPath { get;}
-        /// <summary>
-        /// 获取界面组数量。
-        /// </summary>
-        int UIGroupCount
-        {
-            get;
-        }
 
-        bool AddUIGroup(int groupId, Transform groupRoot);
+        PrefabObjectPool UIPrefabPool { get;}
 
         /// <summary>
-        /// 是否存在界面组。
+        /// 添加界面组。
         /// </summary>
-        /// <param name="groupId">界面组Id。</param>
-        /// <returns>是否存在界面组。</returns>
-        bool HasUIGroup(int groupId);
+        /// <param name="groupType"></param>
+        /// <param name="groupRoot"></param>
+        /// <returns></returns>
+        bool AddGroup(EUIGroupType groupType, Transform groupRoot);
 
         /// <summary>
         /// 界面是否打开状态，不一定在最上层
@@ -33,34 +30,60 @@ namespace Framework
         bool HasUI(string name);
 
         /// <summary>
-        /// 打开界面。
+        /// 打开主界面
         /// </summary>
-        /// <param name="uiFormAssetName">界面资源名称。</param>
-        /// <param name="uiGroupName">界面组名称。</param>
-        /// <returns>界面的序列编号。</returns>
-        void OpenUI(string name, int groupId, ViewData userData = null);
+        /// <param name="name"></param>
+        /// <param name="userData"></param>
+        void OpenHud(string name, ViewData userData = null);
 
         /// <summary>
-        /// 关闭界面。
+        /// 打开一级界面（活动 / 背包 / 商店 / 角色）
         /// </summary>
-        /// <param name="serialId">要关闭界面的序列编号。</param>
+        /// <param name="name"></param>
+        /// <param name="userData"></param>
+        void OpenView(string name, ViewData userData = null);
+
+        /// <summary>
+        /// 打开弹窗界面（二级界面 / 消息框 / MsgBox)
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="userData"></param>
+        void OpenPopup(string name, ViewData userData = null);
+
+        /// <summary>
+        /// 打开Tips界面（飘字、气泡、跑马灯等）
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="userData"></param>
+        void OpenTips(string name, ViewData userData = null);
+
+        /// <summary>
+        /// 重新激活某个组中最上层UI
+        /// </summary>
+        /// <param name="groupType"></param>
+        /// <returns></returns>
+        bool RefocusTopUI(EUIGroupType groupType);
+
+        /// <summary>
+        /// 关闭界面
+        /// </summary>
+        /// <param name="name"></param>
         void CloseUI(string name);
 
         /// <summary>
-        /// //关闭该group下所有UI
+        /// //关闭Group下所有UI
         /// </summary>
-        /// <param name="groupId"></param>
-        void CloseAllUI(int groupId);
+        void CloseAll(EUIGroupType groupType);
 
         /// <summary>
         /// 关闭所有UI
         /// </summary>
-        void CloseAllUI();
+        void CloseAll();
 
         /// <summary>
-        /// 激活界面。
+        /// 隐藏Group下所有UI
         /// </summary>
-        /// <param name="uiForm">要激活的界面。</param>
-        void RefocusUI(string name, ViewData userData);
+        /// <param name="groupType"></param>
+        void HideAll(EUIGroupType groupType);
     }
 }

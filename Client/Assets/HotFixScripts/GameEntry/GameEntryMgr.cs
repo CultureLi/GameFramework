@@ -17,7 +17,7 @@ namespace GameEntry
             FW.I.Initialize();
             AppConfig.Initialize();
 
-            FW.UIMgr.CloseAllUI();
+            FW.UIMgr.CloseAll();
             Debug.Log("加载Login场景");
             //不能在completed回调中调用handler.WaitForCompletion(),会报错：
             ///Reentering the Update method is not allowed.  This can happen when calling WaitForCompletion on an operation while inside of a callback
@@ -53,7 +53,7 @@ namespace GameEntry
 
         internal void EnterGameMain()
         {
-            FW.UIMgr.CloseAllUI();
+            FW.UIMgr.CloseAll();
 
             var assembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain");
 

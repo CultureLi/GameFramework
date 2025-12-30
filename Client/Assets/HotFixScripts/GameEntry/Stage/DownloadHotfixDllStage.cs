@@ -62,7 +62,7 @@ namespace GameEntry.Stage
                         }
                     }
                 };
-                FW.UIMgr.OpenUI("GameEntry/UIGameEntryMsgBox", (int)UIGroupType.MsgBox, uiData);
+                FW.UIMgr.OpenPopup("GameEntry/UIGameEntryMsgBox", uiData);
             }
             else
             {

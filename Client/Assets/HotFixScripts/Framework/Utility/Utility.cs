@@ -25,7 +25,7 @@ namespace Framework
 
         public static void Test()
         {
-            Debug.Log("飞飞飞");
+            Debug.Log("--------");
         }
     }
 }

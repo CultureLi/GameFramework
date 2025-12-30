@@ -11,14 +11,8 @@ namespace GameMain.UI
 {
     internal class UIMain : ViewBase
     {
-        public Button btnGotoLogin;
 
-        private void Awake()
-        {
-            btnGotoLogin.AddSafeListener(OnBtnGotoLoginClick);
-        }
-
-        void OnBtnGotoLoginClick()
+        public void OnBtnGotoLoginClick()
         {
             GameEntryMgr.Entry();
         }
@@ -28,19 +22,15 @@ namespace GameMain.UI
             base.OnShow(isInitShow, data);
         }
 
-        public override void OnClose()
+
+        public void OpenHud2()
         {
-            base.OnClose();
+            FW.UIMgr.OpenHud("Main/UIHUD2");
         }
 
         public void OpenRole()
         {
-            FW.UIMgr.OpenUI("Role/UIRole", (int)UIGroupType.Normal);
-        }
-
-        public void OpenMail()
-        {
-            FW.UIMgr.OpenUI("Mail/UIMail", (int)UIGroupType.Normal);
+            FW.UIMgr.OpenView("Role/UIRole");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Sirenix.OdinInspector;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,10 +26,19 @@ namespace Framework
         {
         }
 
+        public virtual void OnHide()
+        {
+        }
+
         public void Close()
         {
             Wrapper?.CloseSelf();
             Wrapper = null;
+        }
+
+        public virtual void SecondUpdate()
+        {
+        
         }
 
     }

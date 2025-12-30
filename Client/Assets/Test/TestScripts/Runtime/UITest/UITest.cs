@@ -20,19 +20,19 @@ namespace TestRuntime
         }
         void Start()
         {
-            GameEntry.FW.UIMgr.AddUIGroup((int)UIGroupType.Normal, normalRoot);
+            //GameEntry.FW.UIMgr.AddUIGroup(,normalRoot);
 
             
         }
 
         public void Open(string name)
         {
-            GameEntry.FW.UIMgr.OpenUI(name, (int)UIGroupType.Normal);
+            FW.UIMgr.OpenPopup(name);
         }
 
         public void Close(string name)
         {
-            GameEntry.FW.UIMgr.CloseUI(name);
+            FW.UIMgr.CloseUI(name);
         }
 
         // Update is called once per frame

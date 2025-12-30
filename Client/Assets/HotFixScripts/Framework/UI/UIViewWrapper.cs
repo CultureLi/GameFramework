@@ -8,8 +8,6 @@ namespace Framework
     public sealed class UIViewWrapper : IReference
     {
         public string Name => _name;
-        public ViewBase View => _view;
-
         public IUIGroup UIGroup => _uiGroup;
 
         private IUIGroup _uiGroup;
@@ -19,27 +17,23 @@ namespace Framework
         private ViewData _data;
         private bool _initShow = true;
 
-        public static UIViewWrapper Create(IUIGroup group, string name, ViewData data, GameObject viewGo)
+        public static UIViewWrapper Create(IUIGroup group, string name, ViewData data, ViewBase view)
         {
             var info = ReferencePool.Acquire<UIViewWrapper>();
             info._uiGroup = group;
             info._name = name;
             info._data = data;
-            info._view = viewGo.GetComponent<ViewBase>();
+            info._view = view;
             info._view.Wrapper = info;
 
-            info._canvas = viewGo.GetComponent<Canvas>();
+            info._canvas = view.GetComponent<Canvas>();
             return info;
         }
 
-        public static void Release(UIViewWrapper info)
+        public void Release(PrefabObjectPool pool)
         {
-            ReferencePool.Release(info);
-        }
-
-        public void UnSpawnView(PrefabObjectPool pool)
-        {
-            pool.UnSpawn(View.gameObject);
+            pool.UnSpawn(_view.gameObject);
+            ReferencePool.Release(this);
         }
 
         public void UpdateViewData(ViewData data)
@@ -49,10 +43,10 @@ namespace Framework
 
         public void SetParent(Transform parent)
         {
-            View.transform.parent = parent;
+            _view.transform.parent = parent;
         }
 
-        public void SetLayer(int layer)
+        public void SetSortingOrder(int layer)
         {
             _canvas.overrideSorting = true;
             _canvas.sortingOrder = layer;
@@ -60,8 +54,14 @@ namespace Framework
 
         public void DoShow()
         {
+            _view.gameObject.SetActive(true);
             _view.OnShow(_initShow, _data);
             _initShow = false;
+        }
+
+        public void ReFocusSelf()
+        {
+            _uiGroup.RefocusUI(this);
         }
 
         public void CloseSelf()
@@ -70,7 +70,14 @@ namespace Framework
         }
         public void DoClose()
         {
+            DoHide();
             _view.OnClose();
+        }
+
+        public void DoHide()
+        {
+            _view.gameObject.SetActive(false);
+            _view.OnHide();
         }
 
         public void Clear()
@@ -79,6 +86,14 @@ namespace Framework
             _name = null;
             _data = null;
             _view = null;
+        }
+
+        public void SecondUpdate()
+        {
+            if (_view)
+            {
+                _view.SecondUpdate();
+            }
         }
     }
 }

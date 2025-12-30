@@ -11,12 +11,12 @@ namespace GameMain
         public static async UniTaskVoid Entry()
         {
             Utility.Test();
-            Debug.Log(" 慢慢慢 GameMainEntry");
+            Debug.Log("GameMainEntry");
 
             var handle = FW.ResourceMgr.LoadSceneAsync("Main");
             await handle.ToUniTask();
 
-            FW.UIMgr.CloseAllUI();
+            FW.UIMgr.CloseAll();
 
             await UniTask.NextFrame();
             new GameObject("GameMainEntryStages").AddComponent<GameMainEntryStages>();

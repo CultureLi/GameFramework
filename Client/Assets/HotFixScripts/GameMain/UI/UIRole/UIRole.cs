@@ -11,19 +11,23 @@ namespace GameMain.UI
 {
     public class UIRole : ViewBase
     {
+        public void OnBack()
+        {
+            Close();
+        }
         public void OpenMail()
         {
-            FW.UIMgr.OpenUI("Mail/UIMail", (int)UIGroupType.Normal);
+            FW.UIMgr.OpenView("Mail/UIMail");
         }
 
         public void OpenPopup1()
         {
-            FW.UIMgr.OpenUI("Popup/UIPopup1", (int)UIGroupType.Popup);
+            FW.UIMgr.OpenPopup("Popup/UIPopup1");
         }
 
         public void OpenPopup2()
         {
-            FW.UIMgr.OpenUI("Popup/UIPopup2", (int)UIGroupType.Popup);
+            FW.UIMgr.OpenPopup("Popup/UIPopup2");
         }
     }
 }
