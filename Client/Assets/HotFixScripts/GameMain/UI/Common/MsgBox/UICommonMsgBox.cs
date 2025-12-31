@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace GameMain.UI
 {
-    public class GameEntryMsgBoxData : ViewData
+    public class GameEntryMsgBoxData : ViewData, IReference
     {
         public string title;
         public string content;
@@ -18,6 +18,10 @@ namespace GameMain.UI
         public string btnOkText = "OK";
         public string btnCancelText = "Cancel";
         public Action<bool> callback;
+
+        public void Clear()
+        {
+        }
     }
 
     public class UICommonMsgBox : ViewBase

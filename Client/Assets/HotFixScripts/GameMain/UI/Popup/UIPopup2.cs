@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace GameMain.UI
 {
@@ -18,6 +19,18 @@ namespace GameMain.UI
         public void OpenPopup1()
         {
             FW.UIMgr.OpenPopup("Popup/UIPopup1");
+        }
+
+        public void OpenMsgBox()
+        {
+            var uiData = ReferencePool.Acquire<GameEntryMsgBoxData>();
+            uiData.title = "Title";
+            uiData.content = "这是一个测试";
+            uiData.callback = (flag) =>
+            {
+                Debug.Log($"MsgBox 回调 {flag}");
+            };
+            FW.UIMgr.OpenPopup("Common/MsgBox/UICommonMsgBox", uiData);
         }
     }
 }

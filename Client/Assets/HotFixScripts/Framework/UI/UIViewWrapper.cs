@@ -16,6 +16,7 @@ namespace Framework
         private Canvas _canvas;
         private ViewData _data;
         private bool _initShow = true;
+        // 在prefab中自定义的层级，在Group层级基础+自定义 = 该ui最终层级
         public int CustomSortingOrder
         {
             get; private set;
@@ -35,6 +36,8 @@ namespace Framework
 
         public void Release(PrefabObjectPool pool)
         {
+            // 重新设置回去，避免复用的时候层级不对
+            _canvas.sortingOrder = CustomSortingOrder;
             pool.UnSpawn(_view.gameObject);
             ReferencePool.Release(this);
         }
@@ -89,6 +92,8 @@ namespace Framework
             _name = null;
             _data = null;
             _view = null;
+            _canvas = null;
+            CustomSortingOrder = 0;
         }
 
         public void SecondUpdate()

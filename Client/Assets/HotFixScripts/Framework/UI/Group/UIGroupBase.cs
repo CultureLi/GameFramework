@@ -32,7 +32,9 @@ namespace Framework
         }
 
         /// <summary>
-        /// 计算层级, 如果在预制体中提前设置了SortingOrder，就用预制体中的值，否则根据打开顺序计算
+        /// 计算层级,
+        /// 如果在预制体中提前设置了SortingOrder，就用_groupLayer + SortingOrder
+        /// 否则根据打开顺序计算
         /// </summary>
         /// <returns></returns>
         private int CalculateOrder(int idx)
@@ -42,7 +44,7 @@ namespace Framework
             {
                 return _groupLayer + wrapper.CustomSortingOrder;
             }
-            return _groupLayer + idx * 10;
+            return _groupLayer + idx * 100;
         }
 
         protected UIViewWrapper GetViewWrapper(string name)
@@ -155,9 +157,9 @@ namespace Framework
         public virtual void RefocusUI(UIViewWrapper wrapper)
         {
             _viewWrappers.Remove(wrapper);
+            RefreshSortingOrder();
             OnBeforeOpenUI(wrapper);
             DoOpenUI(wrapper);
-            RefreshSortingOrder();
             OnAfterOpenUI(wrapper);
         }
 

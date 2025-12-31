@@ -70,13 +70,11 @@ namespace GameMain.UI
             var item = _pool.Pop();
             var data = _dataQueue.Pop();
 
-            Debug.Log("Display");
             item.SetContent(data.content);
         }
 
         void OnTipDisplayComplete(UICommonTipsItem item)
         {
-            Debug.Log("OnTipDisplayComplete");
             item.gameObject.SetActive(false);
             _pool.Push(item);
         }
