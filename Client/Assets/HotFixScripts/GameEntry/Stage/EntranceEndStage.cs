@@ -17,7 +17,7 @@ namespace GameEntry.Stage
         {
             OverrideCatalogHash();
 
-            FW.UIMgr.OpenView("GameEntry/UIGameEntryLogin");
+            FW.UIMgr.OpenWnd("GameEntry/UIGameEntryLogin");
         }
 
         void OverrideCatalogHash()

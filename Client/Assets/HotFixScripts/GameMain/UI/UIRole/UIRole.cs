@@ -17,7 +17,7 @@ namespace GameMain.UI
         }
         public void OpenMail()
         {
-            FW.UIMgr.OpenView("Mail/UIMail");
+            FW.UIMgr.OpenWnd("Mail/UIMail");
         }
 
         public void OpenPopup1()

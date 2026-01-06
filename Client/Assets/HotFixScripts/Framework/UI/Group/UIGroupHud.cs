@@ -14,11 +14,6 @@ namespace Framework
         {
 
         }
-
-        public override void OnBeforeOpenUI(UIViewWrapper wrapper)
-        {
-            
-        }
     }
 }
 

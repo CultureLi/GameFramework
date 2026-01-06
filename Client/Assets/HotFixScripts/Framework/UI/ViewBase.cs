@@ -10,10 +10,11 @@ namespace Framework
 {
     public class ViewData
     {
+        // 异步加载
         public virtual bool AsyncLoad
         {
             get; set;
-        }
+        } = false;
     }
     public abstract class ViewBase : MonoBehaviour
     {

@@ -14,6 +14,13 @@ namespace Framework
 
         PrefabObjectPool UIPrefabPool { get;}
 
+        UIRoot UIRoot
+        {
+            get;
+        }
+
+        void Init(IResourceMgr resMgr);
+
         /// <summary>
         /// 添加界面组。
         /// </summary>
@@ -21,6 +28,13 @@ namespace Framework
         /// <param name="groupRoot"></param>
         /// <returns></returns>
         bool AddGroup(EUIGroupType groupType, Transform groupRoot);
+
+        /// <summary>
+        /// 获取group信息
+        /// </summary>
+        /// <param name="groupType"></param>
+        /// <returns></returns>
+        UIGroupBase GetGroup(EUIGroupType groupType);
 
         /// <summary>
         /// 界面是否打开状态，不一定在最上层
@@ -41,7 +55,7 @@ namespace Framework
         /// </summary>
         /// <param name="name"></param>
         /// <param name="userData"></param>
-        void OpenView(string name, ViewData userData = null);
+        void OpenWnd(string name, ViewData userData = null);
 
         /// <summary>
         /// 打开弹窗界面（二级界面 / 消息框 / MsgBox)

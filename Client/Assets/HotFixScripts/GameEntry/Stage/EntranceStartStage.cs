@@ -18,15 +18,15 @@ namespace GameEntry.Stage
 
         protected override void OnEnter()
         {
-            if (GameEntryMgr.I.UIRoot == null)
+            /*if (GameEntryMgr.I.UIRoot == null)
             {
                 var handle = FW.ResourceMgr.InstantiateAsync("Assets/BundleRes/UI/Root/UIRoot.prefab");
                 handle.WaitForCompletion();
                 GameObject.DontDestroyOnLoad(handle.Result);
                 GameEntryMgr.I.UIRoot = handle.Result.transform;
-            }
+            }*/
 
-            FW.UIMgr.OpenView("GameEntry/UIGameEntryProgress");
+            FW.UIMgr.OpenWnd("GameEntry/UIGameEntryProgress");
 
             ChangeState<DownloadHotfixDllStage>();
         }

@@ -17,7 +17,32 @@ namespace Framework
 
         public override void OnBeforeOpenUI(UIViewWrapper wrapper)
         {
+            UIMgr.UIRoot.ShowBlurMask(true);
+        }
 
+        public override void OnAfterCloseUI(UIViewWrapper wrapper)
+        {
+            if (RefocusTopUI())
+            {
+                UIMgr.UIRoot.ShowBlurMask(true);
+            }
+            else
+            {
+                UIMgr.UIRoot.ShowBlurMask(false);
+                UIMgr.RefocusTopUI(EUIGroupType.HUD);
+            }
+        }
+
+        public override void CloseAll()
+        {
+            base.CloseAll();
+            UIMgr.UIRoot.ShowBlurMask(false);
+        }
+
+        public override void HideAll()
+        {
+            base.HideAll();
+            UIMgr.UIRoot.ShowBlurMask(false);
         }
     }
 }

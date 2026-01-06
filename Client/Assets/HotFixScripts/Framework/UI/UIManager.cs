@@ -10,6 +10,10 @@ namespace Framework
     /// </summary>
     internal sealed partial class UIManager : IFramework, IUIManager
     {
+        public UIRoot UIRoot
+        {
+            get; private set;
+        }
         public string UIAssetRootPath
         {
             get; set;
@@ -23,7 +27,7 @@ namespace Framework
         /// <summary>
         /// 界面组，具体事务由对应组完成
         /// </summary>
-        private readonly Dictionary<EUIGroupType, IUIGroup> _groups;
+        private readonly Dictionary<EUIGroupType, UIGroupBase> _groups;
 
         /// <summary>
         /// 初始化界面管理器的新实例。
@@ -31,8 +35,16 @@ namespace Framework
         public UIManager()
         {
             UIAssetRootPath = "Assets/BundleRes/UI";
-            _groups = new Dictionary<EUIGroupType, IUIGroup>();
+            _groups = new Dictionary<EUIGroupType, UIGroupBase>();
             UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool");
+        }
+
+        public void Init(IResourceMgr resMgr)
+        {
+            var handle = resMgr.InstantiateAsync("Assets/BundleRes/UI/Root/UIRoot.prefab");
+            handle.WaitForCompletion();
+            UIRoot = handle.Result.GetComponent<UIRoot>();
+            GameObject.DontDestroyOnLoad(handle.Result);
         }
 
         /// <summary>
@@ -48,14 +60,14 @@ namespace Framework
                 return false;
             }
 
-            IUIGroup group = null;
+            UIGroupBase group = null;
             switch (groupType)
             {
                 case EUIGroupType.HUD:
                     group = new UIGroupHud(this, groupType, groupRoot);
                     break;
-                case EUIGroupType.View:
-                    group = new UIGroupView(this, groupType, groupRoot);
+                case EUIGroupType.Wnd:
+                    group = new UIGroupWnd(this, groupType, groupRoot);
                     break;
                 case EUIGroupType.Popup:
                     group = new UIGroupPopup(this, groupType, groupRoot);
@@ -78,7 +90,7 @@ namespace Framework
         /// </summary>
         /// <param name="groupId">界面组Id。</param>
         /// <returns>要获取的界面组。</returns>
-        internal IUIGroup GetGroup(EUIGroupType groupType)
+        public UIGroupBase GetGroup(EUIGroupType groupType)
         {
             return _groups.GetValueOrDefault(groupType);
         }
@@ -113,9 +125,9 @@ namespace Framework
         /// </summary>
         /// <param name="name"></param>
         /// <param name="userData"></param>
-        public void OpenView(string name, ViewData userData = null)
+        public void OpenWnd(string name, ViewData userData = null)
         {
-            InternalOpenUI(EUIGroupType.View, name, userData);
+            InternalOpenUI(EUIGroupType.Wnd, name, userData);
         }
 
         /// <summary>
@@ -169,8 +181,10 @@ namespace Framework
         {
             foreach ((var _, var group) in _groups)
             {
-               if (group.CloseUI(name))
+                if (group.CloseUI(name))
+                {
                     break;
+                }
             }
         }
 

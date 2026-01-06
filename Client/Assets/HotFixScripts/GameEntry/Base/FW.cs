@@ -30,6 +30,8 @@ namespace GameEntry
             CfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
             LocalizationMgr = FrameworkMgr.GetModule<ILocalizationMgr>();
 
+            UIMgr.Init(ResourceMgr);
+
             Application.quitting -= OnApplicationShutdown;
             Application.quitting += OnApplicationShutdown;
         }

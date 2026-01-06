@@ -12,7 +12,7 @@ namespace GameMain.UI
     {
         public void OpenRole()
         {
-            FW.UIMgr.OpenView("Role/UIRole");
+            FW.UIMgr.OpenWnd("Role/UIRole");
         }
 
         public void OpenPopup2()

@@ -9,9 +9,9 @@ namespace Framework
     /// 一级界面组- 活动主界面、角色界面等一级界面
     /// 打开界面时，会关闭上层Popup界面
     /// </summary>
-    internal class UIGroupView : UIGroupBase
+    internal class UIGroupWnd : UIGroupBase
     {
-        public UIGroupView(IUIManager uiMgr, EUIGroupType groupType, Transform root) : base(uiMgr, groupType, root)
+        public UIGroupWnd(IUIManager uiMgr, EUIGroupType groupType, Transform root) : base(uiMgr, groupType, root)
         {
 
         }
@@ -21,7 +21,7 @@ namespace Framework
             // 隐藏主界面
             UIMgr.HideAll(EUIGroupType.HUD);
             // 隐藏view中其他界面
-            UIMgr.HideAll(EUIGroupType.View);
+            UIMgr.HideAll(EUIGroupType.Wnd);
             // 关闭弹窗
             UIMgr.CloseAll(EUIGroupType.Popup);
         }

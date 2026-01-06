@@ -5,30 +5,48 @@ using UnityEngine;
 
 namespace Framework
 {
-    internal class UIGroupBase : IUIGroup
+    public enum EUIGroupType
     {
-        public IUIManager UIMgr => _uiMgr;
-        private IUIManager _uiMgr; 
+        HUD = 1, // 主界面
+        Wnd, // 一级界面（活动 / 背包 / 商店 / 角色）
+        Popup, // 弹窗界面（二级界面 / 消息框 / MsgBox)
+        Tips, // 提示信息（飘字、气泡、跑马灯等）
+    }
 
-        private Transform _root;
-        private EUIGroupType _groupType;
+    public class UIGroupBase
+    {
+        public IUIManager UIMgr
+        {
+            get; private set;
+        }
+
+        public Transform Root
+        {
+            get; private set;
+        }
+
+        public Canvas Canvas => Root.GetComponent<Canvas>();
+
         private int _groupLayer;
-        public EUIGroupType GroupType => _groupType;
+        public EUIGroupType GroupType
+        {
+            get; private set;
+        }
 
         private readonly List<UIViewWrapper> _viewWrappers = new List<UIViewWrapper>();
         private Dictionary<string, UIViewWrapper> _viewWrapperMap = new Dictionary<string, UIViewWrapper>();
 
-        // 正在接在的ui
+        // 正在加载的ui
         private readonly HashSet<string> _loadingUIs = new HashSet<string>();
         // 准备销毁的ui
         private readonly HashSet<string> _toReleaseOnLoading = new HashSet<string>();
 
         public UIGroupBase(IUIManager uiMgr, EUIGroupType groupType, Transform root)
         {
-            _uiMgr = uiMgr;
-            _root = root;
-            _groupType = groupType;
-            _groupLayer = (int)_groupType * 10000;
+            UIMgr = uiMgr;
+            Root = root;
+            GroupType = groupType;
+            _groupLayer = (int)GroupType * 10000;
         }
 
         /// <summary>
@@ -132,11 +150,10 @@ namespace Framework
 
         public virtual void DoOpenUI(UIViewWrapper wrapper)
         {
-            wrapper.SetParent(_root);
             _viewWrappers.Add(wrapper);
-            _viewWrapperMap[wrapper.Name] = wrapper;
-            wrapper.SetSortingOrder(CalculateOrder(_viewWrappers.Count - 1));
-            wrapper.DoShow();
+            _viewWrapperMap[wrapper.assetPath] = wrapper;
+            //wrapper.SetSortingOrder(CalculateOrder(_viewWrappers.Count - 1));
+            wrapper.DoShow(CalculateOrder(_viewWrappers.Count - 1));
         }
 
         public virtual void OnAfterOpenUI(UIViewWrapper wrapper)
@@ -201,7 +218,7 @@ namespace Framework
                 return false;
 
             _viewWrappers.Remove(wrapper);
-            _viewWrapperMap.Remove(wrapper.Name);
+            _viewWrapperMap.Remove(wrapper.assetPath);
             OnBeforeCloseUI(wrapper);
             DoCloseUI(wrapper);
             OnAfterCloseUI(wrapper);
@@ -244,6 +261,13 @@ namespace Framework
             {
                 wrapper.DoHide();
             }
+        }
+
+        public int GetTopUISortingOrder()
+        {
+            if (_viewWrappers.Count == 0)
+                return _groupLayer;
+            return _viewWrappers.Last().Canvas.sortingOrder;
         }
 
         public virtual void SecondUpdate()
