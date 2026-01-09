@@ -46,7 +46,7 @@ namespace GameEntry.Stage
             var localHashMap = JsonConvert.DeserializeObject<Dictionary<string, string>>(localHash);
 
             var remoteHash = string.Empty;
-            yield return FW.ResourceMgr.DownloadRemoteFile(Path.Combine(PathDefine.remoteConfigDataPath,"configHash.hash"), handler =>
+            yield return FW.ResMgr.DownloadRemoteFile(Path.Combine(PathDefine.remoteConfigDataPath,"configHash.hash"), handler =>
             {
                 if (handler != null)
                 {
@@ -90,7 +90,7 @@ namespace GameEntry.Stage
                     var remoteFile = Path.Combine(PathDefine.remoteConfigDataPath, name);
                     var tarFile = Path.Combine(PathDefine.persistentConfigDataPath, name);
 
-                    yield return FW.ResourceMgr.DownloadRemoteFile(remoteFile, (loader) =>
+                    yield return FW.ResMgr.DownloadRemoteFile(remoteFile, (loader) =>
                     {
                         using (MemoryStream zipStream = new MemoryStream(loader.data))
                         using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read))

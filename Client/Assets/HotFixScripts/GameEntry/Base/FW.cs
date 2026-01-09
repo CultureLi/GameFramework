@@ -7,14 +7,14 @@ namespace GameEntry
     {
         public static IEventMgr EventMgr { get; private set; }
         public static IFsmMgr FsmMgr { get; private set; }
-        public static IResourceMgr ResourceMgr { get; private set; }
+        public static IResourceMgr ResMgr { get; private set; }
         public static ITimerMgr TimerMgr { get; private set; }
         public static INetworkMgr NetMgr { get; private set; }
         public static IObjectPoolMgr ObjectPoolMgr { get; private set; }
         public static IUIManager UIMgr { get; private set; }
         public static IConfigMgr CfgMgr { get; private set; }
-        public static ILocalizationMgr LocalizationMgr
-        { get; private set; }
+        public static ILocalizationMgr LocalizationMgr { get; private set; }
+        public static ISpriteMgr SpriteMgr { get; private set; }
 
         
         public void Initialize()
@@ -22,15 +22,17 @@ namespace GameEntry
             base.Awake();
             EventMgr = FrameworkMgr.GetModule<IEventMgr>();
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();
-            ResourceMgr = FrameworkMgr.GetModule<IResourceMgr>();
+            ResMgr = FrameworkMgr.GetModule<IResourceMgr>();
             TimerMgr = FrameworkMgr.GetModule<ITimerMgr>();
             NetMgr = FrameworkMgr.GetModule<INetworkMgr>();
             ObjectPoolMgr = FrameworkMgr.GetModule<IObjectPoolMgr>();
             UIMgr = FrameworkMgr.GetModule<IUIManager>();
             CfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
             LocalizationMgr = FrameworkMgr.GetModule<ILocalizationMgr>();
+            SpriteMgr = FrameworkMgr.GetModule<ISpriteMgr>();
 
-            UIMgr.Init(ResourceMgr);
+            UIMgr.Init(ResMgr);
+            SpriteMgr.Init(ResMgr);
 
             Application.quitting -= OnApplicationShutdown;
             Application.quitting += OnApplicationShutdown;

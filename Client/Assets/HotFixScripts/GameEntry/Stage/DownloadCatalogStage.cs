@@ -56,7 +56,7 @@ namespace GameEntry.Stage
         IEnumerator DownloadRemoteHash()
         {
             //请求远端hash
-            yield return FW.ResourceMgr.DownloadRemoteFile(PathDefine.remoteCatalogHashUrl,
+            yield return FW.ResMgr.DownloadRemoteFile(PathDefine.remoteCatalogHashUrl,
                 (handler) =>
                 {
                     if (handler != null)
@@ -125,14 +125,14 @@ namespace GameEntry.Stage
             }
 
             CollectRemoteResInfo(localLocator, remoteLocator);
-            FW.ResourceMgr.SetInternalIdTransform();
+            FW.ResMgr.SetInternalIdTransform();
 
             completedCb?.Invoke(remoteLocator);
         }
 
         void ModifyLocation(IResourceLocation location)
         {
-            FW.ResourceMgr.ModifyBundleLocation(location.InternalId, Path.Combine(PathDefine.remoteBundleUrl, Path.GetFileName(location.InternalId)));
+            FW.ResMgr.ModifyBundleLocation(location.InternalId, Path.Combine(PathDefine.remoteBundleUrl, Path.GetFileName(location.InternalId)));
         }
 
         void CollectRemoteResInfo(IResourceLocator localCatalog, IResourceLocator remoteCatalog)

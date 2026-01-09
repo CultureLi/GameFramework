@@ -95,7 +95,7 @@ namespace GameEntry.Stage
         {
             Debug.Log("download manifest start....");
             var url = PathDefine.remoteHotFixDllManifest;
-            yield return FW.ResourceMgr.DownloadRemoteFile(url, (handler) =>
+            yield return FW.ResMgr.DownloadRemoteFile(url, (handler) =>
             {
                 if (handler != null)
                 {

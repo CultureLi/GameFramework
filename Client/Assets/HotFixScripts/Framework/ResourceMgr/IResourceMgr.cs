@@ -42,6 +42,7 @@ namespace Framework
 
         public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(IResourceLocation location);
         public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(object key);
+        public AsyncOperationHandle<TObject> LoadAssetSync<TObject>(object key);
         public AsyncOperationHandle<IList<TObject>> LoadAssetsAsync<TObject>(IList<IResourceLocation> locations, Action<TObject> callback);
         public AsyncOperationHandle<IList<TObject>> LoadAssetsAsync<TObject>(IEnumerable keys, Action<TObject> callback, MergeMode mode);
         public AsyncOperationHandle<IList<TObject>> LoadAssetsAsync<TObject>(object key, Action<TObject> callback);

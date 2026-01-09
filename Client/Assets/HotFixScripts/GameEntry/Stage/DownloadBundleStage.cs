@@ -113,7 +113,7 @@ namespace GameEntry.Stage
 
         protected override void OnLeave()
         {
-            FW.ResourceMgr.BundleDownloadCompleted -= OnDownloadCompleted;
+            FW.ResMgr.BundleDownloadCompleted -= OnDownloadCompleted;
         }
 
         void OnDownloadCompleted()

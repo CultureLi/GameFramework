@@ -28,12 +28,11 @@ namespace GameMain.UI
     {
         public GameObject textTipTemplate;
 
-        private Stack<UICommonTipsItem> _pool;
-        private Stack<UICommonTipsData> _dataQueue;
+        private Stack<UICommonTipsItem> _pool = new Stack<UICommonTipsItem>();
+        private Stack<UICommonTipsData> _dataQueue = new Stack<UICommonTipsData>();
 
         private void Awake()
         {
-            _pool = new Stack<UICommonTipsItem>();
             var items = UITools.CloneGameObject(textTipTemplate, 5);
             foreach (var item in items)
             {
@@ -42,7 +41,6 @@ namespace GameMain.UI
                 item.SetActive(false);
                 _pool.Push(comp);
             }
-            _dataQueue = new Stack<UICommonTipsData>();
         }
 
         public override void OnShow(bool isInitShow, ViewData data)

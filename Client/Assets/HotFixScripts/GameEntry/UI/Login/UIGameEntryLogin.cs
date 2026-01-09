@@ -24,6 +24,7 @@ namespace GameEntry
         void OnBtnLoginClick()
         {
             Close();
+            FW.UIMgr.CloseUI("GameEntry/UIGameEntryProgress");
             GameEntryMgr.I.EnterGameMain();
         }
 

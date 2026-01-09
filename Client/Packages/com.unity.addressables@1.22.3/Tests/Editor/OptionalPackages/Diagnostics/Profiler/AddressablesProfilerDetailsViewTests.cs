@@ -72,7 +72,7 @@ namespace UnityEditor.AddressableAssets.Tests.Diagnostics.Profiler
         [Test]
         public void Test_GenerateContentData_MissingReferencedBundle()
         {
-            LogAssert.Expect("Asset Assets/AddressMe/brown.bmp referenced bundle folder_assets_assets/addressme_3876ae7ae6d93912555c4c93ef6e3fd7.bundle not loaded from build layout, attaching to parent scene_scenes_all_ea5d4d944831b5303deb66b664bd2e25.bundle");
+            LogAssert.Expect(LogType.Log, "Asset Assets/AddressMe/brown.bmp referenced bundle folder_assets_assets/addressme_3876ae7ae6d93912555c4c93ef6e3fd7.bundle not loaded from build layout, attaching to parent scene_scenes_all_ea5d4d944831b5303deb66b664bd2e25.bundle");
             Test_GenerateContentData_FrameData(true, true, true, false);
         }
 

@@ -36,7 +36,7 @@ namespace Framework
         {
             UIAssetRootPath = "Assets/BundleRes/UI";
             _groups = new Dictionary<EUIGroupType, UIGroupBase>();
-            UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool");
+            UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool", expireTime:5);
         }
 
         public void Init(IResourceMgr resMgr)

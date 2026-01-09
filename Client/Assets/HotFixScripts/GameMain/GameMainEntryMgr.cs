@@ -13,7 +13,7 @@ namespace GameMain
             Utility.Test();
             Debug.Log("GameMainEntry");
 
-            var handle = FW.ResourceMgr.LoadSceneAsync("Main");
+            var handle = FW.ResMgr.LoadSceneAsync("Main");
             await handle.ToUniTask();
 
             await UniTask.NextFrame();

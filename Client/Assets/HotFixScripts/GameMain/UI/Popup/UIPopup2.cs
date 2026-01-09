@@ -1,16 +1,19 @@
 ﻿using Framework;
 using GameEntry;
+using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace GameMain.UI
 {
     internal class UIPopup2 : ViewBase
     {
+        public Image icon;
         public void OpenRole()
         {
             FW.UIMgr.OpenWnd("Role/UIRole");
@@ -31,6 +34,12 @@ namespace GameMain.UI
                 Debug.Log($"MsgBox 回调 {flag}");
             };
             FW.UIMgr.OpenPopup("Common/MsgBox/UICommonMsgBox", uiData);
+        }
+
+        [Button]
+        void ChangeIcon(string spriteName)
+        {
+            icon.SetSprite(spriteName);
         }
     }
 }

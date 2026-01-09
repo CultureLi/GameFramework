@@ -85,7 +85,7 @@ namespace GameMain.UI
             }
         }
 
-        [SerializeReference]
+        [SerializeField]
         [HideInInspector]
         private List<UIStateCtrlBase> _stateCtrlList = new List<UIStateCtrlBase>();
         private List<UIStateCtrlBase> StateCtrlList => _stateCtrlList;
