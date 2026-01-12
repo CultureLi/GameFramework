@@ -25,6 +25,7 @@ namespace Assets.Editor
             so.Clear();
             CollectAtlasSprites(setting, so);
             CollectSingleSprites(setting, so);
+            //CollectSprites(setting, so);
 
             EditorUtility.SetDirty(so);
             AssetDatabase.SaveAssets();
@@ -47,18 +48,19 @@ namespace Assets.Editor
                 if (assetEntry == null)
                     continue;
 
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                SpriteAtlas atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
+                string atlasPath = AssetDatabase.GUIDToAssetPath(guid);
+                SpriteAtlas atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
 
                 var sprites = new Sprite[atlas.spriteCount];
                 atlas.GetSprites(sprites);
 
                 foreach (var sprite in sprites)
                 {
-                    if (sprite)
-                    {
-                        mapper.Add(sprite, assetEntry.address);
-                    }
+                    var spriteName = sprite.name;
+                    if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
+                        spriteName = spriteName.Replace("(Clone)", "");
+                    var address = $"{assetEntry.address}[{spriteName}]";
+                    mapper.Add(spriteName, address);
                 }
             }
         }
@@ -93,9 +95,14 @@ namespace Assets.Editor
                     if (sprite == null)
                         continue;
 
-                    mapper.Add(sprite, spriteEntry.address);
+                    var spriteName = sprite.name;
+                    if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
+                        spriteName = spriteName.Replace("(Clone)", "");
+
+                    mapper.Add(spriteName, spriteEntry.address);
                 }
             }
         }
+
     }
 }

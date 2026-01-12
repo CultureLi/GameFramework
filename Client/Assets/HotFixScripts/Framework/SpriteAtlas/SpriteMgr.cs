@@ -14,6 +14,8 @@ namespace Framework
         IResourceMgr _resMgr;
         public void Init(IResourceMgr resMgr)
         {
+            AutoReleaseSprite.Init(this);
+
             _resMgr = resMgr;
             var op = resMgr.LoadAssetSync<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
             if (op.Status == AsyncOperationStatus.Succeeded)
@@ -26,7 +28,7 @@ namespace Framework
             }
         }
 
-        public Sprite GetSprite(string spriteName)
+        public Sprite LoadSprite(string spriteName)
         {
             if (_data == null)
             {
@@ -47,6 +49,15 @@ namespace Framework
 
             Debug.LogError($"SpriteMgr:GetSprite {spriteName} failed!");
             return null;
+        }
+
+        public void ReleaseSprite(Sprite sprite)
+        {
+            if (sprite == null)
+            {
+                return;
+            }
+            _resMgr.Release(sprite);
         }
 
         public void Shutdown()

@@ -1,4 +1,5 @@
-﻿using GameEntry;
+﻿using Framework;
+using GameEntry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,9 @@ namespace GameMain.UI
 
         static public void SetSprite(this Image image, string spriteName)
         {
-            var sprite = FW.SpriteMgr.GetSprite(spriteName);
+            var autoRelease = image.gameObject.GetOrAddComponent<AutoReleaseSprite>();
+            var sprite = FW.SpriteMgr.LoadSprite(spriteName);
+            autoRelease.SetSprite(sprite);
             if (sprite != null)
             {
                 image.overrideSprite = sprite;

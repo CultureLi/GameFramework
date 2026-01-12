@@ -22,9 +22,8 @@ namespace Framework
         }
 #if UNITY_EDITOR
 
-        public void Add(Sprite sprite, string value)
+        public void Add(string spriteName, string value)
         {
-            var spriteName = sprite.name.Replace("(Clone)", string.Empty);
             if (!_map.ContainsKey(spriteName))
             {
                 _map.Add(spriteName, value);
