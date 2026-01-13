@@ -21,6 +21,10 @@ namespace Framework
             return string.Empty;
         }
 #if UNITY_EDITOR
+        public void Clear()
+        {
+            _map.Clear();
+        }
 
         public void Add(string spriteName, string value)
         {
@@ -34,10 +38,10 @@ namespace Framework
             }
         }
 
-        public void Clear()
+        public void Remove(string spriteName)
         {
-            _map.Clear();
-        }   
+            _map.Remove(spriteName);
+        }
 #endif
     }
 }

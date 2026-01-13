@@ -9,12 +9,14 @@ using System.IO;
 using System.Linq;
 using System;
 using Framework;
+using UnityEngine.Timeline;
+using static UnityEngine.AssetGraph.DataModel.Version2.Settings;
 
 namespace Assets.Editor
 {
     public static class GenerateSpriteMapper
     {
-        [MenuItem("Tools/UI/生成Sprite Mapper", false, 1000)]
+        [MenuItem("Tools/UI/生成 SpriteMapper", false, 1000)]
         public static void GenSpriteMapper()
         {
             Debug.Log("GenSpriteMapper Stat...............");
@@ -65,6 +67,33 @@ namespace Assets.Editor
             }
         }
 
+        public static void ModifyAtlasMap(AddressableAssetSettings setting, SpriteMapper mapper, string atlasPath, bool add)
+        {
+            SpriteAtlas atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(atlasPath);
+            var guid = AssetDatabase.AssetPathToGUID(atlasPath);
+            var assetEntry = setting.FindAssetEntry(guid, true);
+
+            var sprites = new Sprite[atlas.spriteCount];
+            atlas.GetSprites(sprites);
+
+            foreach (var sprite in sprites)
+            {
+                var spriteName = sprite.name;
+                if (spriteName.EndsWith("(Clone)", StringComparison.Ordinal))
+                    spriteName = spriteName.Replace("(Clone)", "");
+                var address = $"{assetEntry.address}[{spriteName}]";
+
+                if (add)
+                {
+                    mapper.Add(spriteName, address);
+                }
+                else
+                {
+                    mapper.Remove(spriteName);
+                }
+            }
+        }
+
         private static void CollectSingleSprites(AddressableAssetSettings settings, SpriteMapper mapper)
         {
             //找到所有名为 SingleSprite 的文件夹
@@ -104,5 +133,17 @@ namespace Assets.Editor
             }
         }
 
+        [MenuItem("Tools/UI/Clear SpriteMapper", false, 1000)]
+        public static void ClearSpriteMapper()
+        {
+            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+
+            var setting = AddressableAssetSettingsDefaultObject.Settings;
+
+            so.Clear();
+            EditorUtility.SetDirty(so);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
     }
 }
