@@ -8,15 +8,17 @@ using System.IO;
 using System.Linq;
 using System;
 using Framework;
+using Assets.Editor.Build;
 
 namespace Assets.Editor
 {
     public static class GenerateSpriteMapper
     {
-        [MenuItem("Tools/UI/生成 SpriteMapper", false, 1000)]
+        [MenuItem("Tools/UI/生成SpriteMapper", false, 1000)]
         public static void GenSpriteMapper()
         {
             Debug.Log("GenSpriteMapper Stat..............");
+            var st = System.Diagnostics.Stopwatch.StartNew();
             var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
@@ -28,7 +30,7 @@ namespace Assets.Editor
             EditorUtility.SetDirty(so);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
+            BuildTools.LogTime("GenSpriteMapper", st.ElapsedMilliseconds);
             Debug.Log("GenSpriteMapper End...............");
         }
 
@@ -129,7 +131,7 @@ namespace Assets.Editor
             }
         }
 
-        [MenuItem("Tools/UI/Clear SpriteMapper", false, 1000)]
+        //[MenuItem("Tools/UI/Clear SpriteMapper", false, 1000)]
         public static void ClearSpriteMapper()
         {
             var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");

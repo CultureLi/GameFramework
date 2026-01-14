@@ -47,6 +47,11 @@ namespace Assets.Editor.Build
 
             if (buildParams.buildAddressable)
             {
+                // 生成图集
+                GenerateSpriteAtlas.PackAllAtlases();
+                // 生成sprite映射表
+                GenerateSpriteMapper.GenSpriteMapper();
+                // 构建Bundle
                 BuildAddressables();
             }
             else
@@ -93,6 +98,7 @@ namespace Assets.Editor.Build
 
         static void SwitchToTarget()
         {
+            var st = System.Diagnostics.Stopwatch.StartNew();
             var platform = buildParams.targetPlatform.ToLower() switch
             {
                 "android" => BuildTarget.Android,
@@ -107,12 +113,13 @@ namespace Assets.Editor.Build
                 EditorUserBuildSettings.SwitchActiveBuildTarget(group, platform);
                 Debug.Log($"Switch To {platform} Finished !!");
             }
+            LogTime("SwitchPlatform", st.ElapsedMilliseconds);
         }
 
         private static void BuildPlayer()
         {
             Debug.Log("Player Build Start ...");
-
+            var st = System.Diagnostics.Stopwatch.StartNew();
             // 获取当前激活场景列表
             string[] scenes = GetEnabledScenes();
 
@@ -140,6 +147,7 @@ namespace Assets.Editor.Build
             BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
             BuildSummary summary = report.summary;
 
+            LogTime("BuildPlayer", st.ElapsedMilliseconds);
             if (summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($" {buildTargetName} Build Success，Output Path：{outputFilePath}");
@@ -176,6 +184,15 @@ namespace Assets.Editor.Build
                 .Where(s => s.enabled)
                 .Select(s => s.path)
                 .ToArray();
+        }
+
+        public static void LogTime(string key, long time)
+        {
+            var totalSeconds = time / 1000;
+            var minutes = totalSeconds / 60;
+            var seconds = totalSeconds %= 60;
+
+            Debug.Log($"TimeCost {key} --> {minutes}m : {seconds}s");
         }
     }
 

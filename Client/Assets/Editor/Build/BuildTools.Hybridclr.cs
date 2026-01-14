@@ -20,7 +20,10 @@ namespace Assets.Editor.Build
         public static void BuildHybridclrAll()
         {
             Debug.Log("BuildHybridclr 开始");
+            var st = System.Diagnostics.Stopwatch.StartNew();
             PrebuildCommand.GenerateAll();
+            LogTime("PrebuildCommand.GenerateAll", st.ElapsedMilliseconds);
+
             CopyMetaData();
             GenHotFixManifest();
             CopyHotFixDllToServer();

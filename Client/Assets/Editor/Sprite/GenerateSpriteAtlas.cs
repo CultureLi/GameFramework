@@ -6,6 +6,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Build.Content;
+using HybridCLR.Editor.Commands;
+using Assets.Editor.Build;
 
 namespace Assets.Editor
 {
@@ -64,8 +66,12 @@ namespace Assets.Editor
         /// </summary>
         public static void PackAllAtlases()
         {
+            Debug.Log("PackAllAtlases ----- Start");
+            var st = System.Diagnostics.Stopwatch.StartNew();
             GenerateAtlasAll();
             SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
+            BuildTools.LogTime("PackAllAtlases", st.ElapsedMilliseconds);
+            Debug.Log("PackAllAtlases ----- End");
         }   
 
         static bool GenerateAtlas(string spriteRoot)

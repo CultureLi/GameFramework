@@ -22,16 +22,17 @@ namespace Assets.Editor.Build
 				Directory.Delete(inter, true);
 
 			if (success)
-				Debug.Log("✅ Addressables 缓存清理成功！");
+				Debug.Log("Addressables 缓存清理成功！");
 			else
-				Debug.LogWarning("⚠️ 缓存清理失败，可能没有可清理的缓存。");
+				Debug.LogWarning("缓存清理失败，可能没有可清理的缓存。");
 		}
 
         [MenuItem("BuildTools/Addressable/BuildAll")]
         public static void BuildAddressables()
 		{
 			Debug.Log("Addressables Build Start ...");
-			AddressableAssetSettings.CleanPlayerContent();
+            var st = System.Diagnostics.Stopwatch.StartNew();
+            AddressableAssetSettings.CleanPlayerContent();
 			try
 			{
 				AddressableAssetSettings.BuildPlayerContent();
@@ -44,8 +45,8 @@ namespace Assets.Editor.Build
 			Debug.Log("Addressables Build Finished !!! ");
 
 			AssetDatabase.Refresh();
-
-			CopyBundlesToServer();
+            BuildTools.LogTime("BuildAddressables", st.ElapsedMilliseconds);
+            CopyBundlesToServer();
 			
 		}
 
