@@ -1,7 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
-using UnityEditor.U2D;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using System.Collections.Generic;
@@ -9,8 +8,6 @@ using System.IO;
 using System.Linq;
 using System;
 using Framework;
-using UnityEngine.Timeline;
-using static UnityEngine.AssetGraph.DataModel.Version2.Settings;
 
 namespace Assets.Editor
 {
@@ -19,11 +16,10 @@ namespace Assets.Editor
         [MenuItem("Tools/UI/生成 SpriteMapper", false, 1000)]
         public static void GenSpriteMapper()
         {
-            Debug.Log("GenSpriteMapper Stat...............");
+            Debug.Log("GenSpriteMapper Stat..............");
             var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
-
             so.Clear();
             CollectAtlasSprites(setting, so);
             CollectSingleSprites(setting, so);

@@ -13,10 +13,9 @@ namespace GameMain
             Utility.Test();
             Debug.Log("GameMainEntry");
 
-            var handle = FW.ResMgr.LoadSceneAsync("Main");
-            await handle.ToUniTask();
+            await FW.ResMgr.LoadSceneAsync("Main").ToUniTask(FW.CoroutineRunner);
 
-            await UniTask.NextFrame();
+            await UniTask.WaitForEndOfFrame(FW.CoroutineRunner);
             new GameObject("GameMainEntryStages").AddComponent<GameMainEntryStages>();
         }
     }

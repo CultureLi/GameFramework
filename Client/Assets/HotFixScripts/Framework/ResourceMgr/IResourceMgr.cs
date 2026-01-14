@@ -91,7 +91,7 @@ namespace Framework
 
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string key, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100);
 
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(Scene scene);
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance instance);
 
         public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle);
 

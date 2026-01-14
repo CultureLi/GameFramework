@@ -9,7 +9,6 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
-
 namespace Launcher
 {
     public partial class Launcher : MonoBehaviour
@@ -151,7 +150,6 @@ namespace Launcher
         void EnterEntrance()
         {
             Debug.Log("EnterEntrance");
-
             var entranceAssembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameEntry");
 
             if (entranceAssembly == null)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace Framework
@@ -38,6 +39,21 @@ namespace Framework
         {
             if (handle.IsValid())
                 handle.Completed -= value;
+            return handle;
+        }
+
+        public static AsyncOperation AddCompleted(this AsyncOperation handle, Action<AsyncOperation> value)
+        {
+            if (!handle.isDone)
+                handle.completed += value;
+            else
+                value(handle);
+            return handle;
+        }
+
+        public static AsyncOperation RemoveCompleted(this AsyncOperation handle, Action<AsyncOperation> value)
+        {
+            handle.completed -= value;
             return handle;
         }
     }

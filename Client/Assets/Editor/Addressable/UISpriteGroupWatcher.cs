@@ -1,4 +1,4 @@
-﻿/*using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -89,15 +89,14 @@ namespace Assets.Editor.Addressable
             string address = entry.address;
             string assetPath = entry.AssetPath;
 
-            *//*var spriteName
+            /*var spriteName
             if (evt == AddressableAssetSettings.ModificationEvent.EntryRemoved)
             {
                 mapper.Remove()
-            }*//*
+            }*/
             // 示例
             UnityEngine.Debug.Log(
                 $"[UIGroup Changed] {evt} | {entry.AssetPath} {entry.address}");
         }
     }
 }
-*/

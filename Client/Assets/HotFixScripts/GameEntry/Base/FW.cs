@@ -16,10 +16,16 @@ namespace GameEntry
         public static ILocalizationMgr LocalizationMgr { get; private set; }
         public static ISpriteMgr SpriteMgr { get; private set; }
 
-        
+        public static MonoBehaviour CoroutineRunner
+        {
+            get; private set;
+        }
+
         public void Initialize()
         {
             base.Awake();
+            CoroutineRunner = this;
+
             EventMgr = FrameworkMgr.GetModule<IEventMgr>();
             FsmMgr = FrameworkMgr.GetModule<IFsmMgr>();
             ResMgr = FrameworkMgr.GetModule<IResourceMgr>();
@@ -45,6 +51,7 @@ namespace GameEntry
 
         void OnApplicationShutdown()
         {
+            CoroutineRunner.StopAllCoroutines();
             FrameworkMgr.Shutdown();
         }
     }

@@ -44,7 +44,7 @@ namespace Framework
             protected internal override void OnUnspawn()
             {
                 var go = (Target as GameObject);
-                go.transform.parent = _root;
+                go.transform.SetParent(_root);
                 go.SetActive(false);
             }
         }

@@ -41,52 +41,6 @@ namespace Framework
         }
 
         /// <summary>
-        /// 加载本地文件
-        /// </summary>
-        /// <param name="searchPaths">要搜索的全路径</param>
-        /// <param name="completedCb"></param>
-        /// <returns></returns>
-        /*public IEnumerator LoadLocalFile(string[] searchPaths, Action<DownloadHandler> completedCb)
-        {
-            var cnt = searchPaths.Length;
-            for (var idx = 0; idx < cnt; idx++)
-            {
-                var url = searchPaths[idx];
-                Debug.Log($"LoadLocalFile {url}");
-                var uwr = UnityWebRequest.Get(url);
-                yield return uwr.SendWebRequest();
-                if (uwr.result == UnityWebRequest.Result.Success)
-                {
-                    Debug.Log($"LoadLocalFile Success {url}");
-                    completedCb?.Invoke(uwr.downloadHandler);
-                    yield break;
-                }
-                else
-                {
-                    Debug.LogError($"LoadLocalFile Failed {url}");
-                    if (idx == cnt - 1)
-                        completedCb?.Invoke(null);
-                }
-            }
-        }*/
-
-        /// <summary>
-        /// 加载本地文件
-        /// </summary>
-        /// <param name="relativePath">相对路径</param>
-        /// <param name="completedCb"></param>
-        /// <returns></returns>
-        /*public IEnumerator LoadLocalFileRelative(string relativePath, Action<DownloadHandler> completedCb)
-        {
-            string[] rootPaths =
-            {
-                "file://" + Path.Combine(Application.persistentDataPath, relativePath),
-                Path.Combine(Application.streamingAssetsPath, relativePath)
-            };
-            yield return LoadLocalFile(rootPaths, completedCb);
-        }*/
-
-        /// <summary>
         /// 加载本地、远端文件
         /// </summary>
         /// <param name="path"></param>
@@ -332,7 +286,6 @@ namespace Framework
             return Addressables.LoadResourceLocationsAsync(key, type);
         }
 
-        private Dictionary<Scene, SceneInstance> _sceneInstanceMap = new Dictionary<Scene,SceneInstance>();
         /// <summary>
         /// 加载场景
         /// </summary>
@@ -344,40 +297,53 @@ namespace Framework
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string path, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
             var scenePath = $"Assets/BundleRes/Scene/{path}.unity";
+            var oldScene = SceneManager.GetActiveScene();
+            // 如果是single模式，会自动卸载之前的场景
             var handle = Addressables.LoadSceneAsync(scenePath, loadMode, activateOnLoad, priority);
-            if (loadMode == LoadSceneMode.Single)
+
+            if (loadMode == LoadSceneMode.Additive)
             {
                 handle.AddCompleted(_ =>
                 {
-                    _sceneInstanceMap[handle.Result.Scene] = handle.Result;
-                    var oldScene = SceneManager.GetActiveScene();
-                    SceneManager.SetActiveScene(handle.Result.Scene);
+                    var newScene = handle.Result.Scene;
+                    handle.Result.ActivateAsync().AddCompleted(_ =>
+                    {
+                        SceneManager.SetActiveScene(newScene);
+                    });
 
                     UnloadSceneAsync(oldScene);
                 });
             }
+
             return handle;
         }
 
-        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(Scene scene)
+        AsyncOperation UnloadSceneAsync(Scene scene)
         {
-            if (_sceneInstanceMap.TryGetValue(scene, out SceneInstance instance))
+            var handle = SceneManager.UnloadSceneAsync(scene);
+            handle.AddCompleted((_) =>
             {
-                _sceneInstanceMap.Remove(scene);
-                var handle = Addressables.UnloadSceneAsync(instance, true);
-                handle.AddCompleted((_) =>
-                {
-                    Resources.UnloadUnusedAssets();
-                    GC.Collect();
-                });
-                return handle;
-            }
-            return Addressables.ResourceManager.CreateCompletedOperation<SceneInstance>(default, "Don't Have SceneInstance");
+                Resources.UnloadUnusedAssets();
+                GC.Collect();
+            });
+
+            return handle;
+        }
+
+        public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(SceneInstance instance)
+        {
+            var handle = Addressables.UnloadSceneAsync(instance, true);
+            handle.AddCompleted((_) =>
+            {
+                Resources.UnloadUnusedAssets();
+                GC.Collect();
+            });
+            return handle;
         }
 
         public AsyncOperationHandle<SceneInstance> UnloadSceneAsync(AsyncOperationHandle<SceneInstance> handle)
         {
-            return UnloadSceneAsync(handle.Result.Scene);
+            return UnloadSceneAsync(handle.Result);
         }
 
         public void Release<TObject>(TObject obj)

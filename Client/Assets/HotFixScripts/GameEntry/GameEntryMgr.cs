@@ -19,12 +19,12 @@ namespace GameEntry
 
             FW.UIMgr.CloseAll();
             Debug.Log("加载Login场景");
-            //不能在completed回调中调用handler.WaitForCompletion(),会报错：
+            //在completed回调中调用handler.WaitForCompletion(),或者加载其他资源会报错, 所以在帧末在处理
             ///Reentering the Update method is not allowed.  This can happen when calling WaitForCompletion on an operation while inside of a callback
-            var handle = FW.ResMgr.LoadSceneAsync("Login");
-            await handle.ToUniTask();
 
-            await UniTask.NextFrame();
+            await FW.ResMgr.LoadSceneAsync("Main").ToUniTask(FW.CoroutineRunner);
+
+            await UniTask.WaitForEndOfFrame(FW.CoroutineRunner);
             new GameObject("GameEntryStages").AddComponent<GameEntryStages>();
         }
 
