@@ -17,7 +17,29 @@ namespace GameEntry.Stage
         {
             OverrideCatalogHash();
 
-            FW.UIMgr.OpenPopup("GameEntry/UIGameEntryLogin");
+            if (GameEntryMgr.I.NeedRestart)
+            {
+                var uiData = new GameEntryMsgBoxData()
+                {
+                    content = $"Need Restart App",
+                    callback = (result) =>
+                    {
+                        if (result)
+                        {
+                            AppHelper.RestartApp();
+                        }
+                        else
+                        {
+                            AppHelper.QuitGame();
+                        }
+                    }
+                };
+                FW.UIMgr.OpenPopup("GameEntry/UIGameEntryMsgBox", uiData);
+            }
+            else
+            {
+                FW.UIMgr.OpenPopup("GameEntry/UIGameEntryLogin");
+            }
         }
 
         void OverrideCatalogHash()

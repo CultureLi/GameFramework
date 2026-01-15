@@ -10,7 +10,7 @@ namespace GameMain.Event
 {
     internal partial class Event
     {
-        internal class CommonTipsEvent : EventBase
+        /*internal class CommonTipsEvent : EventBase
         {
             public string content;
 
@@ -20,6 +20,6 @@ namespace GameMain.Event
                 instance.content = content;
                 return instance;
             }
-        }
+        }*/
     }
 }

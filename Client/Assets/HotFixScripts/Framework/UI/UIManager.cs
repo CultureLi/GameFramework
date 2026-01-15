@@ -250,5 +250,10 @@ namespace Framework
             CloseAll();
             _groups.Clear();
         }
+
+        public void SetCanBeReleased(GameObject go, bool flag)
+        {
+
+        }
     }
 }

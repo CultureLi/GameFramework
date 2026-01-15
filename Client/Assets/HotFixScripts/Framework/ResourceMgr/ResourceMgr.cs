@@ -249,7 +249,7 @@ namespace Framework
             return Addressables.LoadAssetAsync<TObject>(key);
         }
 
-        public AsyncOperationHandle<TObject> LoadAssetSync<TObject>(object key)
+        public AsyncOperationHandle<TObject> LoadAsset<TObject>(object key)
         {
             var op = LoadAssetAsync<TObject>(key);
             op.WaitForCompletion();

@@ -14,6 +14,8 @@ namespace GameEntry
     {
         public static async UniTaskVoid Entry()
         {
+            I.Reset();
+
             FW.I.Initialize();
             AppConfig.Initialize();
 
@@ -28,6 +30,14 @@ namespace GameEntry
             new GameObject("GameEntryStages").AddComponent<GameEntryStages>();
         }
 
+        void Reset()
+        {
+            NeedRestart = false;
+            RemoteCatalogHash = string.Empty;
+            LocalCatalogHash = string.Empty;
+            AllLocations.Clear();
+        }
+
         internal Transform UIRoot
         {
             get;set;
@@ -39,7 +49,7 @@ namespace GameEntry
             get; set;
         }
 
-        internal AsyncOperationHandle<SceneInstance> LoadingSceneHandle;
+        internal bool NeedRestart { get; set; }
         internal HashSet<IResourceLocation> AllLocations = new HashSet<IResourceLocation>();
 
         // catalogHash是否发生了变化，决定是否需要进行资源热更
@@ -53,8 +63,6 @@ namespace GameEntry
 
         internal void EnterGameMain()
         {
-            FW.UIMgr.CloseAll();
-
             var assembly = AppDomain.CurrentDomain.GetAssemblies().First(a => a.GetName().Name == "GameMain");
 
             if (assembly == null)

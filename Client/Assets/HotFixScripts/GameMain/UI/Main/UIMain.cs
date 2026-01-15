@@ -42,7 +42,7 @@ namespace GameMain.UI
 
         public void ShowTips()
         {
-            FW.EventMgr.Broadcast(CommonTipsEvent.Create(Time.deltaTime.ToString()));
+            UIDelegate.I.ShowCommonTips(Time.deltaTime.ToString());
         }
     }
 }

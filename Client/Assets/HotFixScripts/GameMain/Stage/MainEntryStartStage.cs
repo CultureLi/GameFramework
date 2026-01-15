@@ -1,4 +1,5 @@
 ﻿using Framework;
+using GameEntry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace GameMain
     {
         protected override void OnEnter()
         {
-            ChangeState<InitUIRootStage>();
+            FW.UIMgr.OpenHud("Main/UIMain");
         }
     }
 }

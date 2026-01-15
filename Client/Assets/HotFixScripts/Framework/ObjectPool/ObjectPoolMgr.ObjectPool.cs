@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Framework
 {
@@ -181,13 +182,13 @@ namespace Framework
 
                 Object<T> internalObject = Object<T>.Create(obj, spawned);
 
-                if (!_objects.TryGetValue(obj.Name, out var objectlist))
+                if (!_objects.TryGetValue(obj.Name, out var objectList))
                 {
-                    objectlist = new LinkedList<Object<T>>();
-                    _objects[obj.Name] = objectlist;
+                    objectList = new LinkedList<Object<T>>();
+                    _objects[obj.Name] = objectList;
                 }
 
-                objectlist.AddLast(internalObject);
+                objectList.AddLast(internalObject);
                 _objectMap.Add(obj.Target, internalObject);
 
                 if (Count > _capacity)
@@ -339,7 +340,7 @@ namespace Framework
                     return false;
                 }
 
-                if (internalObject.IsInUse || !internalObject.CustomCanReleaseFlag)
+                if (internalObject.IsInUse || !internalObject.CanBeReleased)
                 {
                     return false;
                 }
@@ -351,7 +352,7 @@ namespace Framework
                 objectList.Remove(internalObject);
                 _objectMap.Remove(internalObject.Peek().Target);
 
-                internalObject.Release(false);
+                internalObject.Release();
                 ReferencePool.Release(internalObject);
                 return true;
             }
@@ -447,7 +448,7 @@ namespace Framework
             {
                 foreach ((var key, var value) in _objectMap)
                 {
-                    value.Release(true);
+                    value.Release();
                     ReferencePool.Release(value);
                 }
 
@@ -483,7 +484,7 @@ namespace Framework
                 results.Clear();
                 foreach ((var key, var value) in _objectMap)
                 {
-                    if (value.IsInUse || !value.CustomCanReleaseFlag)
+                    if (value.IsInUse || !value.CanBeReleased)
                     {
                         continue;
                     }
@@ -528,6 +529,12 @@ namespace Framework
                 }
 
                 return _cachedToReleaseObjects;
+            }
+            public void SetCanBeReleased(GameObject go, bool canBeReleased)
+            {
+                var obj = GetObject(go);
+                if (obj != null)
+                    obj.CanBeReleased = canBeReleased;
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿
 using System;
+using UnityEngine;
 
 namespace Framework
 {
@@ -171,5 +172,7 @@ namespace Framework
         /// 释放对象池中的所有未使用对象。
         /// </summary>
         void ReleaseAllUnused();
+
+        void SetCanBeReleased(GameObject go, bool canBeReleased);
     }
 }

@@ -18,7 +18,6 @@ namespace Assets.HotFixScripts.GameMain
             _stageFsm = Fsm.Create("GameMainEntryFsm", new List<FsmState>()
             {
                 new MainEntryStartStage(),
-                new InitUIRootStage(this),
             });
 
             _stageFsm.Start<MainEntryStartStage>();

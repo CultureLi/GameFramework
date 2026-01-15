@@ -48,6 +48,9 @@ namespace Framework
             uiTransform.localScale = Vector3.one;
 
             info._view.gameObject.SetActive(false);
+
+            group.UIMgr.UIPrefabPool.SetCanBeReleased(view.gameObject, view.CanBeReleased);
+
             return info;
         }
 

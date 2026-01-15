@@ -7,8 +7,6 @@ namespace Framework
     /// </summary>
     public abstract class ObjectPoolBase
     {
-        private readonly string _name;
-
         /// <summary>
         /// 初始化对象池基类的新实例。
         /// </summary>
@@ -23,7 +21,7 @@ namespace Framework
         /// <param name="name">对象池名称。</param>
         public ObjectPoolBase(string name)
         {
-            this._name = name ?? string.Empty;
+            Name = name ?? string.Empty;
         }
 
         /// <summary>
@@ -31,12 +29,8 @@ namespace Framework
         /// </summary>
         public string Name
         {
-            get
-            {
-                return _name;
-            }
+            get; private set;
         }
-
         /// <summary>
         /// 获取对象池完整名称。
         /// </summary>
@@ -44,7 +38,7 @@ namespace Framework
         {
             get
             {
-                return new TypeNamePair(ObjectType, _name).ToString();
+                return new TypeNamePair(ObjectType, Name).ToString();
             }
         }
 

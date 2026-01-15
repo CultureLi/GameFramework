@@ -13,6 +13,8 @@ namespace GameMain.UI
 {
     internal class UIPopup2 : ViewBase
     {
+        public override bool CanBeReleased { get; set; } = false;
+
         public Image icon;
         public void OpenRole()
         {

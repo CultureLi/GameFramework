@@ -7,66 +7,29 @@ namespace Framework
     /// </summary>
     public abstract class ObjectBase : IReference
     {
-        private string _name;
-        private UnityEngine.Object _target;
-        private DateTime _lastUseTime;
+        public string Name
+        {
+            get; private set;
+        }
+
+        public UnityEngine.Object Target
+        {
+            get; private set;
+        }
+
+        public DateTime LastUseTime
+        {
+            get; internal set;
+        }
 
         /// <summary>
         /// 初始化对象基类的新实例。
         /// </summary>
         public ObjectBase()
         {
-            _name = null;
-            _target = null;
-            _lastUseTime = default(DateTime);
-        }
-
-        /// <summary>
-        /// 获取对象名称。
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                return _name;
-            }
-        }
-
-        /// <summary>
-        /// 获取对象。
-        /// </summary>
-        public UnityEngine.Object Target
-        {
-            get
-            {
-                return _target;
-            }
-        }
-
-        /// <summary>
-        /// 获取自定义释放检查标记。
-        /// </summary>
-        public virtual bool CustomCanReleaseFlag
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        /// <summary>
-        /// 获取对象上次使用时间。
-        /// </summary>
-        public DateTime LastUseTime
-        {
-            get
-            {
-                return _lastUseTime;
-            }
-            internal set
-            {
-                _lastUseTime = value;
-            }
+            Name = null;
+            Target = null;
+            LastUseTime = default(DateTime);
         }
 
         /// <summary>
@@ -90,9 +53,9 @@ namespace Framework
                 throw new Exception($"Target '{name}' is invalid.");
             }
 
-            this._name = name ?? string.Empty;
-            this._target = target;
-            _lastUseTime = DateTime.UtcNow;
+            Name = name ?? string.Empty;
+            Target = target;
+            LastUseTime = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -100,9 +63,9 @@ namespace Framework
         /// </summary>
         public virtual void Clear()
         {
-            _name = null;
-            _target = null;
-            _lastUseTime = default(DateTime);
+            Name = null;
+            Target = null;
+            LastUseTime = default(DateTime);
         }
 
         /// <summary>
@@ -122,7 +85,6 @@ namespace Framework
         /// <summary>
         /// 释放对象。
         /// </summary>
-        /// <param name="isShutdown">是否是关闭对象池时触发。</param>
-        protected internal abstract void Release(bool isShutdown);
+        protected internal abstract void Release();
     }
 }

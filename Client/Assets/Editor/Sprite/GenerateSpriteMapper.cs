@@ -23,9 +23,9 @@ namespace Assets.Editor
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
             so.Clear();
+
             CollectAtlasSprites(setting, so);
             CollectSingleSprites(setting, so);
-            //CollectSprites(setting, so);
 
             EditorUtility.SetDirty(so);
             AssetDatabase.SaveAssets();

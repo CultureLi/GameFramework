@@ -71,21 +71,19 @@ namespace Framework
         public GameObject Spawn(string location)
         {
             var obj = _pool.Spawn(location);
-            if (obj != null)
+            if (obj == null)
             {
-                return obj.Target as GameObject;
+                var handler = _resourceMgr.InstantiateAsync(location);
+                handler.WaitForCompletion();
+                if (handler.Status != AsyncOperationStatus.Succeeded)
+                {
+                    Debug.LogError($"PrefabPool Spawn:{location} Failed");
+                }
+
+                obj = RegisterObject(location, handler.Result);
             }
 
-            var handler = _resourceMgr.InstantiateAsync(location);
-            handler.WaitForCompletion();
-            if (handler.Status != AsyncOperationStatus.Succeeded)
-            {
-                Debug.LogError($"PrefabPool Spawn:{location} Failed");
-            }
-
-            RegisterObject(location, handler.Result);
-
-            return handler.Result;
+            return obj.Target as GameObject;
         }
 
         /// <summary>
@@ -102,15 +100,13 @@ namespace Framework
                 return null;
             }
             var obj = _pool.Spawn(name);
-            if (obj != null)
+            if (obj == null)
             {
-                return obj.Target as GameObject;
+                var go = GameObject.Instantiate(template);
+                obj = RegisterObject(name, go);
             }
 
-            var go = GameObject.Instantiate(template);
-            RegisterObject(name, go);
-
-            return go;
+            return obj.Target as GameObject;
         }
 
         /// <summary>
@@ -166,6 +162,11 @@ namespace Framework
         public void Dispose()
         {
             _objectPoolMgr.DestroyObjectPool<PrefabObject>(_name);
+        }
+
+        public void SetCanBeReleased(GameObject go, bool canBeReleased)
+        {
+            _pool.SetCanBeReleased(go, canBeReleased);
         }
     }
 }

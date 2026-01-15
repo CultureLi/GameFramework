@@ -36,13 +36,10 @@ namespace Framework
             /// <summary>
             /// 获取自定义释放检查标记。
             /// </summary>
-            public bool CustomCanReleaseFlag
+            public bool CanBeReleased
             {
-                get
-                {
-                    return _object.CustomCanReleaseFlag;
-                }
-            }
+                get; set;
+            } = true;
 
             /// <summary>
             /// 获取对象上次使用时间。
@@ -148,10 +145,9 @@ namespace Framework
             /// <summary>
             /// 释放对象。
             /// </summary>
-            /// <param name="isShutdown">是否是关闭对象池时触发。</param>
-            public void Release(bool isShutdown)
+            public void Release()
             {
-                _object.Release(isShutdown);
+                _object.Release();
                 ReferencePool.Release(_object);
             }
         }

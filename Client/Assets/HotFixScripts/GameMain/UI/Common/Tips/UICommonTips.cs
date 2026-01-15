@@ -26,6 +26,12 @@ namespace GameMain.UI
 
     public class UICommonTips : ViewBase
     {
+        public override bool CanBeReleased
+        {
+            get;
+            set;
+        } = false;
+
         public GameObject textTipTemplate;
 
         private Stack<UICommonTipsItem> _pool = new Stack<UICommonTipsItem>();
@@ -45,13 +51,11 @@ namespace GameMain.UI
 
         public override void OnShow(bool isInitShow, ViewData data)
         {
-            FW.EventMgr.Subscribe<CommonTipsEvent>(OnNewTips);
+            UIDelegate.I.CommonTipsCtrl = this;
         }
 
-        void OnNewTips(CommonTipsEvent e)
+        public void ShowTips(UICommonTipsData data)
         {
-            var data = ReferencePool.Acquire<UICommonTipsData>();
-            data.content = e.content;
             _dataQueue.Push(data);
         }
 
@@ -90,7 +94,7 @@ namespace GameMain.UI
 
         public override void OnClose()
         {
-            FW.EventMgr.Unsubscribe<CommonTipsEvent>(OnNewTips);
+            UIDelegate.I.CommonTipsCtrl = null;
         }
     }
 }

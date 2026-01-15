@@ -17,7 +17,7 @@ namespace Framework
             AutoReleaseSprite.Init(this);
 
             _resMgr = resMgr;
-            var op = resMgr.LoadAssetSync<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+            var op = resMgr.LoadAsset<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 _data = op.Result;
@@ -41,12 +41,11 @@ namespace Framework
             {
                 return null;
             }
-            var op = _resMgr.LoadAssetSync<Sprite>(address);
+            var op = _resMgr.LoadAsset<Sprite>(address);
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 return op.Result;
             }
-
             Debug.LogError($"SpriteMgr:GetSprite {spriteName} failed!");
             return null;
         }

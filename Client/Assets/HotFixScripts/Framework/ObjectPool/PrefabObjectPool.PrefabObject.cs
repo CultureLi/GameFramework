@@ -5,11 +5,6 @@ namespace Framework
 {
     public partial class PrefabObjectPool
     {
-        public class PrefabObjectBehaviour : MonoBehaviour
-        {
-
-        }
-
         public class PrefabObject : ObjectBase
         {
             private Transform _root;
@@ -29,7 +24,7 @@ namespace Framework
                 Initialize(name, target);
             }
                 
-            protected internal override void Release(bool isShutdown)
+            protected internal override void Release()
             {
                 _onPreRelease?.Invoke(Target as GameObject);
                 GameObject.Destroy(Target as GameObject);

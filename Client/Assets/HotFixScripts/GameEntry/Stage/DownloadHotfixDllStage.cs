@@ -22,8 +22,6 @@ namespace GameEntry.Stage
         HotFixDllManifest _remoteManifest;
         string _remoteManifestJsonText;
         ulong _totalSize;
-        //是否需要重启
-        bool needRestart;
 
         public DownloadHotfixDllStage(MonoBehaviour runner)
         {
@@ -45,29 +43,7 @@ namespace GameEntry.Stage
             yield return DownloadRemoteManifest();
             yield return DownloadHotFixDlls();
 
-            if (needRestart)
-            {
-                var uiData = new GameEntryMsgBoxData()
-                {
-                    content = $"Need Restart App",
-                    callback = (result) =>
-                    {
-                        if (result)
-                        {
-                            AppHelper.RestartApp();
-                        }
-                        else
-                        {
-                            AppHelper.QuitGame();
-                        }
-                    }
-                };
-                FW.UIMgr.OpenPopup("GameEntry/UIGameEntryMsgBox", uiData);
-            }
-            else
-            {
-                ChangeState<DownloadCatalogStage>();
-            }
+            ChangeState<DownloadCatalogStage>();
         }
 
         /// <summary>
@@ -264,7 +240,7 @@ namespace GameEntry.Stage
                     {
                         if (needDownloadList.Find(x => x.name == depName) != null)
                         {
-                            needRestart = true;
+                            GameEntryMgr.I.NeedRestart = true;
                         }
                     }
                 }
