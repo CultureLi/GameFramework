@@ -29,12 +29,12 @@ namespace Assets.Editor.Build
         {
             Debug.Log("Auto Build Start ...");
 
-            //CollectBuildParams();
-            buildParams.buildPlayer = false;
-            buildParams.buildAddressable = false;
-            buildParams.buildHybridclr = true;
+            CollectBuildParams();
+            buildParams.buildPlayer = true;
+            //buildParams.buildAddressable = true;
+            //buildParams.buildHybridclr = true;
             buildParams.date = Time.time.ToString();
-            buildParams.targetPlatform = "Android";
+            //buildParams.targetPlatform = "Android";
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
             Init();
 
