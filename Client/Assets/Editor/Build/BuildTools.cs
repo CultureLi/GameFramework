@@ -12,10 +12,10 @@ namespace Assets.Editor.Build
     {
         public string targetPlatform = "Android";
         public string platformDir = Path.Combine("../HttpServer", "Android");
-        public bool buildAddressable;
-        public bool buildPlayer;
-        public bool buildHybridclr;
-        public string version;
+        public bool buildAddressable = true;
+        public bool buildPlayer = true;
+        public bool buildHybridclr = true;
+        public string version = "0.0.1";
 
     }
 
@@ -28,12 +28,8 @@ namespace Assets.Editor.Build
         public static void BuildByCommandLine()
         {
             Debug.Log("Auto Build Start ...");
+            //CollectBuildParams();
 
-            CollectBuildParams();
-            buildParams.buildPlayer = true;
-            //buildParams.buildAddressable = true;
-            //buildParams.buildHybridclr = true;
-            //buildParams.targetPlatform = "Android";
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
             Init();
 

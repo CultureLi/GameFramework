@@ -1,4 +1,4 @@
-::@echo off
+@echo off
 setlocal EnableDelayedExpansion
 
 :: 输入参数
@@ -63,7 +63,7 @@ echo [Build Unity Project]
 "C:\Program Files\Unity\Hub\Editor\2022.3.62f2\Editor\Unity.exe" ^
     -batchmode ^
     -projectPath "%PROJECT_DIR%\Client" ^
-    -executeMethod AutoBuild.BuildByCommandLine ^
+    -executeMethod BuildTools.BuildByCommandLine ^
     -version %Version% ^
     -buildAddressable %BuildAddressable% ^
     -targetPlatform %TargetPlatform% ^

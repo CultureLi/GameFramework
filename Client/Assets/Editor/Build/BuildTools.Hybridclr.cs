@@ -15,12 +15,24 @@ namespace Assets.Editor.Build
 {
     public partial class BuildTools
     {
+        static string hotUpdateDllPath = Path.Combine(HybridCLRSettings.Instance.hotUpdateDllCompileOutputRootDir, EditorUserBuildSettings.activeBuildTarget.ToString());
+
+        static string hotFixDllManifestSavePath = Path.Combine(hotUpdateDllPath, "hotFixDllManifest.json");
+
+        static string serverHotFixDllPath = Path.Combine("../HttpServer", PlatformMappingService.GetPlatformPathSubFolder(), "HotFixDll");
 
         [MenuItem("BuildTools/Hybridclr/BuildHybridclrAll")]
         public static void BuildHybridclrAll()
         {
             Debug.Log("BuildHybridclr 开始");
             var st = System.Diagnostics.Stopwatch.StartNew();
+
+            hotUpdateDllPath = Path.Combine(HybridCLRSettings.Instance.hotUpdateDllCompileOutputRootDir, EditorUserBuildSettings.activeBuildTarget.ToString());
+
+            hotFixDllManifestSavePath = Path.Combine(hotUpdateDllPath, "hotFixDllManifest.json");
+
+            serverHotFixDllPath = Path.Combine("../HttpServer", PlatformMappingService.GetPlatformPathSubFolder(), "HotFixDll");
+
             PrebuildCommand.GenerateAll();
             LogTime("PrebuildCommand.GenerateAll", st.ElapsedMilliseconds);
 
@@ -76,12 +88,6 @@ namespace Assets.Editor.Build
             Debug.Log($"已将 {dllFiles.Length} 个 DLL 拷贝到 {targetPath} 并生成 {listFileName}");
         }
 
-
-        static string hotUpdateDllPath = Path.Combine(HybridCLRSettings.Instance.hotUpdateDllCompileOutputRootDir, EditorUserBuildSettings.activeBuildTarget.ToString());
-
-        static string hotFixDllManifestSavePath = Path.Combine(hotUpdateDllPath, "hotFixDllManifest.json");
-
-        static string serverHotFixDllPath = Path.Combine("../HttpServer", PlatformMappingService.GetPlatformPathSubFolder(), "HotFixDll");
         /// <summary>
         /// 生成HotFixManifest.json
         /// </summary>
@@ -90,6 +96,7 @@ namespace Assets.Editor.Build
         public static void GenHotFixManifest()
         {
             Debug.Log("开始生成 hotFixDllManifest.json");
+            Debug.Log("HotUpdateDllPath: " + hotUpdateDllPath);
 
             string[] guids = AssetDatabase.FindAssets("t:AssemblyDefinitionAsset");
             var manifest = new HotFixDllManifest();
