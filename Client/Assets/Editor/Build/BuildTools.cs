@@ -15,7 +15,7 @@ namespace Assets.Editor.Build
         public bool buildAddressable;
         public bool buildPlayer;
         public bool buildHybridclr;
-        public string date;
+        public string version;
 
     }
 
@@ -33,12 +33,11 @@ namespace Assets.Editor.Build
             buildParams.buildPlayer = true;
             //buildParams.buildAddressable = true;
             //buildParams.buildHybridclr = true;
-            buildParams.date = Time.time.ToString();
             //buildParams.targetPlatform = "Android";
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
             Init();
 
-            SwitchToTarget();
+            SwitchToTargetPlatform();
 
             if (buildParams.buildHybridclr)
             {
@@ -84,7 +83,7 @@ namespace Assets.Editor.Build
             string[] args = Environment.GetCommandLineArgs();
             buildParams.buildAddressable = bool.Parse(GetArgument(args, "-buildAddressable"));
             buildParams.targetPlatform = GetArgument(args, "-targetPlatform");
-            buildParams.date = GetArgument(args, "-date");
+            buildParams.version = GetArgument(args, "-version");
 
         }
 
@@ -96,7 +95,7 @@ namespace Assets.Editor.Build
             return null;
         }
 
-        static void SwitchToTarget()
+        static void SwitchToTargetPlatform()
         {
             var st = System.Diagnostics.Stopwatch.StartNew();
             var platform = buildParams.targetPlatform.ToLower() switch
@@ -113,6 +112,7 @@ namespace Assets.Editor.Build
                 EditorUserBuildSettings.SwitchActiveBuildTarget(group, platform);
                 Debug.Log($"Switch To {platform} Finished !!");
             }
+            PlayerSettings.bundleVersion = "1.2.3";
             LogTime("SwitchPlatform", st.ElapsedMilliseconds);
         }
 
