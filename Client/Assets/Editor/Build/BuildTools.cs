@@ -23,7 +23,7 @@ namespace Assets.Editor.Build
     {
         private static BuildParams buildParams = new BuildParams();
 
-        private static string OutputPath => $"../../Output/{buildParams.date}/";
+        private static string OutputPath => $"../../Output/{buildParams.version}/";
         [MenuItem("BuildTools/Build Full Game")]
         public static void BuildByCommandLine()
         {
@@ -81,6 +81,10 @@ namespace Assets.Editor.Build
         private static void CollectBuildParams()
         {
             string[] args = Environment.GetCommandLineArgs();
+            foreach (string arg in args)
+            {
+                Debug.Log("Build Arg: " + arg);
+            }
             buildParams.buildAddressable = bool.Parse(GetArgument(args, "-buildAddressable"));
             buildParams.targetPlatform = GetArgument(args, "-targetPlatform");
             buildParams.version = GetArgument(args, "-version");
