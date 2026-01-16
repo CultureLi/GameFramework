@@ -23,14 +23,16 @@ namespace Assets.Editor.Build
     {
         private static BuildParams buildParams = new BuildParams();
 
-        private static string OutputPath => $"../../Output/{buildParams.version}/";
+        private static string OutputPath = $"../../Output/{buildParams.version}/";
         [MenuItem("BuildTools/Build Full Game")]
         public static void BuildByCommandLine()
         {
             Debug.Log("Auto Build Start ...");
-            //CollectBuildParams();
+            CollectBuildParams();
 
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
+            OutputPath = $"../../Output/{buildParams.version}/";
+
             Init();
 
             SwitchToTargetPlatform();
