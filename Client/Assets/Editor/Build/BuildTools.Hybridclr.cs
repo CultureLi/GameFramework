@@ -13,7 +13,7 @@ using UnityEngine.AddressableAssets;
 
 namespace Assets.Editor.Build
 {
-    public partial class BuildTools
+    public static partial class BuildTools
     {
         static string hotUpdateDllPath = Path.Combine(HybridCLRSettings.Instance.hotUpdateDllCompileOutputRootDir, EditorUserBuildSettings.activeBuildTarget.ToString());
 

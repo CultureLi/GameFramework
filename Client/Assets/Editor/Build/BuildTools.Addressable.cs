@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Assets.Editor.Build
 {
-    public partial class BuildTools
+    public static partial class BuildTools
     {
 		[MenuItem("BuildTools/Addressable/Clear Cache")]
 		public static void ClearAddressablesCache()

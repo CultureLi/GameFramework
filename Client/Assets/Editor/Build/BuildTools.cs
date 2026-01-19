@@ -26,7 +26,7 @@ namespace Assets.Editor.Build
         }
     }
 
-    public partial class BuildTools
+    public static partial class BuildTools
     {
         private static BuildParams buildParams = new BuildParams();
 

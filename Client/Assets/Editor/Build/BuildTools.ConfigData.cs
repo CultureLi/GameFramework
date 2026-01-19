@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Assets.Editor.Build
 {
-    public partial class BuildTools
+    public static partial class BuildTools
     {
 
         [MenuItem("BuildTools/ConfigData/CopyToServer")]
