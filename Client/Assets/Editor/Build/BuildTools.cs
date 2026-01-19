@@ -26,6 +26,14 @@ namespace Assets.Editor.Build
         }
     }
 
+    public static class BuildTools2
+    {
+        public static void BuildByCommandLine()
+        {
+            Debug.Log("BuildByCommandLine Start ...222222222");
+        }
+    }
+
     public static partial class BuildTools
     {
         private static BuildParams buildParams = new BuildParams();
