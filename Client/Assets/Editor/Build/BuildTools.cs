@@ -30,12 +30,11 @@ namespace Assets.Editor.Build
     {
         private static BuildParams buildParams = new BuildParams();
 
-        private static string OutputPath = $"../../Output/{buildParams.version}/";
+        private static string OutputPath;
         [MenuItem("BuildTools/Build Full Game")]
         public static void BuildByCommandLine()
         {
             Debug.Log("BuildByCommandLine Start ...");
-            buildParams = new BuildParams();
             CollectBuildParams();
 
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
