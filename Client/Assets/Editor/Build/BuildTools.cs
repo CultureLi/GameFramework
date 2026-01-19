@@ -105,7 +105,7 @@ namespace Assets.Editor.Build
             {
                 if (args[i] == name && i + 1 < args.Length)
                 {
-                    var value = args[i];
+                    var value = args[i + 1];
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
             }
