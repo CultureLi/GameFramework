@@ -13,7 +13,6 @@ namespace Assets.Editor.Build
         public string targetPlatform = "Android";
         public string platformDir = Path.Combine("../HttpServer", "Android");
         public bool buildAddressable = true;
-        public bool buildPlayer = true;
         public bool buildHybridclr = true;
         public string version = "0.0.1";
 
@@ -21,7 +20,6 @@ namespace Assets.Editor.Build
         {
             Debug.Log($"targetPlatform: {targetPlatform}\n " +
                 $"buildAddressable: {buildAddressable}\n" +
-                $"buildPlayer: {buildPlayer}\n" +
                 $"buildHybridclr: {buildHybridclr}\n" +
                 $"version: {version}\n"
                 );
@@ -45,11 +43,15 @@ namespace Assets.Editor.Build
 
             Init();
 
-            /*SwitchToTargetPlatform();
+            SwitchToTargetPlatform();
 
             if (buildParams.buildHybridclr)
             {
                 BuildHybridclrAll();
+            }
+            else
+            {
+                Debug.Log("Jump Build Hybridclr");
             }
 
             if (buildParams.buildAddressable)
@@ -65,11 +67,9 @@ namespace Assets.Editor.Build
             {
                 Debug.Log("Jump Build Addressables");
             }
-            */
-            if (buildParams.buildPlayer)
-            {
-                BuildPlayer();
-            }
+            
+
+            BuildPlayer();
 
             CopyConfigDataToServer();
         }
