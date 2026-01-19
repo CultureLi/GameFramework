@@ -17,6 +17,15 @@ namespace Assets.Editor.Build
         public bool buildHybridclr = true;
         public string version = "0.0.1";
 
+        public void DebugInfo()
+        {
+            Debug.Log($"targetPlatform: {targetPlatform}\n " +
+                $"buildAddressable: {buildAddressable}\n" +
+                $"buildPlayer: {buildPlayer}\n" +
+                $"buildHybridclr: {buildHybridclr}\n" +
+                $"version: {version}\n"
+                );
+        }
     }
 
     public partial class BuildTools
@@ -27,7 +36,8 @@ namespace Assets.Editor.Build
         [MenuItem("BuildTools/Build Full Game")]
         public static void BuildByCommandLine()
         {
-            Debug.Log("Auto Build Start ...");
+            Debug.Log("BuildByCommandLine Start ...");
+            buildParams = new BuildParams();
             CollectBuildParams();
 
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
@@ -35,7 +45,7 @@ namespace Assets.Editor.Build
 
             Init();
 
-            SwitchToTargetPlatform();
+            /*SwitchToTargetPlatform();
 
             if (buildParams.buildHybridclr)
             {
@@ -55,7 +65,7 @@ namespace Assets.Editor.Build
             {
                 Debug.Log("Jump Build Addressables");
             }
-
+            */
             if (buildParams.buildPlayer)
             {
                 BuildPlayer();
@@ -83,18 +93,24 @@ namespace Assets.Editor.Build
             {
                 Debug.Log("Build Arg: " + arg);
             }
-            buildParams.buildAddressable = bool.Parse(GetArgument(args, "-buildAddressable"));
-            buildParams.targetPlatform = GetArgument(args, "-targetPlatform");
-            buildParams.version = GetArgument(args, "-version");
+            buildParams.buildAddressable = GetArgument<bool>(args, "-buildAddressable", true);
+            buildParams.targetPlatform = GetArgument<string>(args, "-targetPlatform", "Android");
+            buildParams.version = GetArgument<string>(args, "-version", "0.0.1");
 
+            buildParams.DebugInfo();
         }
 
-        static string GetArgument(string[] args, string name)
+        static T GetArgument<T>(string[] args, string name, T defaultValue)
         {
             for (int i = 0; i < args.Length; i++)
+            {
                 if (args[i] == name && i + 1 < args.Length)
-                    return args[i + 1];
-            return null;
+                {
+                    var value = args[i];
+                    return (T)Convert.ChangeType(value, typeof(T));
+                }
+            }
+            return defaultValue;
         }
 
         static void SwitchToTargetPlatform()
