@@ -4,7 +4,6 @@ using UnityEditor.Build.Reporting;
 using UnityEditor;
 using UnityEngine;
 using System.IO;
-using UnityEngine.AddressableAssets;
 
 namespace Assets.Editor.Build
 {
@@ -12,16 +11,17 @@ namespace Assets.Editor.Build
     {
         public string targetPlatform = "Android";
         public string platformDir = Path.Combine("../HttpServer", "Android");
-        public bool buildAddressable = true;
-        public bool buildHybridclr = true;
+        public bool buildAddressable = false;
+        public bool buildHybridclr = false;
         public string version = "0.0.1";
-
+        public string outputPath = $"../../Output/0.0.1/";
         public void DebugInfo()
         {
             Debug.Log($"targetPlatform: {targetPlatform}\n " +
                 $"buildAddressable: {buildAddressable}\n" +
                 $"buildHybridclr: {buildHybridclr}\n" +
-                $"version: {version}\n"
+                $"version: {version}\n" +
+                $"outputPath: {outputPath}\n"
                 );
         }
     }
@@ -30,7 +30,6 @@ namespace Assets.Editor.Build
     {
         private static BuildParams buildParams = new BuildParams();
 
-        private static string OutputPath;
         [MenuItem("BuildTools/Build Full Game")]
         public static void BuildByCommandLine()
         {
@@ -38,7 +37,6 @@ namespace Assets.Editor.Build
             CollectBuildParams();
 
             buildParams.platformDir = Path.Combine("../HttpServer", buildParams.targetPlatform);
-            OutputPath = $"../../Output/{buildParams.version}/";
 
             Init();
 
@@ -75,8 +73,8 @@ namespace Assets.Editor.Build
 
         private static void Init()
         {
-            if (!Directory.Exists(OutputPath))
-                Directory.CreateDirectory(OutputPath);
+            if (!Directory.Exists(buildParams.outputPath))
+                Directory.CreateDirectory(buildParams.outputPath);
 
             if (Directory.Exists(buildParams.platformDir))
             {
@@ -95,7 +93,7 @@ namespace Assets.Editor.Build
             buildParams.buildAddressable = GetArgument<bool>(args, "-buildAddressable", true);
             buildParams.targetPlatform = GetArgument<string>(args, "-targetPlatform", "Android");
             buildParams.version = GetArgument<string>(args, "-version", "0.0.1");
-
+            buildParams.outputPath = GetArgument<string>(args, "-outputPath", $"../../Output/{buildParams.version}/");
             buildParams.DebugInfo();
         }
 
@@ -151,12 +149,12 @@ namespace Assets.Editor.Build
             string suffix = GetFileSuffix(target);
             var productFileName = $"{productName}{suffix}";
 
-            var outputFilePath = $"{OutputPath}{productFileName}";
+            var outputFilePath = Path.Combine(buildParams.outputPath, productFileName);
 
             BuildPlayerOptions buildOptions = new BuildPlayerOptions
             {
                 scenes = scenes,
-                locationPathName = $"{OutputPath}{productFileName}",
+                locationPathName = outputFilePath,
                 target = target,
                 options = BuildOptions.None
             };
