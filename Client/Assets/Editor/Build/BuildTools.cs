@@ -11,8 +11,8 @@ namespace Assets.Editor.Build
     {
         public string targetPlatform = "Android";
         public string platformDir = Path.Combine("../HttpServer", "Android");
-        public bool buildAddressable = false;
-        public bool buildHybridclr = false;
+        public bool buildAddressable = true;
+        public bool buildHybridclr = true;
         public string version = "0.0.1";
         public string outputPath = $"../../Output/0.0.1/";
         public void DebugInfo()
