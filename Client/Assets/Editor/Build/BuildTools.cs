@@ -17,7 +17,7 @@ namespace Assets.Editor.Build
         public string outputPath = $"../../Output/0.0.1/";
         public void DebugInfo()
         {
-            Debug.Log($"targetPlatform: {targetPlatform}\n " +
+            Debug.Log($"DebugInfo ------------- targetPlatform: {targetPlatform}\n " +
                 $"buildAddressable: {buildAddressable}\n" +
                 $"buildHybridclr: {buildHybridclr}\n" +
                 $"version: {version}\n" +
@@ -101,9 +101,10 @@ namespace Assets.Editor.Build
         {
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == name && i + 1 < args.Length)
+                if (args[i].StartsWith(name))
                 {
-                    var value = args[i + 1];
+                    var split = args[i].Split('=');
+                    var value = split[1];
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
             }
