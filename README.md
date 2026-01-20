@@ -1,1 +1,4 @@
-# GameFramework
+Client 项目工程
+HttpServer 模拟了一个httpServer服务器，热更时下载bundle
+Protos 协议
+BuildScript 构建脚本，新建构建目录，把BuildScript放入构建目录中，在jenkins中调用构建脚本

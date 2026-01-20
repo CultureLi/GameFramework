@@ -1,4 +1,4 @@
-@echo off
+::@echo off
 setlocal EnableDelayedExpansion
 
 :: 输入参数
@@ -11,12 +11,13 @@ set CleanProject=%4
 set PROJECT_DIR=E:\Work\BuildDir\AutoBuild
 set GIT_URL=https://github.com/CultureLi/GameFramework.git
 
-set BUILD_LOG_NAME=unity_build.log
 
 :: 输出开始信息
 echo Version at %Version%
 echo BuildAddressable: %BuildAddressable%
 echo TargetPlatform: %TargetPlatform%
+
+set BUILD_LOG_NAME=unity_build_%Version%.log
 
 :: -----------------------------
 :: 处理工程目录
@@ -57,23 +58,31 @@ if /I "%CleanProject%"=="true" (
 )
 
 :: -----------------------------
-:: 执行 Unity 构建
+:: 执行 Unity 构建 -executeMethod Assets.Editor.Build.BuildTools.BuildByCommandLine ^
+::    -logFile %BUILD_LOG_NAME%
 :: -----------------------------
 echo [Build Unity Project]
 "C:\Program Files\Unity\Hub\Editor\2022.3.62f2\Editor\Unity.exe" ^
     -batchmode ^
     -projectPath "%PROJECT_DIR%\Client" ^
-    -executeMethod BuildTools.BuildByCommandLine ^
-    -version %Version% ^
-    -buildAddressable %BuildAddressable% ^
-    -targetPlatform %TargetPlatform% ^
+    -executeMethod "Assets.Editor.Build.BuildTools.BuildByCommandLine" ^
     -quit ^
-    -logFile %BUILD_LOG_NAME%
+    -logFile "E:\Work\BuildDir\Output\%Version%\unity_build.log" ^
+    --version="%Version%" ^
+    --buildAddressable="%BuildAddressable%" ^
+    --targetPlatform="%TargetPlatform%"
 
+
+set UNITY_EXIT_CODE=%ERRORLEVEL%
 :: 检查 Unity 构建是否成功
-if errorlevel 1 (
-    echo Unity build failed!
-    exit /b 1
+if NOT "%UNITY_EXIT_CODE%"=="0" (
+    echo.
+    echo =========================================
+    echo Unity build failed! ExitCode=%UNITY_EXIT_CODE%
+    echo -------- Unity Log --------
+    type "%UNITY_LOG%"
+    echo =========================================
+    exit /b %UNITY_EXIT_CODE%
 )
 
 :: 输出日志路径
