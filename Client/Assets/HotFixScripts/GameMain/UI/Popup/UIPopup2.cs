@@ -38,10 +38,9 @@ namespace GameMain.UI
             FW.UIMgr.OpenPopup("Common/MsgBox/UICommonMsgBox", uiData);
         }
 
-        [Button]
-        void ChangeIcon(string spriteName)
+        public void ChangeIcon()
         {
-            icon.SetSprite(spriteName);
+            icon.SetSprite("Icon_Buff_01");
         }
     }
 }
