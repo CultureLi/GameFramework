@@ -66,21 +66,17 @@ namespace GameMain.UI
 
         public int StateCount => _states.Count;
 
-        bool _initSetted = false;
+
         private int _selectedIndex;
         public int SelectedIndex
         {
             get => _selectedIndex;
             set
             {
-                if (_selectedIndex != value || !_initSetted)
+                if (0 <= value && value < _states.Count)
                 {
-                    _initSetted = true;
-                    if (0 <= value && value < _states.Count)
-                    {
-                        _selectedIndex = value;
-                        Apply();
-                    }
+                    _selectedIndex = value;
+                    Apply();
                 }
             }
         }
@@ -205,14 +201,15 @@ namespace GameMain.UI
         public void RefreshCtrlList()
         {
             _stateCtrlList.Clear();
-            var list = _owner.GetComponentsInChildren<UIStateCtrlBase>();
+            var list = _owner.GetComponentsInChildren<UIStateCtrlBase>(true);
             foreach (var ctrl in list)
             {
-                if (ctrl.CtrlUID == _uid && ctrl.GetComponentInParent<UIStateControllerMgr>() == _owner)
+                if (ctrl.CtrlUID == _uid && ctrl.GetComponentInParent<UIStateControllerMgr>(true) == _owner)
                 {
                     _stateCtrlList.Add(ctrl);
                 }
             }
+            EditorUtility.SetDirty(_owner);
         }
 
         public void DrawStateItems()
@@ -277,12 +274,14 @@ namespace GameMain.UI
             if (!_stateCtrlList.Contains(ctrl))
             {
                 _stateCtrlList.Add(ctrl);
+                EditorUtility.SetDirty(_owner);
             }
         }
 
         public void OnRemoveCtrl(UIStateCtrlBase ctrl)
         {
             _stateCtrlList.Remove(ctrl);
+            EditorUtility.SetDirty(_owner);
         }
 #endif
     }

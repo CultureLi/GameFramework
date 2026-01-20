@@ -172,9 +172,9 @@ namespace GameMain.UI
             {
                 _ctrlUID = CtrlMgr.ControllerList[newSelectedIdx].UID;
                 FixedValuesCnt();
-                controller.OnRemoveCtrl(this);
+                controller?.OnRemoveCtrl(this);
                 controller = CtrlMgr.GetController(_ctrlUID);
-                controller.OnAddCtrl(this);
+                controller?.OnAddCtrl(this);
             }
             GUILayout.EndHorizontal();
 

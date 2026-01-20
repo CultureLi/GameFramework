@@ -28,34 +28,53 @@ namespace GameMain.UI
         private void OnEnable()
         {
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
-            {
-                //打开prefab的时候设置状态
-                foreach (var ctrl in _controllerList)
-                {
-                    ctrl.SelectedIndex = 0;
-                }
-            }
+            EditorApplication.delayCall += OnPrefabOpend;
 #endif
         }
 
         private void OnDisable()
         {
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            OnPrefabClosing();
+            EditorApplication.delayCall -= OnPrefabOpend;
+#endif
+        }
+
+
+        //----------------------------- Editor ---------------------------------
+#if UNITY_EDITOR
+        void OnPrefabOpend()
+        {
+            if (this == null)
+                return;
+
+            //打开prefab的时候设置状态
+            if (IsInPrefabEditMode())
             {
-                // 关闭prefab的时候刷新列表
+                foreach (var ctrl in _controllerList)
+                {
+                    ctrl.SelectedIndex = 0;
+                }
+            }
+        }
+        void OnPrefabClosing()
+        {
+            // 关闭prefab的时候刷新列表
+            if (IsInPrefabEditMode())
+            {
                 foreach (var ctrl in _controllerList)
                 {
                     ctrl.RefreshCtrlList();
                 }
             }
-#endif
         }
 
-        //----------------------------- Editor ---------------------------------
+        private bool IsInPrefabEditMode()
+        {
+            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            return prefabStage != null && prefabStage.IsPartOfPrefabContents(gameObject);
+        }
 
-#if UNITY_EDITOR
         int GenUID()
         {
             int id = 0;
