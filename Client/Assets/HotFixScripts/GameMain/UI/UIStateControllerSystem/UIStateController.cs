@@ -129,15 +129,13 @@ namespace GameMain.UI
         [PropertyOrder(0)]
         private void Draw()
         {
-            SirenixEditorGUI.BeginHorizontalToolbar();
-
             DrawStateItems();
 
-            GUILayout.FlexibleSpace();
+            SirenixEditorGUI.BeginHorizontalToolbar();
 
             // Delete last
             GUI.enabled = _states.Count > 2;
-            if (GUILayout.Button("Del", GUILayout.Height(30), GUILayout.Width(40)))
+            if (GUILayout.Button("删除状态", GUILayout.Height(30), GUILayout.Width(80)))
             {
                 bool ok = EditorUtility.DisplayDialog("提示", "此操作会删除【最后一个】状态", "确定", "取消");
                 if (ok)
@@ -146,9 +144,9 @@ namespace GameMain.UI
                 }
             }
             GUI.enabled = true;
-
+            GUILayout.FlexibleSpace();
             // Add
-            if (GUILayout.Button("Add", GUILayout.Height(30), GUILayout.Width(40)))
+            if (GUILayout.Button("添加状态", GUILayout.Height(30), GUILayout.Width(80)))
             {
                 AddState();
             }
@@ -225,30 +223,54 @@ namespace GameMain.UI
 
         public void DrawStateItems()
         {
-            SirenixEditorGUI.BeginHorizontalToolbar();
+            float viewWidth = EditorGUIUtility.currentViewWidth;
 
-            // Tabs
+            float currentLineWidth = 0f;
+
+            SirenixEditorGUI.BeginVerticalList();
+            GUILayout.BeginHorizontal();
+
             foreach (var item in _states)
             {
                 bool isSelected = item.Idx == _selectedIndex;
+
+                string text = item.GetShowName();
+                GUIStyle style = SirenixGUIStyles.ToolbarButton;
+
+                //Vector2 size = style.CalcSize(new GUIContent(text));
+                //float buttonWidth = size.x + 12f; // padding
+                float buttonWidth = 60; // padding
+
+                float buttonHeight = 30f;
+
+                if (currentLineWidth + buttonWidth > viewWidth)
+                {
+                    GUILayout.EndHorizontal();
+                    GUILayout.Space(1f);
+                    GUILayout.BeginHorizontal();
+                    currentLineWidth = 0f;
+                }
 
                 Color old = GUI.color;
                 if (isSelected)
                     GUI.color = Color.green.WithAlpha(0.8f);
 
-                if (GUILayout.Button(
-                    item.GetShowName(), GUILayout.Height(30)))
+                if (GUILayout.Button(text, style, GUILayout.Width(buttonWidth), GUILayout.Height(buttonHeight)))
                 {
-                    if (_selectedIndex == item.Idx)
-                        return;
-                    SelectedIndex = item.Idx;
-                    EditorUtility.SetDirty(_owner);
+                    if (_selectedIndex != item.Idx)
+                    {
+                        SelectedIndex = item.Idx;
+                        EditorUtility.SetDirty(_owner);
+                    }
                 }
 
                 GUI.color = old;
+
+                currentLineWidth += buttonWidth + 4f;
             }
 
-            SirenixEditorGUI.EndHorizontalToolbar();
+            GUILayout.EndHorizontal();
+            SirenixEditorGUI.EndVerticalList();
         }
 
 

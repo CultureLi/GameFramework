@@ -178,15 +178,13 @@ namespace GameMain.UI
             }
             GUILayout.EndHorizontal();
 
+            controller.DrawStateItems();
+
             if (controller != null)
             {
                 SirenixEditorGUI.BeginHorizontalToolbar();
 
-                controller.DrawStateItems();
-
-                GUILayout.FlexibleSpace();
-
-                if (GUILayout.Button("记录", GUILayout.Height(30), GUILayout.Width(60)))
+                if (GUILayout.Button("记录", GUILayout.Height(30)))
                 {
                     Capture(controller.SelectedIndex);
                 }
