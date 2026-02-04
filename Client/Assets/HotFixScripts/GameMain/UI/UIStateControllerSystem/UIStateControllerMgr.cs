@@ -35,7 +35,6 @@ namespace GameMain.UI
         private void OnDisable()
         {
 #if UNITY_EDITOR
-            OnPrefabClosing();
             EditorApplication.delayCall -= OnPrefabOpend;
 #endif
         }
@@ -53,18 +52,12 @@ namespace GameMain.UI
             {
                 foreach (var ctrl in _controllerList)
                 {
-                    ctrl.SelectedIndex = 0;
-                }
-            }
-        }
-        void OnPrefabClosing()
-        {
-            // 关闭prefab的时候刷新列表
-            if (IsInPrefabEditMode())
-            {
-                foreach (var ctrl in _controllerList)
-                {
+                    if (ctrl.Owner == null)
+                        ctrl.Owner = this;
+
                     ctrl.RefreshCtrlList();
+
+                    ctrl.SelectedIndex = 0;
                 }
             }
         }

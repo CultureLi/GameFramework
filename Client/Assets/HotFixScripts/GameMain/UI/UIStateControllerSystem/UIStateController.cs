@@ -53,8 +53,19 @@ namespace GameMain.UI
         [OnValueChanged("OnNameValueChanged")]
         string _name;
         public string Name => _name;
-        [SerializeReference, HideInInspector]
+        [SerializeField, HideInInspector]
         UIStateControllerMgr _owner;
+        public UIStateControllerMgr Owner
+        {
+            get
+            {
+                return _owner;
+            }
+            set
+            {
+                _owner = value;
+            }
+        }
 
         [SerializeField, HideInInspector]
         [ListDrawerSettings(HideAddButton = true, HideRemoveButton = true, DraggableItems = false, DefaultExpandedState = false)]
