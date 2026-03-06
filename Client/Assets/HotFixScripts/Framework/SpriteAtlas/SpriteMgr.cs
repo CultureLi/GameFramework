@@ -17,7 +17,7 @@ namespace Framework
             AutoReleaseSprite.Init(this);
 
             _resMgr = resMgr;
-            var op = resMgr.LoadAsset<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+            var op = resMgr.LoadAsset<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 _data = op.Result;

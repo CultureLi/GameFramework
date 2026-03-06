@@ -67,7 +67,7 @@ namespace Assets.Editor.Addressable
         {
             try
             {
-                var mapper = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+                var mapper = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
                 foreach (var entry in ChangedEntries)
                 {
                     OnUIGroupEntryChanged(mapper, entry.Item1, entry.Item2);

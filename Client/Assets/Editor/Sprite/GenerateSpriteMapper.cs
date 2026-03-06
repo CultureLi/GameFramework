@@ -19,7 +19,7 @@ namespace Assets.Editor
         {
             Debug.Log("GenSpriteMapper Stat..............");
             var st = System.Diagnostics.Stopwatch.StartNew();
-            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
             so.Clear();
@@ -134,7 +134,7 @@ namespace Assets.Editor
         //[MenuItem("Tools/UI/Clear SpriteMapper", false, 1000)]
         public static void ClearSpriteMapper()
         {
-            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/ScriptableObject/SpriteMapper.asset");
+            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
 
