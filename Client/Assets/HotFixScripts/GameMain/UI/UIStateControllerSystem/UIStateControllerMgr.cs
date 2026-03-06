@@ -25,6 +25,17 @@ namespace GameMain.UI
             return _controllerList.Find(e => e.UID == uid);
         }
 
+        //void Awake()
+        //{
+        //    //Debug.LogError($"dddd owner00");
+        //    foreach (var l in _controllerList)
+        //    {
+        //        if (l != null)
+        //            l.SetOwner(this);
+        //    }
+        //}
+
+
         private void OnEnable()
         {
 #if UNITY_EDITOR
@@ -36,16 +47,15 @@ namespace GameMain.UI
         {
 #if UNITY_EDITOR
             EditorApplication.delayCall -= OnPrefabOpend;
+            OnPrefabClosing();
 #endif
         }
 
-
-        //----------------------------- Editor ---------------------------------
 #if UNITY_EDITOR
+
         void OnPrefabOpend()
         {
-            if (this == null)
-                return;
+            if (this == null) return;
 
             //打开prefab的时候设置状态
             if (IsInPrefabEditMode())
@@ -56,10 +66,23 @@ namespace GameMain.UI
                         ctrl.Owner = this;
 
                     ctrl.RefreshCtrlList();
-
                     ctrl.SelectedIndex = 0;
                 }
             }
+        }
+        void OnPrefabClosing()
+        {
+            // 关闭prefab的时候刷新列表, 这个保存不了
+            /*if (IsInPrefabEditMode())
+            {
+                foreach (var ctrl in _controllerList)
+                {
+                    if (ctrl.Owner == null)
+                        ctrl.Owner = this;
+                    ctrl.RefreshCtrlList();
+                    AssetDatabase.SaveAssets();
+                }
+            }*/
         }
 
         private bool IsInPrefabEditMode()
@@ -67,7 +90,11 @@ namespace GameMain.UI
             var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
             return prefabStage != null && prefabStage.IsPartOfPrefabContents(gameObject);
         }
+#endif
 
+        //----------------------------- Editor ---------------------------------
+
+#if UNITY_EDITOR
         int GenUID()
         {
             int id = 0;

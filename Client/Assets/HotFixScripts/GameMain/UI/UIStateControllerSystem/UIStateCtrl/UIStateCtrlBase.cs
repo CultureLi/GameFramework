@@ -203,7 +203,7 @@ namespace GameMain.UI
                 return;
             if (index == controller.SelectedIndex)
             {
-                EditorGUI.DrawRect(rect, Color.green.WithAlpha(0.3f));
+                EditorGUI.DrawRect(rect, UIStateControllerHelper.listLightColor);
             }
         }
 

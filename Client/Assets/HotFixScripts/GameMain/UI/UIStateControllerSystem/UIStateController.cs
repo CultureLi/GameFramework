@@ -53,7 +53,7 @@ namespace GameMain.UI
         [OnValueChanged("OnNameValueChanged")]
         string _name;
         public string Name => _name;
-        [SerializeField, HideInInspector]
+        [SerializeField]
         UIStateControllerMgr _owner;
         public UIStateControllerMgr Owner
         {
@@ -77,7 +77,7 @@ namespace GameMain.UI
 
         public int StateCount => _states.Count;
 
-
+        bool _initSetted = false;
         private int _selectedIndex;
         public int SelectedIndex
         {
@@ -92,8 +92,8 @@ namespace GameMain.UI
             }
         }
 
-        [SerializeField]
         [HideInInspector]
+        [SerializeField]
         private List<UIStateCtrlBase> _stateCtrlList = new List<UIStateCtrlBase>();
         private List<UIStateCtrlBase> StateCtrlList => _stateCtrlList;
 
@@ -104,6 +104,12 @@ namespace GameMain.UI
             _uid = uid;
             _name = $"Controller_{uid}";
         }
+
+        //public void SetOwner(UIStateControllerMgr owner)
+        //{
+        //    this._owner = owner;
+        //}
+
 
         void Apply()
         {
@@ -152,6 +158,8 @@ namespace GameMain.UI
             }
 
             SirenixEditorGUI.EndHorizontalToolbar();
+
+
 
             _statesFoldout = EditorGUILayout.Foldout(_statesFoldout, $"编辑", true);
             if (_statesFoldout)
@@ -274,6 +282,7 @@ namespace GameMain.UI
         }
 
 
+
         private void AddState()
         {
             _states.Add(new UIStateItem(_states.Count));
@@ -307,8 +316,8 @@ namespace GameMain.UI
             if (!_stateCtrlList.Contains(ctrl))
             {
                 _stateCtrlList.Add(ctrl);
-                EditorUtility.SetDirty(_owner);
             }
+            EditorUtility.SetDirty(_owner);
         }
 
         public void OnRemoveCtrl(UIStateCtrlBase ctrl)
