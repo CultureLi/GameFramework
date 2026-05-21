@@ -1,4 +1,4 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -71,7 +71,7 @@ namespace GameMain.UI
             {
                 if (_ctrlMgr == null)
                 {
-                    _ctrlMgr = GetComponentInParent<UIStateControllerMgr>(true);
+                    _ctrlMgr = transform.parent?.GetComponentInParent<UIStateControllerMgr>(true);
                 }
                 return _ctrlMgr;
             }

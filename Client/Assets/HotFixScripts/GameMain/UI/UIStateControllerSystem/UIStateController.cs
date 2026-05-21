@@ -1,4 +1,4 @@
-﻿using Sirenix.OdinInspector;
+using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -221,7 +221,7 @@ namespace GameMain.UI
             var list = _owner.GetComponentsInChildren<UIStateCtrlBase>(true);
             foreach (var ctrl in list)
             {
-                if (ctrl.CtrlUID == _uid && ctrl.GetComponentInParent<UIStateControllerMgr>(true) == _owner)
+                if (ctrl.CtrlUID == _uid && ctrl.transform.parent?.GetComponentInParent<UIStateControllerMgr>(true) == _owner)
                 {
                     _stateCtrlList.Add(ctrl);
                 }
