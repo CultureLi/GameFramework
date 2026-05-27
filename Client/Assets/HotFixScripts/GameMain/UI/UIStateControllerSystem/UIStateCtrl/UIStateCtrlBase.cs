@@ -153,9 +153,13 @@ namespace GameMain.UI
             GUILayout.BeginHorizontal();
             GUILayout.Label("控制器:", GUILayout.Width(50));
             GUILayout.FlexibleSpace();
+
+            var cnt = CtrlMgr.ControllerList.Count;
+            if (_ctrlUID == 0 && cnt > 0)
+                _ctrlUID = CtrlMgr.ControllerList[0].UID;
+
             var controller = CtrlMgr.GetController(_ctrlUID);
             var selectedIdx = -1;
-            var cnt = CtrlMgr.ControllerList.Count;
             string[] options = new string[cnt];
             for (var i = 0; i < cnt; i++)
             {
