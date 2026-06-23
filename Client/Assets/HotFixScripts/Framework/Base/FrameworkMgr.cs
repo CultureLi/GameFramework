@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Framework
@@ -26,14 +26,17 @@ namespace Framework
         /// <summary>
         /// 关闭并清理所有游戏框架模块。
         /// </summary>
-        public static void Shutdown()
+        public static void Shutdown(EShutdownType type)
         {
             for (LinkedListNode<IFramework> current = _gameFrameworkModules.Last; current != null; current = current.Previous)
             {
-                current.Value.Shutdown();
+                current.Value.Shutdown(type);
             }
             ReferencePool.ClearAll();
-            _gameFrameworkModules.Clear();
+            if (type == EShutdownType.Shutdown)
+            {
+                _gameFrameworkModules.Clear();
+            }
         }
 
         /// <summary>

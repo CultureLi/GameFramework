@@ -1,4 +1,4 @@
-﻿using Framework;
+using Framework;
 using GameEntry;
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,10 @@ namespace GameMain
         protected override void OnEnter()
         {
             FW.UIMgr.OpenHud("Main/UIMain");
+
+            FW.GameLogicMgr.CreateMgr<PlayerInfoMgr>();
+
+            PlayerInfoMgr.I.Test();
         }
     }
 }

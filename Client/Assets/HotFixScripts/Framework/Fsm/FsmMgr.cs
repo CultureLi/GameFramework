@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Framework
@@ -75,7 +75,7 @@ namespace Framework
         /// <summary>
         /// 关闭并清理有限状态机管理器。
         /// </summary>
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             foreach (KeyValuePair<string, Fsm> fsm in _fsms)
             {

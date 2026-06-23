@@ -1,4 +1,4 @@
-﻿using Framework;
+using Framework;
 using GameEntry.Stage;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,6 +21,10 @@ namespace GameEntry
             });
 
             _stageFsm.Start<EntranceStartStage>();
+        }
+        private void OnDestroy()
+        {
+            FW.FsmMgr.DestroyFsm(_stageFsm);
         }
     }
 }

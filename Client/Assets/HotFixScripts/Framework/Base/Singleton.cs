@@ -1,4 +1,4 @@
-﻿namespace Framework
+namespace Framework
 {
     public abstract class Singleton<T> where T : class, new()
     {
@@ -24,7 +24,7 @@
         }
 
         // 可选的释放方法
-        public static void Dispose()
+        public virtual void Dispose()
         {
             _instance = null;
         }

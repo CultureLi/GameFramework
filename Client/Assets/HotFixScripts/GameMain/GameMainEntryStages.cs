@@ -1,4 +1,5 @@
-﻿using Framework;
+using Framework;
+using GameEntry;
 using GameEntry.Stage;
 using GameMain;
 using System;
@@ -21,6 +22,11 @@ namespace Assets.HotFixScripts.GameMain
             });
 
             _stageFsm.Start<MainEntryStartStage>();
+        }
+
+        private void OnDestroy()
+        {
+            FW.FsmMgr.DestroyFsm(_stageFsm);
         }
     }
 }

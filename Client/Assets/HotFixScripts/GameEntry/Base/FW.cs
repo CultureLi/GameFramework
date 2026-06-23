@@ -1,4 +1,4 @@
-﻿using Framework;
+using Framework;
 using UnityEngine;
 
 namespace GameEntry
@@ -15,6 +15,8 @@ namespace GameEntry
         public static IConfigMgr CfgMgr { get; private set; }
         public static ILocalizationMgr LocalizationMgr { get; private set; }
         public static ISpriteMgr SpriteMgr { get; private set; }
+
+        public static IGameLogicMgr GameLogicMgr { get; private set; }
 
         public static MonoBehaviour CoroutineRunner
         {
@@ -40,6 +42,8 @@ namespace GameEntry
             UIMgr.Init(ResMgr);
             SpriteMgr.Init(ResMgr);
 
+            GameLogicMgr = FrameworkMgr.GetModule<IGameLogicMgr>();
+
             Application.quitting -= OnApplicationShutdown;
             Application.quitting += OnApplicationShutdown;
         }
@@ -52,7 +56,19 @@ namespace GameEntry
         void OnApplicationShutdown()
         {
             CoroutineRunner.StopAllCoroutines();
-            FrameworkMgr.Shutdown();
+            FrameworkMgr.Shutdown(EShutdownType.Shutdown);
+        }
+
+        public void ReStart()
+        {
+            CoroutineRunner.StopAllCoroutines();
+            FrameworkMgr.Shutdown(EShutdownType.Restart);
+            UIMgr.CloseAll();
+
+            System.GC.Collect();
+
+
+            GameEntryMgr.Entry().Forget();
         }
     }
 }

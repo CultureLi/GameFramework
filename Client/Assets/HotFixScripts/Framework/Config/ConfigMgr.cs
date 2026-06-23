@@ -1,4 +1,4 @@
-﻿using AOTBase;
+using AOTBase;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,7 +40,6 @@ namespace Framework
         /// </summary>
         public void Initialize()
         {
-            Shutdown();
             foreach (var zipName in new string[] { "configData.zip", "i18n.zip" })
             {
                 var zipPath = Path.Combine(Application.persistentDataPath, "Config", zipName);
@@ -127,7 +126,7 @@ namespace Framework
             return buf;
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             foreach ((var _, var zipArchive) in _zipArchiveMap)
             {

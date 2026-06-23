@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Framework
@@ -64,7 +64,7 @@ namespace Framework
         /// <summary>
         /// 关闭并清理对象池管理器。
         /// </summary>
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             foreach (KeyValuePair<TypeNamePair, ObjectPoolBase> objectPool in _objectPools)
             {

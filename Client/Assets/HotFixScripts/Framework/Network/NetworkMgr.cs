@@ -1,4 +1,4 @@
-﻿using Google.Protobuf;
+using Google.Protobuf;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -70,12 +70,13 @@ namespace Framework
             }
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             foreach ((var k, var instance) in _tcpInstances)
             {
                 instance.Dispose();
             }
+            _tcpInstances.Clear();
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -59,7 +59,7 @@ namespace Framework
             _resMgr.Release(sprite);
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             _resMgr.Release(_data);
         }

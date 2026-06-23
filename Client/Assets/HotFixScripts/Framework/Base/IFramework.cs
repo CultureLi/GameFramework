@@ -1,5 +1,13 @@
-﻿namespace Framework
+using UnityEditor;
+
+namespace Framework
 {
+    public enum EShutdownType
+    {
+        Restart,
+        Shutdown,
+    }
+
     /// <summary>
     /// 游戏框架模块抽象类。
     /// </summary>
@@ -27,6 +35,6 @@
         /// <summary>
         /// 关闭并清理游戏框架模块。
         /// </summary>
-        public void Shutdown();
+        public void Shutdown(EShutdownType type);
     }
 }

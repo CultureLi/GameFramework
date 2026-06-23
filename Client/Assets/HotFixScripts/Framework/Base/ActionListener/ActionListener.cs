@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Framework
@@ -113,7 +113,7 @@ namespace Framework
             _nodeQueue.Clear();
         }
 
-        public void Shutdown()
+        public void Dispose()
         {
             ClearNodes();
             _listeners.Clear();

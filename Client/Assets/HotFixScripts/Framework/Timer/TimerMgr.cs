@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -85,7 +85,7 @@ namespace Framework
             _timers.Clear();
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             Release();
         }

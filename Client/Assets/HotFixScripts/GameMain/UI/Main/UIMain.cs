@@ -1,4 +1,4 @@
-﻿using Framework;
+using Framework;
 using GameEntry;
 using System;
 using System.Collections.Generic;
@@ -13,10 +13,9 @@ namespace GameMain.UI
 {
     internal class UIMain : ViewBase
     {
-
         public void OnBtnGotoLoginClick()
         {
-            GameEntryMgr.Entry();
+            FW.I.ReStart();
         }
 
         public override void OnShow(bool isInitShow, ViewData data)

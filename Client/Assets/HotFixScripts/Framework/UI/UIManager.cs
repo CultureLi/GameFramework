@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -41,6 +41,10 @@ namespace Framework
 
         public void Init(IResourceMgr resMgr)
         {
+            if (UIRoot != null)
+            {
+                return;
+            }
             var handle = resMgr.InstantiateAsync("Assets/BundleRes/UI/Root/UIRoot.prefab");
             handle.WaitForCompletion();
             UIRoot = handle.Result.GetComponent<UIRoot>();
@@ -245,7 +249,7 @@ namespace Framework
         /// <summary>
         /// 关闭并清理界面管理器。
         /// </summary>
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             CloseAll();
             _groups.Clear();

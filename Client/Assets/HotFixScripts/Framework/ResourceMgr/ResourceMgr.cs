@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -398,7 +398,7 @@ namespace Framework
 
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
 
         }

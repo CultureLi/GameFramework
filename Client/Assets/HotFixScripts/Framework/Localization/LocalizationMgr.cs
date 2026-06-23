@@ -1,4 +1,4 @@
-﻿using cfg;
+using cfg;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -206,7 +206,7 @@ namespace Framework
         }
 
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
             
         }

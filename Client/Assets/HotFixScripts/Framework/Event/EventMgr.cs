@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Framework
 {
@@ -56,9 +56,9 @@ namespace Framework
             _ActionListener.Update(elapseSeconds, realElapseSeconds);
         }
 
-        public void Shutdown()
+        public void Shutdown(EShutdownType type)
         {
-            _ActionListener?.Shutdown();
+            _ActionListener?.Dispose();
         }
     }
 }
