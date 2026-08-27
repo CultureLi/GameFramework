@@ -1,8 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace GameMain.UI
 {
+    /// <summary>
+    /// 控制Image、Text的颜色
+    /// </summary>
     [SerializeField]
     public sealed class UIStateCtrlColor : UIStateCtrlBase<Color>
     {

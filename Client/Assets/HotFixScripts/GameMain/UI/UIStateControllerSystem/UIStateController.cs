@@ -161,7 +161,7 @@ namespace GameMain.UI
 
 
 
-            _statesFoldout = EditorGUILayout.Foldout(_statesFoldout, $"编辑", true);
+            _statesFoldout = EditorGUILayout.Foldout(_statesFoldout, $"状态说明", true);
             if (_statesFoldout)
             {
                 EditorGUI.indentLevel++;
