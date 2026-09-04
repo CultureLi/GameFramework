@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Framework;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace GameEntry
             //在completed回调中调用handler.WaitForCompletion(),或者加载其他资源会报错, 所以在帧末在处理
             ///Reentering the Update method is not allowed.  This can happen when calling WaitForCompletion on an operation while inside of a callback
 
-            await FW.ResMgr.LoadSceneAsync("Main").ToUniTask(FW.CoroutineRunner);
+            await FW.ResMgr.LoadSceneAsync("Login").ToUniTask(FW.CoroutineRunner);
 
             await UniTask.WaitForEndOfFrame(FW.CoroutineRunner);
             new GameObject("GameEntryStages").AddComponent<GameEntryStages>();

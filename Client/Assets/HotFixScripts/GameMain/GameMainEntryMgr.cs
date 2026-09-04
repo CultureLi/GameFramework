@@ -13,7 +13,7 @@ namespace GameMain
             Utility.Test();
             Debug.Log("GameMainEntry");
 
-            await FW.ResMgr.LoadSceneAsync("OpenWorld").ToUniTask(FW.CoroutineRunner);
+            await FW.ResMgr.LoadSceneAsync("Main").ToUniTask(FW.CoroutineRunner);
 
             await UniTask.WaitForEndOfFrame(FW.CoroutineRunner);
             new GameObject("GameMainEntryStages").AddComponent<GameMainEntryStages>();

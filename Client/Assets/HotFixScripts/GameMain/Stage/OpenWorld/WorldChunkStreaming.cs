@@ -33,7 +33,7 @@ namespace GameMain
         [Header("Addressables")]
         [Tooltip("Prefab path prefix (Addressables key). '{0}' = x index, '{1}' = y index.")]
         public string chunkAddressPattern =
-            "Assets/BundleRes/Scene/SceneData/OpenWorldTerrainData/GridData/OpenWorldTerrainData x({0}) y({1}).prefab";
+            "Assets/BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData x({0}) y({1}).prefab";
 
         [Header("Pool")]
         public string poolName = "OpenWorldChunkPool";
