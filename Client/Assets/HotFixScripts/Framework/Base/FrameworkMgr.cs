@@ -8,6 +8,7 @@ namespace Framework
     /// </summary>
     public static class FrameworkMgr
     {
+        public static EShutdownType ShutdownType { get; private set; } = EShutdownType.None;
         private static readonly LinkedList<IFramework> _gameFrameworkModules = new LinkedList<IFramework>();
 
         /// <summary>
@@ -28,6 +29,8 @@ namespace Framework
         /// </summary>
         public static void Shutdown(EShutdownType type)
         {
+            ShutdownType = type;
+
             for (LinkedListNode<IFramework> current = _gameFrameworkModules.Last; current != null; current = current.Previous)
             {
                 current.Value.Shutdown(type);

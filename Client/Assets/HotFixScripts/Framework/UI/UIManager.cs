@@ -252,7 +252,10 @@ namespace Framework
         public void Shutdown(EShutdownType type)
         {
             CloseAll();
-            _groups.Clear();
+            if (type == EShutdownType.Shutdown)
+            {
+                _groups.Clear();
+            }
         }
 
         public void SetCanBeReleased(GameObject go, bool flag)
