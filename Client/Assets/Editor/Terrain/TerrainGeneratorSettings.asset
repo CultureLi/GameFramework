@@ -12,19 +12,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24ee3f44891ca4b46b7a710d0088989e, type: 3}
   m_Name: TerrainGeneratorSettings
   m_EditorClassIdentifier: 
-  terrainSize: {x: 1000, y: 60, z: 1000}
+  terrainSize: {x: 1000, y: 40, z: 1000}
   heightmapResolution: 1025
   alphamapResolution: 1024
   detailResolution: 1024
   detailResolutionPerPatch: 16
   seed: 20260903
   octaves: 5
-  baseFrequency: 0.0018
   lacunarity: 2.05
   gain: 0.48
   domainWarp: 55
-  heightMin: 0.18
-  heightMax: 0.62
+  edgeZeroWidth: 30
+  edgeBlendWidth: 90
+  plainsLevel: 0.04
+  plainsRelief: 0.045
+  plainsFrequency: 0.0038
+  plateauFrequency: 0.0022
+  plateauThreshold: 0.45
+  plateauEdgeWidth: 0.22
+  plateauLift: 0.28
+  plateauTerraces: 3
+  plateauTerraceSharpness: 4
+  plateauDetail: 0.018
+  mountainFrequency: 0.0018
+  mountainThreshold: 0.44
+  mountainEdgeWidth: 0.28
+  mountainLift: 0.62
+  ridgeFrequency: 0.003
+  ridgeOctaves: 6
+  ridgeSharpness: 1.4
   mainRoad:
   - x: 0.02
     z: 0.1
@@ -42,11 +58,13 @@ MonoBehaviour:
   mudHalfWidth: 2.4
   mudEdge: 1.8
   roadFlattenRadius: 9
+  roadCorridorRadius: 110
+  roadCarveStrength: 0.92
   grassSlopeThresholdDeg: 24
   desertBiasFromCenter: 0.55
   desertNoiseWeight: 0.45
-  treeCount: 420
+  treeCount: 0
   grassDensityPerCell: 6
   flowerDensityPerCell: 2
-  buildingCount: 32
+  buildingCount: 0
   forceRegenerateAssets: 0

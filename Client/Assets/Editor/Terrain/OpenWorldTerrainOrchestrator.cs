@@ -8,8 +8,8 @@ namespace GameFramework.EditorTools.TerrainGen
 {
     public static class OpenWorldTerrainOrchestrator
     {
-        public const string ScenePath = "Assets/BundleRes/Scene/OpenWorld.unity";
-        public const string TerrainDataPath = "Assets/BundleRes/Scene/OpenWorldTerrainData.asset";
+        public const string ScenePath = "Assets/NoBundleRes/Scene/OpenWorld/OpenWorld.unity";
+        public const string TerrainDataPath = "Assets/NoBundleRes/Scene/OpenWorld/OpenWorldTerrainData.asset";
 
         public enum Step { All, Splatmap, Vegetation, Clear }
 

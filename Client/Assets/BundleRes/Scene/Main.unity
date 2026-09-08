@@ -183,7 +183,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 30
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -272,19 +272,75 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dabf1e6a2068e1419d9e30ede0411f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minHeight: 200
-  maxHeight: 800
   scrollSensitivity: 60
   heightSmoothTime: 0.15
+  zoomTowardCursor: 1
+  zoomCurve:
+    heightCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 50
+        inSlope: 0
+        outSlope: 250
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 300
+        inSlope: 250
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   dragMouseButton: 0
-  groundY: 20
-  autoAimAtGround: 1
-  aimForwardOffset: 120
+  groundY: 0
+  dragThresholdPixels: 6
+  inertiaEnabled: 1
+  inertiaMinScreenSpeed: 0.15
+  inertiaMaxScreenSpeed: 2
+  inertiaDuration: 1
+  inertiaDecay:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  pitchDegrees: 45
+  yawDegrees: 0
   clampToMapBounds: 1
+  boundType: 0
   boundsSource: {fileID: 0}
   mapMinXZ: {x: 0, y: 0}
   mapMaxXZ: {x: 1000, y: 1000}
-  boundsPadding: 0
+  boundsPadding: 20
+  drawGizmos: 1
+  drawFrustumTrapezoid: 1
 --- !u!1 &710219747
 GameObject:
   m_ObjectHideFlags: 0
@@ -314,12 +370,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76132d285d650a34bb96073ff267d7ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetCamera: {fileID: 0}
+  targetCamera: {fileID: 694119366}
   groundY: 0
   gridSize: 10
   blockSize: 100
   gridOriginXZ: {x: 0, y: 0}
-  loadMarginWorld: 100
+  paddingCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 50
+      inSlope: 0
+      outSlope: 234.94897
+      tangentMode: 65
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 284.94897
+      inSlope: 234.94897
+      outSlope: 1.8
+      tangentMode: 5
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   maxProjectionDistance: 2000
   chunkAddressPattern: Assets/BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData
     x({0}) y({1}).prefab

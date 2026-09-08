@@ -5,54 +5,63 @@ using UnityEngine;
 namespace GameMain
 {
     /// <summary>
-    /// Streams 100×100 terrain chunk prefabs based on the camera's view-frustum footprint on the
-    /// ground plane. Each frame we intersect the four screen-corner rays with y = <see cref="groundY"/>
-    /// to get a convex quad, then load every block whose XZ AABB overlaps that quad (SAT test).
-    /// This naturally scales with camera altitude, tilt, FOV, and aspect ratio — as long as the
-    /// camera has ground in view, whatever is visible is loaded.
+    /// 按相机在地面上的覆盖范围，流式加载 100×100 的地形块预制体。
+    ///
+    /// 加载区域取自该覆盖范围的轴对齐外接矩形 —— 相机若发布了自己的覆盖范围，就直接用
+    /// <see cref="WorldCameraController.TryGetFootprintRect"/>，让流式加载和相机自身的移动限制
+    /// 共用同一份「相机能看到哪儿」的定义 —— 再向四边各外扩 <see cref="footprintPadding"/>。
+    /// 凡与这个矩形重叠的地块都会被加载。
+    ///
+    /// 加载区域和地块网格都是轴对齐的，所以「要哪些块」退化成一段纯下标范围，不必逐块求交。
+    /// 区域大小仍会自动跟着相机高度、俯角、视场角和宽高比变化，因为覆盖范围本来就由这几项决定。
     /// </summary>
     public class WorldChunkStreaming : MonoBehaviour
     {
-        [Header("Camera")]
+        [Header("相机")]
         public Camera targetCamera;
-        [Tooltip("World-space Y of the ground plane used to project the camera frustum.")]
+        [Tooltip("投射相机视锥时所用的地面高度（世界空间 Y）。")]
         public float groundY = 0f;
 
-        [Header("Grid")]
+        [Header("网格")]
+        [Tooltip("网格边长，单位是块数。10 表示 10×10 共 100 块。")]
         public int gridSize = 10;
+        [Tooltip("单个地块的边长（米）。")]
         public float blockSize = 100f;
-        [Tooltip("World-space origin of block (0,0). Block (i,j) covers [origin + (i,j)*blockSize, origin + (i+1,j+1)*blockSize).")]
+        [Tooltip("地块 (0,0) 的世界空间原点。地块 (i,j) 覆盖 [原点 + (i,j)*blockSize, 原点 + (i+1,j+1)*blockSize)。")]
         public Vector2 gridOriginXZ = Vector2.zero;
 
-        [Header("Load margin")]
-        [Tooltip("Extra world-space padding around the frustum quad. Set to roughly `blockSize` so one ring of blocks just outside the visible footprint is pre-loaded (adjacent-chunk pre-load). Prevents pop-in when the camera slides across a chunk boundary.")]
-        public float loadMarginWorld = 100f;
-        [Tooltip("Cap the ray→ground intersection distance. Prevents runaway load radius when the camera pitches nearly horizontal so top-screen rays project to infinity on the ground.")]
+        [Header("加载范围")]
+        [Tooltip("在相机覆盖范围的外接矩形基础上，向四边各额外扩张多少米 —— 加载区域就是外扩之后的这个矩形。填成大致等于 blockSize，可以让可见范围外侧一圈地块保持常驻（邻接块预加载），相机跨过块边界时地块就不会凭空弹出来。")]
+        public AnimationCurve paddingCurve = AnimationCurve.Linear(50f, 50f, 300f, 500f);
+        [Tooltip("回退射线长度。只在相机上没挂 WorldCameraController、需要自己投射时才用得到，而且只用于那些与地平线齐平或朝上、根本打不到地面的视锥角点。真打到地面的角点一律按实际交点距离取值 —— 把它们截短会低估覆盖范围，导致可见的地面没被加载。")]
         public float maxProjectionDistance = 2000f;
 
         [Header("Addressables")]
-        [Tooltip("Prefab path prefix (Addressables key). '{0}' = x index, '{1}' = y index.")]
+        [Tooltip("地块预制体的路径模板（Addressables key）。{0} = x 下标，{1} = y 下标。")]
         public string chunkAddressPattern =
             "Assets/BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData x({0}) y({1}).prefab";
 
-        [Header("Pool")]
+        [Header("内存池")]
+        [Tooltip("内存池名字。")]
         public string poolName = "OpenWorldChunkPool";
-        [Tooltip("Pool capacity — should be ≥ max loaded blocks. Whole 10×10 grid + slack = 128 is safe.")]
+        [Tooltip("池容量，应当不小于同时加载的最大块数。整张 10×10 网格再留点余量，128 是安全值。")]
         public int poolCapacity = 128;
+        [Tooltip("对象回池后多久过期释放（秒）。")]
         public float poolExpireTime = 30f;
 
-        [Header("Timing")]
-        [Tooltip("Seconds a block stays loaded after leaving the load set before being pooled back.")]
+        [Header("时序")]
+        [Tooltip("地块离开加载集合之后，还要保留多少秒才回收进池。")]
         public float unloadDelaySeconds = 5f;
-        [Tooltip("How often the streaming set is recomputed (seconds). 0 = every frame.")]
+        [Tooltip("重算一次加载集合的间隔（秒）。0 = 每帧都算。")]
         public float refreshInterval = 0.15f;
 
-        [Header("Placement")]
-        [Tooltip("If true, spawned chunks are parented to this streaming node (world position stays as authored in the prefab).")]
+        [Header("摆放")]
+        [Tooltip("勾上则把生成出来的地块挂到本流式加载节点下（世界坐标保持预制体里烘好的值）。")]
         public bool parentSpawnedChunks = true;
-        [Tooltip("If true, override each chunk's world position to (gridOrigin + (i,j)*blockSize, 0, ...). Leave OFF when TerrainToMesh baked the world position into the prefab.")]
+        [Tooltip("勾上则强行把每个地块的世界坐标改写成 (网格原点 + (i,j)*blockSize)。TerrainToMesh 已经把世界坐标烘进预制体时，保持关闭。")]
         public bool forcePositionByIndex = false;
 
+        /// <summary>地块的网格下标，用作下面各个集合的键。</summary>
         struct BlockKey
         {
             public int x, y;
@@ -61,21 +70,43 @@ namespace GameMain
             public override int GetHashCode() => (x * 397) ^ y;
         }
 
+        /// <summary>地块预制体的内存池。</summary>
         PrefabObjectPool _pool;
+        /// <summary>覆盖范围的来源：相机上的 <see cref="WorldCameraController"/>，可能为空。</summary>
+        WorldCameraController _footprintSource;
+        /// <summary>已经加载完成的地块。</summary>
         readonly Dictionary<BlockKey, GameObject> _loaded = new Dictionary<BlockKey, GameObject>();
+        /// <summary>正在异步加载、还没回调的地块，用来避免重复发起请求。</summary>
         readonly HashSet<BlockKey> _loading = new HashSet<BlockKey>();
+        /// <summary>已标记预卸载的地块 → 到期时刻（<see cref="Time.unscaledTime"/>）。</summary>
         readonly Dictionary<BlockKey, float> _pendingUnloadAt = new Dictionary<BlockKey, float>();
+        /// <summary>本次刷新算出来的、应当处于加载状态的地块集合。</summary>
         readonly HashSet<BlockKey> _wantedThisPass = new HashSet<BlockKey>();
+        /// <summary>遍历字典时不能直接删元素，先把到期的键收集到这里。</summary>
         readonly List<BlockKey> _tmpDue = new List<BlockKey>();
-        readonly Vector2[] _quadXZ = new Vector2[4];    // frustum ground-projected quad (CCW when looking down)
-        float _quadMinX, _quadMaxX, _quadMinZ, _quadMaxZ;
+        /// <summary>世界 XZ 上的加载区域（矩形的 X/Y 对应世界的 X/Z）：相机覆盖范围的外接矩形，
+        /// 并且已经外扩过 <see cref="footprintPadding"/>。</summary>
+        Rect _loadRect;
+        /// <summary>下一次重算加载集合的时刻。</summary>
         float _nextRefreshTime;
+
+        /// <summary>视口四角，只给自己投射的回退路径用。既然从它们身上只取一个外接矩形，
+        /// 四个角的先后顺序就无关紧要了。</summary>
+        static readonly Vector3[] ViewportCorners =
+        {
+            new Vector3(0f, 0f, 0f), new Vector3(1f, 0f, 0f),
+            new Vector3(1f, 1f, 0f), new Vector3(0f, 1f, 0f),
+        };
 
         void Awake()
         {
             if (targetCamera == null) targetCamera = Camera.main;
+            // 相机自己发布了覆盖范围就优先用它，让流式加载和相机的移动限制
+            // 由同一份「相机能看到哪儿」的定义驱动。
+            if (targetCamera != null) _footprintSource = targetCamera.GetComponent<WorldCameraController>();
         }
 
+        /// <summary>建好地块预制体的内存池。</summary>
         void Start()
         {
             _pool = PrefabObjectPool.Create(poolName, poolCapacity, poolExpireTime);
@@ -83,9 +114,9 @@ namespace GameMain
 
         void OnDestroy()
         {
-            // Editor stop / app quit: Framework's ObjectPoolMgr may already be disposed by the
-            // time our OnDestroy runs, in which case UnSpawn throws "Can not find target in
-            // object pool". Skip the pool round-trip entirely on shutdown — Unity/GC handles it.
+            // 编辑器停止运行 / 程序退出：等我们的 OnDestroy 跑到，Framework 的 ObjectPoolMgr
+            // 可能已经先被销毁了，此时 UnSpawn 会抛「Can not find target in object pool」。
+            // 关闭流程里干脆不走回池这一步 —— 交给 Unity/GC 处理。
             if (FrameworkMgr.ShutdownType == EShutdownType.Shutdown)
             {
                 _loaded.Clear();
@@ -95,18 +126,18 @@ namespace GameMain
                 return;
             }
 
-            // Normal runtime teardown (e.g. scene unload): try to return objects to the pool,
-            // but swallow benign exceptions if the pool state is unexpectedly gone.
+            // 正常的运行期销毁（比如卸载场景）：尽量把对象还回池里，
+            // 但万一池的状态意外已经没了，就把无害的异常吞掉。
             if (_pool != null)
             {
                 foreach (var kv in _loaded)
                 {
                     if (kv.Value == null) continue;
                     try { _pool.UnSpawn(kv.Value); }
-                    catch { /* pool torn down before us — ignore */ }
+                    catch { /* 池比我们先销毁 —— 忽略 */ }
                 }
                 try { _pool.Dispose(); }
-                catch { /* ignore */ }
+                catch { /* 忽略 */ }
             }
             _loaded.Clear();
             _loading.Clear();
@@ -114,6 +145,10 @@ namespace GameMain
             _pool = null;
         }
 
+        /// <summary>
+        /// 按 <see cref="refreshInterval"/> 的节奏重算加载集合；预卸载的到期检查每帧都做，
+        /// 免得回收被刷新间隔拖慢。
+        /// </summary>
         void Update()
         {
             if (_pool == null || targetCamera == null) return;
@@ -124,124 +159,101 @@ namespace GameMain
             }
             _nextRefreshTime = Time.unscaledTime + Mathf.Max(0f, refreshInterval);
 
-            ComputeFrustumGroundQuad();
-            RecomputeWantedSet();
+            ComputeLoadRect();
+            CollectBlocksInLoadRect(_wantedThisPass);
             LoadMissing();
             MarkOutOfRangeForUnload();
             ProcessPendingUnloads();
         }
 
-        // ---------------------------------------------------------------- Frustum → ground quad
+        // ---------------------------------------------------------------- 相机覆盖范围 → 加载矩形
 
-        void ComputeFrustumGroundQuad()
+        /// <summary>
+        /// 重算 <see cref="_loadRect"/>：取相机地面覆盖范围的轴对齐外接矩形，
+        /// 再向四边各外扩 <see cref="footprintPadding"/>。
+        /// </summary>
+        void ComputeLoadRect()
         {
-            // Viewport corners in CCW order when looking down: BL → BR → TR → TL.
-            // Bottom of screen usually maps to nearer ground points, top to farther.
-            var viewportCorners = new[]
-            {
-                new Vector3(0f, 0f, 0f),
-                new Vector3(1f, 0f, 0f),
-                new Vector3(1f, 1f, 0f),
-                new Vector3(0f, 1f, 0f),
-            };
-            float capDist = Mathf.Min(maxProjectionDistance, targetCamera.farClipPlane);
+            if (_footprintSource == null || !_footprintSource.TryGetFootprintRect(out Rect foot))
+                foot = ProjectFootprintRect();
+
+            float p = paddingCurve.Evaluate(WorldCameraController.I.ZoomValue);
+            _loadRect = Rect.MinMaxRect(foot.xMin - p, foot.yMin - p, foot.xMax + p, foot.yMax + p);
+        }
+
+        /// <summary>
+        /// 相机上没有 <see cref="WorldCameraController"/> 发布覆盖范围时的独立回退：
+        /// 把屏幕四角投到 y = <see cref="groundY"/> 平面上，取它们的外接矩形。
+        ///
+        /// 打到地面的角点一律按精确交点距离取值；<see cref="maxProjectionDistance"/> 只用于
+        /// 那些与地平线齐平或朝上、根本碰不到平面的角点。截断一个真实交点会把该点挪到半空中，
+        /// 比它所代表的那片地面更近，于是可见的地形就漏加载了。
+        /// </summary>
+        Rect ProjectFootprintRect()
+        {
+            float minX = float.MaxValue, maxX = float.MinValue;
+            float minZ = float.MaxValue, maxZ = float.MinValue;
             for (int i = 0; i < 4; i++)
             {
-                Ray ray = targetCamera.ViewportPointToRay(viewportCorners[i]);
-                Vector3 hit;
-                if (Mathf.Abs(ray.direction.y) < 1e-6f)
+                Ray ray = targetCamera.ViewportPointToRay(ViewportCorners[i]);
+                float t;
+                if (Mathf.Abs(ray.direction.y) < 1e-6f || ray.direction.y > 0f)
                 {
-                    hit = ray.origin + ray.direction * capDist;
+                    t = maxProjectionDistance;                          // 与地平线齐平 / 朝上
                 }
                 else
                 {
-                    float t = (groundY - ray.origin.y) / ray.direction.y;
-                    if (t <= 0f) t = capDist;                              // ray pointing up — clamp to horizon
-                    else t = Mathf.Min(t, capDist);                        // ray hits ground far away — clamp
-                    hit = ray.origin + ray.direction * t;
+                    t = (groundY - ray.origin.y) / ray.direction.y;
+                    if (t <= 0f) t = maxProjectionDistance;             // 相机已经在平面之下
                 }
-                _quadXZ[i] = new Vector2(hit.x, hit.z);
+                Vector3 hit = ray.origin + ray.direction * t;
+                if (hit.x < minX) minX = hit.x;
+                if (hit.x > maxX) maxX = hit.x;
+                if (hit.z < minZ) minZ = hit.z;
+                if (hit.z > maxZ) maxZ = hit.z;
             }
-            _quadMinX = _quadMaxX = _quadXZ[0].x;
-            _quadMinZ = _quadMaxZ = _quadXZ[0].y;
-            for (int i = 1; i < 4; i++)
-            {
-                if (_quadXZ[i].x < _quadMinX) _quadMinX = _quadXZ[i].x;
-                if (_quadXZ[i].x > _quadMaxX) _quadMaxX = _quadXZ[i].x;
-                if (_quadXZ[i].y < _quadMinZ) _quadMinZ = _quadXZ[i].y;
-                if (_quadXZ[i].y > _quadMaxZ) _quadMaxZ = _quadXZ[i].y;
-            }
+            return Rect.MinMaxRect(minX, minZ, maxX, maxZ);
         }
 
-        // ---------------------------------------------------------------- Wanted set
+        // ---------------------------------------------------------------- 加载集合
 
-        void RecomputeWantedSet()
+        /// <summary>
+        /// 把与 <see cref="_loadRect"/> 重叠的地块全部填进 <paramref name="into"/>。
+        /// 加载区域和网格都是轴对齐的，所以由矩形算出来的下标范围<i>本身</i>就是答案 ——
+        /// 范围内的每一块必然重叠，不需要再逐块判定。
+        /// </summary>
+        void CollectBlocksInLoadRect(HashSet<BlockKey> into)
         {
-            _wantedThisPass.Clear();
-
-            // Candidate block index range from the quad's AABB, expanded by margin.
-            float margin = loadMarginWorld;
-            int minI = Mathf.Max(0, Mathf.FloorToInt((_quadMinX - margin - gridOriginXZ.x) / blockSize));
-            int maxI = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_quadMaxX + margin - gridOriginXZ.x) / blockSize) - 1);
-            int minJ = Mathf.Max(0, Mathf.FloorToInt((_quadMinZ - margin - gridOriginXZ.y) / blockSize));
-            int maxJ = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_quadMaxZ + margin - gridOriginXZ.y) / blockSize) - 1);
+            into.Clear();
+            // 地块 i 覆盖 [i*blockSize, (i+1)*blockSize)，所以取整用 floor / ceil-1：
+            // 仅与矩形边相切（重叠面积为零）的地块不算命中。范围为空时下面的循环自然不执行。
+            int minI = Mathf.Max(0, Mathf.FloorToInt((_loadRect.xMin - gridOriginXZ.x) / blockSize));
+            int maxI = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_loadRect.xMax - gridOriginXZ.x) / blockSize) - 1);
+            int minJ = Mathf.Max(0, Mathf.FloorToInt((_loadRect.yMin - gridOriginXZ.y) / blockSize));
+            int maxJ = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_loadRect.yMax - gridOriginXZ.y) / blockSize) - 1);
 
             for (int j = minJ; j <= maxJ; j++)
                 for (int i = minI; i <= maxI; i++)
-                    if (BlockOverlapsQuad(i, j))
-                        _wantedThisPass.Add(new BlockKey(i, j));
+                    into.Add(new BlockKey(i, j));
         }
 
-        /// <summary>Convex quad vs axis-aligned block overlap (SAT), with isotropic <see cref="loadMarginWorld"/>.</summary>
-        bool BlockOverlapsQuad(int i, int j)
+        /// <summary>
+        /// 上面那套判定的单块版本，用于异步加载回调里复查某一个键。
+        /// 用严格不等号，让仅与矩形边相切的地块不算重叠，
+        /// 与 <see cref="CollectBlocksInLoadRect"/> 的下标范围严格保持一致。
+        /// </summary>
+        bool BlockOverlapsLoadRect(int i, int j)
         {
+            if (i < 0 || j < 0 || i >= gridSize || j >= gridSize) return false;
             float bMinX = gridOriginXZ.x + i * blockSize;
             float bMinZ = gridOriginXZ.y + j * blockSize;
-            float bMaxX = bMinX + blockSize;
-            float bMaxZ = bMinZ + blockSize;
-            float m = loadMarginWorld;
-
-            // Box's own axes (X, Z) — cheap AABB overlap test.
-            if (_quadMaxX + m < bMinX || _quadMinX - m > bMaxX) return false;
-            if (_quadMaxZ + m < bMinZ || _quadMinZ - m > bMaxZ) return false;
-
-            // Quad edge normals (4 axes).
-            for (int e = 0; e < 4; e++)
-            {
-                Vector2 a = _quadXZ[e];
-                Vector2 b = _quadXZ[(e + 1) & 3];
-                Vector2 n = new Vector2(-(b.y - a.y), b.x - a.x);
-                float len = Mathf.Sqrt(n.x * n.x + n.y * n.y);
-                if (len < 1e-6f) continue;
-                float invLen = 1f / len;
-                n.x *= invLen; n.y *= invLen;
-
-                // Project quad
-                float qMin = float.MaxValue, qMax = float.MinValue;
-                for (int k = 0; k < 4; k++)
-                {
-                    float p = _quadXZ[k].x * n.x + _quadXZ[k].y * n.y;
-                    if (p < qMin) qMin = p;
-                    if (p > qMax) qMax = p;
-                }
-                // Project block AABB (only 4 corners)
-                float p1 = bMinX * n.x + bMinZ * n.y;
-                float p2 = bMaxX * n.x + bMinZ * n.y;
-                float p3 = bMaxX * n.x + bMaxZ * n.y;
-                float p4 = bMinX * n.x + bMaxZ * n.y;
-                float bMin = p1, bMax = p1;
-                if (p2 < bMin) bMin = p2; else if (p2 > bMax) bMax = p2;
-                if (p3 < bMin) bMin = p3; else if (p3 > bMax) bMax = p3;
-                if (p4 < bMin) bMin = p4; else if (p4 > bMax) bMax = p4;
-
-                // Grow the quad's interval by margin (unit normal → isotropic).
-                if (qMax + m < bMin || qMin - m > bMax) return false;
-            }
-            return true;
+            return _loadRect.xMax > bMinX && _loadRect.xMin < bMinX + blockSize
+                && _loadRect.yMax > bMinZ && _loadRect.yMin < bMinZ + blockSize;
         }
 
-        // ---------------------------------------------------------------- Load / unload
+        // ---------------------------------------------------------------- 加载 / 卸载
 
+        /// <summary>给本次加载集合里还缺的地块发起加载；已经在的顺手取消它的预卸载。</summary>
         void LoadMissing()
         {
             foreach (var key in _wantedThisPass)
@@ -256,6 +268,7 @@ namespace GameMain
             }
         }
 
+        /// <summary>从池里异步取一个地块，回调里再确认它是否仍然需要。</summary>
         void BeginLoad(BlockKey key)
         {
             _loading.Add(key);
@@ -265,6 +278,7 @@ namespace GameMain
                 _loading.Remove(key);
                 if (go == null) return;
 
+                // 异步这段时间里相机可能已经走开了，不再需要就直接还回池里。
                 if (!_wantedThisPass.Contains(key) && !IsWantedNow(key))
                 {
                     _pool.UnSpawn(go);
@@ -283,13 +297,17 @@ namespace GameMain
             });
         }
 
+        /// <summary>这一块现在还要不要。本帧缓存的矩形可能在异步期间就过期了，所以重算一次。</summary>
         bool IsWantedNow(BlockKey key)
         {
-            // Recompute in case the frame's cached quad went stale during an async load.
-            ComputeFrustumGroundQuad();
-            return BlockOverlapsQuad(key.x, key.y);
+            ComputeLoadRect();
+            return BlockOverlapsLoadRect(key.x, key.y);
         }
 
+        /// <summary>
+        /// 把已加载、但本次不再需要的地块标记成预卸载，
+        /// <see cref="unloadDelaySeconds"/> 秒之后才真正回收。
+        /// </summary>
         void MarkOutOfRangeForUnload()
         {
             float dueAt = Time.unscaledTime + unloadDelaySeconds;
@@ -301,6 +319,7 @@ namespace GameMain
             }
         }
 
+        /// <summary>把所有已经到期的预卸载地块还回池里。</summary>
         void ProcessPendingUnloads()
         {
             if (_pendingUnloadAt.Count == 0) return;
@@ -322,16 +341,17 @@ namespace GameMain
         }
 
 #if UNITY_EDITOR
-        // OnDrawGizmos (not OnDrawGizmosSelected) so gizmos remain visible in Play mode
-        // without needing the object selected. Toggle the "Gizmos" button in the Game view
-        // to see them at runtime there too.
+        /// <summary>
+        /// 用 OnDrawGizmos 而不是 OnDrawGizmosSelected，这样运行期不选中物体也照样能看到。
+        /// 想在 Game 视图里看，还得打开右上角的 Gizmos 开关。
+        /// </summary>
         void OnDrawGizmos()
         {
             if (targetCamera == null) return;
-            // Ensure we have up-to-date data even in Edit mode where Update won't run.
-            if (!Application.isPlaying) ComputeFrustumGroundQuad();
+            // 编辑模式下 Update 不跑，这里自己补算一次，保证画的是最新数据。
+            if (!Application.isPlaying) ComputeLoadRect();
 
-            // Full grid (yellow, thin)
+            // 整张网格（黄色，细）
             Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
             for (int j = 0; j < gridSize; j++)
                 for (int i = 0; i < gridSize; i++)
@@ -340,7 +360,7 @@ namespace GameMain
                     Gizmos.DrawWireCube(c, new Vector3(blockSize, 0.1f, blockSize));
                 }
 
-            // Loaded / wanted blocks (green, thick)
+            // 需要加载的地块（绿色，粗）
             Gizmos.color = new Color(0f, 1f, 0f, 1f);
             var wanted = Application.isPlaying ? _wantedThisPass : ComputeEditModeWanted();
             foreach (var k in wanted)
@@ -349,40 +369,19 @@ namespace GameMain
                 Gizmos.DrawWireCube(c, new Vector3(blockSize * 0.98f, 3f, blockSize * 0.98f));
             }
 
-            // Frustum ground quad (cyan)
-            Gizmos.color = new Color(0.2f, 0.9f, 1f, 1f);
-            for (int i = 0; i < 4; i++)
-            {
-                var a = _quadXZ[i];
-                var b = _quadXZ[(i + 1) & 3];
-                Gizmos.DrawLine(new Vector3(a.x, groundY + 0.2f, a.y), new Vector3(b.x, groundY + 0.2f, b.y));
-            }
-
-            // Margin-expanded quad AABB (red dashed-ish outline)
+            // 加载矩形本身（红色）：相机覆盖范围的外接矩形外扩 footprintPadding 之后的结果。
+            // 它碰到的每一块都会是上面的绿色块，两者应当严格吻合。
             Gizmos.color = new Color(1f, 0.3f, 0.3f, 0.85f);
-            var cMin = new Vector3(_quadMinX - loadMarginWorld, groundY + 0.3f, _quadMinZ - loadMarginWorld);
-            var cMax = new Vector3(_quadMaxX + loadMarginWorld, groundY + 0.3f, _quadMaxZ + loadMarginWorld);
-            var center = (cMin + cMax) * 0.5f;
-            var size = cMax - cMin; size.y = 0.1f;
-            Gizmos.DrawWireCube(center, size);
+            var center = new Vector3(_loadRect.center.x, groundY + 0.3f, _loadRect.center.y);
+            Gizmos.DrawWireCube(center, new Vector3(_loadRect.width, 0.1f, _loadRect.height));
         }
 
-        // Edit-mode helper: rebuild wanted set on the fly for gizmo visualization
-        // (Update won't tick when the game isn't playing).
+        /// <summary>编辑模式下 Gizmos 用的加载集合。游戏没运行时 Update 不会 tick，只能现算一份。</summary>
         HashSet<BlockKey> _editWanted;
         HashSet<BlockKey> ComputeEditModeWanted()
         {
             if (_editWanted == null) _editWanted = new HashSet<BlockKey>();
-            _editWanted.Clear();
-            float margin = loadMarginWorld;
-            int minI = Mathf.Max(0, Mathf.FloorToInt((_quadMinX - margin - gridOriginXZ.x) / blockSize));
-            int maxI = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_quadMaxX + margin - gridOriginXZ.x) / blockSize) - 1);
-            int minJ = Mathf.Max(0, Mathf.FloorToInt((_quadMinZ - margin - gridOriginXZ.y) / blockSize));
-            int maxJ = Mathf.Min(gridSize - 1, Mathf.CeilToInt((_quadMaxZ + margin - gridOriginXZ.y) / blockSize) - 1);
-            for (int j = minJ; j <= maxJ; j++)
-                for (int i = minI; i <= maxI; i++)
-                    if (BlockOverlapsQuad(i, j))
-                        _editWanted.Add(new BlockKey(i, j));
+            CollectBlocksInLoadRect(_editWanted);
             return _editWanted;
         }
 #endif
