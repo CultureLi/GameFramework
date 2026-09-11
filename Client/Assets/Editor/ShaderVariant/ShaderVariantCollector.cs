@@ -49,6 +49,15 @@ namespace Assets.Editor.ShaderVariant
         private static Dictionary<string, HashSet<string>> _shaderToShaderDeps;
         private static HashSet<string> _orphanShaderPaths;
 
+        /// <summary>
+        /// 当前子目录"允许保留在 SVC 里"的 shader 白名单：本轮真正参与渲染的材质所用的 shader，
+        /// 外加它们通过 UsePass/Fallback 传递引用到的 shader。每个子目录开始前由
+        /// <see cref="BuildAllowedShaderSet"/> 重建。
+        /// 白名单是按 <see cref="Shader"/> 对象而不是路径记录的，所以 URP 包内 shader
+        /// （<c>Packages/com.unity.render-pipelines.universal/...</c>）、第三方插件 shader 都能被正常保留。
+        /// </summary>
+        private static HashSet<Shader> _allowedShaders;
+
         private static IEnumerator _routine;
         private static bool _prevAsyncCompilation;
 

@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 2ee4282b9e6312148a4f3ff9ced6117b, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -400,8 +400,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   maxProjectionDistance: 2000
-  chunkAddressPattern: Assets/BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData
-    x({0}) y({1}).prefab
+  sceneName: OpenWorld
   poolName: OpenWorldChunkPool
   poolCapacity: 128
   poolExpireTime: 30

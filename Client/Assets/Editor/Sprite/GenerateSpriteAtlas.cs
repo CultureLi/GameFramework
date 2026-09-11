@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
@@ -48,7 +48,7 @@ namespace Assets.Editor
         [MenuItem("Tools/UI/生成所有图集", false, 1000)]
         static void GenerateAtlasAll()
         {
-            var guids = AssetDatabase.FindAssets("t:Folder Sprite", new[] { "Assets/BundleRes/Arts/UI" });
+            var guids = AssetDatabase.FindAssets("t:Folder Sprite", new[] { "Assets/BundleRes/UISprite" });
 
             foreach (var guid in guids)
             {

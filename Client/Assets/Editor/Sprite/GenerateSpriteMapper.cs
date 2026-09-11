@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor.AddressableAssets;
@@ -38,7 +38,7 @@ namespace Assets.Editor
         {
             var atlasGuids = AssetDatabase.FindAssets(
                 "t:SpriteAtlas",
-                new[] { "Assets/BundleRes/Arts/UI" }
+                new[] { "Assets/BundleRes/UISprite" }
             );
 
             foreach (var guid in atlasGuids)
@@ -95,7 +95,7 @@ namespace Assets.Editor
         private static void CollectSingleSprites(AddressableAssetSettings settings, SpriteMapper mapper)
         {
             //找到所有名为 SingleSprite 的文件夹
-            var folderGuids = AssetDatabase.FindAssets("SingleSprite", new[] { "Assets/BundleRes/Arts/UI" });
+            var folderGuids = AssetDatabase.FindAssets("SingleSprite", new[] { "Assets/BundleRes/UISprite" });
 
             foreach (var folderGuid in folderGuids)
             {

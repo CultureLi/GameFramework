@@ -15,7 +15,7 @@ MonoBehaviour:
   rulesEnabled: 1
   allowGroupCreation: 1
   rules:
-  - path: Assets/BundleRes/Arts/UI.*\.spriteatlas(v2|)$
+  - path: Assets/BundleRes/UISprite.*\.spriteatlas(v2|)$
     matchType: 1
     groupName: UISprite
     groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
@@ -25,7 +25,7 @@ MonoBehaviour:
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: Assets/BundleRes/Arts/UI.*/*/SingleSprite$
+  - path: Assets/BundleRes/UISprite.*/*/SingleSprite$
     matchType: 1
     groupName: UISprite
     groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
@@ -39,6 +39,46 @@ MonoBehaviour:
     matchType: 1
     groupName: Scene
     groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/BundleRes/SceneChunk/[^/]+/[^/.]+$
+    matchType: 1
+    groupName: SceneChunk
+    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/BundleRes/Material+/[^/.]+$
+    matchType: 1
+    groupName: Material
+    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/BundleRes/Texture/Scene/([^/]+)/.+\.(png|jpg|jpeg|tga|exr|psd|tif|tiff|hdr|bmp)$
+    matchType: 1
+    groupName: Texture
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/BundleRes/Texture/SkyBox$
+    matchType: 1
+    groupName: Texture
+    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
     dynamicLabels: []
@@ -65,6 +105,16 @@ MonoBehaviour:
     LabelMode: 0
     simplified: 0
     addressReplacement: 
+  - path: ^Assets/BundleRes/Shader/[^/]+/[^/.]+\.*
+    matchType: 1
+    groupName: Shader
+    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
   - path: Assets/TextMesh Pro/Fonts$
     matchType: 1
     groupName: Font
@@ -79,6 +129,16 @@ MonoBehaviour:
     matchType: 1
     groupName: Font
     groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/BundleRes/CommonSOData$
+    matchType: 1
+    groupName: CommonSOData
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
     dynamicLabels: []

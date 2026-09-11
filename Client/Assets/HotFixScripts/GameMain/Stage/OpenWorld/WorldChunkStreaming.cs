@@ -32,14 +32,13 @@ namespace GameMain
 
         [Header("加载范围")]
         [Tooltip("在相机覆盖范围的外接矩形基础上，向四边各额外扩张多少米 —— 加载区域就是外扩之后的这个矩形。填成大致等于 blockSize，可以让可见范围外侧一圈地块保持常驻（邻接块预加载），相机跨过块边界时地块就不会凭空弹出来。")]
-        public AnimationCurve paddingCurve = AnimationCurve.Linear(50f, 50f, 300f, 500f);
+        public AnimationCurve paddingCurve = AnimationCurve.Linear(0f, 50f, 1f, 500f);
         [Tooltip("回退射线长度。只在相机上没挂 WorldCameraController、需要自己投射时才用得到，而且只用于那些与地平线齐平或朝上、根本打不到地面的视锥角点。真打到地面的角点一律按实际交点距离取值 —— 把它们截短会低估覆盖范围，导致可见的地面没被加载。")]
         public float maxProjectionDistance = 2000f;
 
         [Header("Addressables")]
-        [Tooltip("地块预制体的路径模板（Addressables key）。{0} = x 下标，{1} = y 下标。")]
-        public string chunkAddressPattern =
-            "Assets/BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData x({0}) y({1}).prefab";
+        [Tooltip("场景名字")]
+        public string sceneName = "OpenWorld";
 
         [Header("内存池")]
         [Tooltip("内存池名字。")]
@@ -272,7 +271,8 @@ namespace GameMain
         void BeginLoad(BlockKey key)
         {
             _loading.Add(key);
-            string addr = string.Format(chunkAddressPattern, key.x, key.y);
+            var chunkName = $"{sceneName}TerrainData x({key.x}) y({key.y})";
+            var addr = $"Assets/BundleRes/SceneChunk/{sceneName}/{chunkName}/{chunkName}.prefab";
             _pool.SpawnAsync(addr, go =>
             {
                 _loading.Remove(key);
