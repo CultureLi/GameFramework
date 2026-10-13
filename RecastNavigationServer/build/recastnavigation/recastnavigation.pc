@@ -1,0 +1,10 @@
+prefix=C:/Program Files/RecastNavigationServer
+exec_prefix=${prefix}
+libdir=C:/Program Files/RecastNavigationServer/lib
+includedir=C:/Program Files/RecastNavigationServer/include
+
+Name: RecastNavigation
+Description: RecastNavigation is a cross-platform navigation mesh construction toolset for games
+Version: 1.6.0
+Libs: -L${libdir} -lRecast -lDetour -lDebugUtils -lDetourCrowd -lDetourTileCache
+Cflags: -I${includedir} -I${includedir}/recastnavigation 
