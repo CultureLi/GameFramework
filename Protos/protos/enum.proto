@@ -3,7 +3,7 @@ syntax = "proto3";
 package google.protobuf;
 
 option cc_enable_arenas = true;
-option go_package = "google.golang.org/protobuf/types/known/structpb";
+option go_package = "gameframework/server/pb/enumpb;enumpb";
 option objc_class_prefix = "GPB";
 option csharp_namespace = "Google.Protobuf.WellKnownTypes";
 

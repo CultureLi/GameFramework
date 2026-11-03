@@ -23,6 +23,16 @@ namespace Framework
 
             public Connecter()
             {
+            }
+
+            /// <summary>
+            /// 确保 TcpClient 存在，断线重连时可以重新创建。
+            /// </summary>
+            private void EnsureClient()
+            {
+                if (_TcpClient != null && _TcpClient.Client != null)
+                    return;
+
                 var family = Socket.OSSupportsIPv6 ?
                     AddressFamily.InterNetworkV6 :
                     AddressFamily.InterNetwork;
@@ -39,6 +49,7 @@ namespace Framework
             public async Task ConnectAsync(string host, int port, Action<NetworkConnectState> cb)
             {
                 _onConnectResult = cb;
+                EnsureClient();
                 if (_TcpClient == null || _TcpClient.Client == null)
                     return;
 

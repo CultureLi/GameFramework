@@ -38,6 +38,11 @@ namespace Framework
             }
         }
 
+        public bool IsConnected(NetChannelType type = NetChannelType.Main)
+        {
+            return _tcpInstances.TryGetValue(type, out var instance) && instance.IsConnected;
+        }
+
         public void Disconnect(NetChannelType type = NetChannelType.Main)
         {
             if (_tcpInstances.TryGetValue(type, out var instance))

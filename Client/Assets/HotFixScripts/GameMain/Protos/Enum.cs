@@ -25,9 +25,9 @@ namespace Google.Protobuf.WellKnownTypes {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgplbnVtLnByb3RvEg9nb29nbGUucHJvdG9idWYqIwoLTW9uc3RlclR5cGUS",
-            "CgoGTm9ybWFsEAASCAoEQm9zcxABQltaL2dvb2dsZS5nb2xhbmcub3JnL3By",
-            "b3RvYnVmL3R5cGVzL2tub3duL3N0cnVjdHBi+AEBogIDR1BCqgIeR29vZ2xl",
-            "LlByb3RvYnVmLldlbGxLbm93blR5cGVzYgZwcm90bzM="));
+            "CgoGTm9ybWFsEAASCAoEQm9zcxABQlFaJWdhbWVmcmFtZXdvcmsvc2VydmVy",
+            "L3BiL2VudW1wYjtlbnVtcGL4AQGiAgNHUEKqAh5Hb29nbGUuUHJvdG9idWYu",
+            "V2VsbEtub3duVHlwZXNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Google.Protobuf.WellKnownTypes.MonsterType), }, null, null));

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -42,15 +43,39 @@ namespace Framework
         }
 
         /// <summary>
-        /// 初始化，收集所有消息，做Type和id的双向映射
+        /// 初始化，收集所有消息，做Type和id的双向映射。
+        /// 可以重复调用：HybridCLR 热更程序集是在启动后才 Assembly.Load 的，
+        /// 所以 GameEntryMgr.Entry 里需要再调用一次，确保热更程序集里的消息也注册进来。
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void CollectMsgType()
         {
+            _typeToIdMap.Clear();
+            _idToTypeMap.Clear();
+
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                foreach (var type in assembly.GetTypes())
+                Type[] types;
+                try
                 {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException e)
+                {
+                    // 某些程序集有加载失败的依赖类型，能拿到的类型继续注册
+                    types = e.Types.Where(t => t != null).ToArray();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[ProtoTypeHelper] 扫描程序集 {assembly.GetName().Name} 失败: {e.Message}");
+                    continue;
+                }
+
+                foreach (var type in types)
+                {
+                    if (type == null)
+                        continue;
+
                     if (!type.IsClass || type.IsAbstract)
                         continue;
 
@@ -68,6 +93,8 @@ namespace Framework
                     _idToTypeMap[msgId] = type;
                 }
             }
+
+            Debug.Log($"[ProtoTypeHelper] 已注册 {_typeToIdMap.Count} 个 protobuf 消息");
         }
     }
 }

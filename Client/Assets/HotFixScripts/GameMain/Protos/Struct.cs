@@ -26,9 +26,9 @@ namespace Google.Protobuf.WellKnownTypes {
           string.Concat(
             "CgxzdHJ1Y3QucHJvdG8SD2dvb2dsZS5wcm90b2J1ZiJDCgtNb25zdGVyRGF0",
             "YRIKCgJJZBgBIAEoBRIoCgVidWZmcxgCIAMoCzIZLmdvb2dsZS5wcm90b2J1",
-            "Zi5CdWZmRGF0YSIWCghCdWZmRGF0YRIKCgJJZBgBIAEoBUJbWi9nb29nbGUu",
-            "Z29sYW5nLm9yZy9wcm90b2J1Zi90eXBlcy9rbm93bi9zdHJ1Y3RwYvgBAaIC",
-            "A0dQQqoCHkdvb2dsZS5Qcm90b2J1Zi5XZWxsS25vd25UeXBlc2IGcHJvdG8z"));
+            "Zi5CdWZmRGF0YSIWCghCdWZmRGF0YRIKCgJJZBgBIAEoBUJVWilnYW1lZnJh",
+            "bWV3b3JrL3NlcnZlci9wYi9zdHJ1Y3RwYjtzdHJ1Y3RwYvgBAaICA0dQQqoC",
+            "Hkdvb2dsZS5Qcm90b2J1Zi5XZWxsS25vd25UeXBlc2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {

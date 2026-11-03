@@ -12,6 +12,7 @@ namespace Framework
     {
         void Create(string host, int port, NetChannelType type = NetChannelType.Main);
         Task ConnectAsync(NetChannelType type = NetChannelType.Main, Action<NetworkConnectState> cb = null);
+        bool IsConnected(NetChannelType type = NetChannelType.Main);
         void Disconnect(NetChannelType type = NetChannelType.Main);
         void SendMsg(IMessage msg, NetChannelType type = NetChannelType.Main);
         void RegisterMsg<T>(Action<T> handler, NetChannelType type = NetChannelType.Main) where T : IMessage;

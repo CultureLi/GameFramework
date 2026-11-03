@@ -27,6 +27,10 @@ namespace Framework
         private Dispatcher _dispatcher;
         private Cryptor _cryptor;
 
+        // 密钥交换完成前发送的消息先缓存在这里，握手成功后统一发出。
+        private readonly Queue<IMessage> _pendingMsgs = new Queue<IMessage>();
+        private readonly object _pendingLock = new object();
+
 
         public bool IsDisposed
         {
@@ -35,24 +39,33 @@ namespace Framework
 
         public bool IsConnected => _connecter?.IsConnected ?? false;
 
+        public bool IsReady => _sender != null;
+
         public TcpClient TCPClient => _connecter?.TCPClient ?? null;
 
 
         public async Task ConnectAsync(Action<NetworkConnectState> cb = null)
         {
-            if (_connecter == null)
+            // 重连时先清理旧连接，避免旧的收发线程继续操作新连接。
+            DisposeConnection();
+
+            _connecter = new Connecter();
+
+            lock (_pendingLock)
             {
-                _connecter = new Connecter();
+                _pendingMsgs.Clear();
             }
-            
+
             await _connecter.ConnectAsync(_host, _port, (state) =>
             {
-                if (state == NetworkConnectState.Succeed)
+                if (state == NetworkConnectState.Succeed || state == NetworkConnectState.Connected)
                 {
                     _cryptor = new Cryptor(this, () =>
                     {
                         _sender = new Sender(_connecter, _cryptor);
                         _receiver = new Receiver(_connecter, _cryptor, _dispatcher);
+                        UnityEngine.Debug.Log("[Network] 密钥交换完成，收发器已创建");
+                        FlushPendingMsgs();
                     });
                 }
 
@@ -61,14 +74,65 @@ namespace Framework
 
         }
 
+        private void DisposeConnection()
+        {
+            _sender?.Dispose();
+            _receiver?.Dispose();
+            _cryptor?.Dispose();
+            _connecter?.Dispose();
+
+            _sender = null;
+            _receiver = null;
+            _cryptor = null;
+        }
+
         public void DisConnect()
         {
-            _connecter.Disconnect();
+            _connecter?.Disconnect();
         }
 
         public void SendMsg(IMessage msg)
         {
-            _sender?.SendMsg(msg);
+            if (msg == null)
+                return;
+
+            var sender = _sender;
+            if (sender != null)
+            {
+                sender.SendMsg(msg);
+                return;
+            }
+
+            lock (_pendingLock)
+            {
+                _pendingMsgs.Enqueue(msg);
+            }
+
+            UnityEngine.Debug.Log($"[Network] 发送器未就绪，暂存消息 {msg.GetType().Name}");
+        }
+
+        private void FlushPendingMsgs()
+        {
+            var count = 0;
+            while (true)
+            {
+                IMessage msg;
+                lock (_pendingLock)
+                {
+                    if (_pendingMsgs.Count == 0)
+                        break;
+
+                    msg = _pendingMsgs.Dequeue();
+                }
+
+                _sender?.SendMsg(msg);
+                count++;
+            }
+
+            if (count > 0)
+            {
+                UnityEngine.Debug.Log($"[Network] 已发送 {count} 条握手前暂存的消息");
+            }
         }
 
         public void RegisterMsg<T>(Action<T> handler) where T : IMessage
@@ -89,11 +153,8 @@ namespace Framework
         }
         public void Dispose()
         {
-            _connecter?.Dispose();
-            _sender?.Dispose();
-            _receiver?.Dispose();
+            DisposeConnection();
             _dispatcher?.Dispose();
-            _cryptor?.Dispose();
         }
 
     }

@@ -48,9 +48,12 @@ namespace Framework
                 if (_isFinished)
                     return;
 
-                var stream = _instance.TCPClient.GetStream();
+                var client = _instance.TCPClient;
+                if (client == null || !_instance.IsConnected)
+                    return;
 
-                if (_instance.IsConnected && stream.DataAvailable)
+                var stream = client.GetStream();
+                if (stream.DataAvailable)
                 {
                     ReceivePublicKey(stream);
                 }
@@ -75,10 +78,12 @@ namespace Framework
                         throw new Exception("ReceivePublicKey key read failed !!!");
 
                     var publicKey = Encoding.UTF8.GetString(keyBytes);
+                    Debug.Log($"[Network] 收到 RSA 公钥，长度 {length}");
 
                     SendEncryptedAESKey(stream, publicKey);
 
                     _isFinished = true;
+                    Debug.Log("[Network] AES 密钥已发送，握手完成");
                     _exchangeKeyFinished?.Invoke();
                 }
                 catch(Exception e)

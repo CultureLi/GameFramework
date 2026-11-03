@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,8 @@ namespace Framework
             Cryptor _cryptor;
             private bool _disposed;
 
-            private Queue<CSPacket> _packets = new Queue<CSPacket>();
+            // 主线程入队、发送线程出队，必须用线程安全队列
+            private readonly ConcurrentQueue<CSPacket> _packets = new ConcurrentQueue<CSPacket>();
 
             public Sender(Connecter connecter, Cryptor cryptor)
             {
@@ -45,14 +47,13 @@ namespace Framework
                 {
                     try
                     {
-                        if (_connecter.IsConnected && _packets.Count > 0)
+                        if (_connecter.IsConnected && _packets.TryDequeue(out var packet))
                         {
-                            var packet = _packets.Dequeue();
                             if (packet != null)
                             {
                                 NetworkStream networkStream = _connecter.TCPClient.GetStream();
                                 networkStream.Write(packet.buff, 0, packet.length + NetDefine.CSHeaderLen);
-                                
+
                                 ReferencePool.Release(packet);
                             }
                         }
@@ -63,7 +64,7 @@ namespace Framework
                         {
                             Debug.LogError("Network sender run error:" + e.Message);
                         }
-                        _connecter.TCPClient.Close();
+                        _connecter?.TCPClient?.Close();
                     }
 
                     Thread.Sleep(1);
@@ -74,9 +75,12 @@ namespace Framework
             {
                 if (null == msg)
                     return;
-                
+
                 var packet = Pack(msg);
-                _packets.Enqueue(packet);
+                if (packet != null)
+                {
+                    _packets.Enqueue(packet);
+                }
             }
 
             /// <summary>
@@ -93,6 +97,14 @@ namespace Framework
                 {
                     var packet = ReferencePool.Acquire<CSPacket>();
                     packet.id = ProtoTypeHelper.GetMsgId(msg.GetType());
+                    if (packet.id == 0)
+                    {
+                        Debug.LogError($"[Network] 消息 {msg.GetType().FullName} 未注册 msgId，发送取消。" +
+                                       "检查 Protos 程序集是否已加载以及 ProtoTypeHelper.CollectMsgType 是否执行。");
+                        ReferencePool.Release(packet);
+                        return null;
+                    }
+
                     packet.flag = 0;
                     var length = msg.CalculateSize();
 
