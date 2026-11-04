@@ -43,6 +43,36 @@ message LoginAck {
   uint64 playerId = 3;
   string token = 4;
   int64 serverTime = 5; // 服务器毫秒时间戳
+  Vec3 spawnPos = 6;    // 玩家出生点（脚底坐标）
+  float spawnRotationY = 7;
+}
+
+// ===== 寻路 / 移动同步 =====
+
+message PathFindReq {
+  uint32 seq = 1;
+  Vec3 target = 2;     // 点击的目标点
+  Vec3 clientPos = 3;  // 仅用于偏差检测，服务端以自己维护的位置为准
+}
+
+message PathFindAck {
+  uint32 seq = 1;
+  // 0=成功 1=未登录 2=目标无效 3=不可达 4=服务器错误
+  int32 code = 2;
+  string message = 3;
+  uint32 pathId = 4;
+  repeated Vec3 corners = 5; // 服务端权威路径
+  Vec3 start = 6;            // 服务端吸附后的起点
+  float speed = 7;           // 移动速度
+}
+
+message MoveSync {
+  uint64 playerId = 1;
+  uint32 pathId = 2;
+  Vec3 position = 3; // 脚底坐标
+  float rotationY = 4;
+  bool moving = 5;
+  int32 cornerIndex = 6;
 }
 
 message HeartBeatReq {

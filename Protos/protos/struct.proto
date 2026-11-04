@@ -17,3 +17,9 @@ message BuffData{
   int32 Id = 1;
 }
 
+message Vec3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+

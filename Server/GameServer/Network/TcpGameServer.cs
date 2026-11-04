@@ -1,11 +1,14 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using DotRecast.Core.Numerics;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using GameServer.Configuration;
 using GameServer.Game;
+using GameServer.Pathfinding;
 using GameServer.Protocol;
 using GameServer.Utility;
 using Type = System.Type;
@@ -19,11 +22,15 @@ public sealed class TcpGameServer
 {
     private readonly AccountStore _accounts = new();
     private readonly ConcurrentDictionary<long, ClientSession> _sessions = new();
+    private readonly ConcurrentDictionary<ulong, PlayerEntity> _players = new();
     private readonly Dictionary<Type, Func<ClientSession, IMessage, Task>> _handlers = new();
     private readonly object _onlineLock = new();
+    private readonly object _playerLock = new();
     private readonly Dictionary<string, ClientSession> _online = new(StringComparer.Ordinal);
+    private readonly NavMeshWorld _navMesh;
 
     private TcpListener? _listener;
+    private Task? _gameLoopTask;
     private long _nextSessionId;
 
     public TcpGameServer(ServerConfig config)
@@ -31,10 +38,12 @@ public sealed class TcpGameServer
         Config = config;
         Rsa = RSA.Create(2048);
         PublicKeyXml = BuildPublicKeyXml(Rsa);
+        _navMesh = NavMeshWorld.Load(config.NavMeshPath);
 
         MessageRegistry.Initialize();
         Register<LoginReq>(HandleLoginAsync);
         Register<HeartBeatReq>(HandleHeartbeatAsync);
+        Register<PathFindReq>(HandlePathFindAsync);
     }
 
     public ServerConfig Config { get; }
@@ -65,6 +74,7 @@ public sealed class TcpGameServer
                  $"心跳超时 {Config.HeartbeatTimeout.TotalSeconds:0}s");
 
         var monitorTask = HeartbeatMonitorAsync(cancellationToken);
+        _gameLoopTask = GameLoopAsync(cancellationToken);
 
         try
         {
@@ -125,6 +135,17 @@ public sealed class TcpGameServer
             {
             }
 
+            if (_gameLoopTask != null)
+            {
+                try
+                {
+                    await _gameLoopTask;
+                }
+                catch (OperationCanceledException)
+                {
+                }
+            }
+
             Rsa.Dispose();
             Log.Info("GameServer 已停止");
         }
@@ -154,6 +175,12 @@ public sealed class TcpGameServer
     public void OnSessionClosed(ClientSession session)
     {
         _sessions.TryRemove(session.Id, out _);
+
+        if (session.Player is { } player)
+        {
+            _players.TryRemove(player.PlayerId, out _);
+            Log.Info($"玩家 {player.PlayerId} 已从世界移除");
+        }
 
         var account = session.Account;
         if (account == null)
@@ -245,6 +272,13 @@ public sealed class TcpGameServer
 
         session.SetLogin(account, result.PlayerId);
 
+        // 登录成功后创建服务端玩家实体，出生点来自导航网格
+        var spawn = _navMesh.SpawnPoint;
+        var spawnPoint = new PathPoint(spawn.X, spawn.Y, spawn.Z);
+        var player = new PlayerEntity(result.PlayerId, spawnPoint);
+        _players[result.PlayerId] = player;
+        session.Player = player;
+
         var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
         await session.SendAsync(new LoginAck
         {
@@ -252,11 +286,17 @@ public sealed class TcpGameServer
             Message = result.Message,
             PlayerId = result.PlayerId,
             Token = token,
-            ServerTime = UnixMilliseconds()
+            ServerTime = UnixMilliseconds(),
+            SpawnPos = new Vec3 { X = spawnPoint.X, Y = spawnPoint.Y, Z = spawnPoint.Z },
+            SpawnRotationY = 0f
         });
 
+        // 初始位置同步，客户端进入场景后可以立刻对齐
+        await session.SendAsync(BuildMoveSync(player));
+
         Log.Info($"账号 {account} 登录成功 playerId={result.PlayerId} " +
-                 $"会话={session.Id} 地址={session.RemoteEndPoint}");
+                 $"会话={session.Id} 出生点=({spawnPoint.X:F2}, {spawnPoint.Y:F2}, {spawnPoint.Z:F2}) " +
+                 $"地址={session.RemoteEndPoint}");
     }
 
     private static Task HandleHeartbeatAsync(ClientSession session, HeartBeatReq request)
@@ -266,6 +306,169 @@ public sealed class TcpGameServer
             ClientTime = request.ClientTime,
             ServerTime = UnixMilliseconds()
         });
+    }
+
+    private async Task HandlePathFindAsync(ClientSession session, PathFindReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new PathFindAck
+            {
+                Seq = request.Seq,
+                Code = PathFindCodes.NotLoggedIn,
+                Message = "未登录"
+            });
+            return;
+        }
+
+        if (request.Target == null)
+        {
+            await session.SendAsync(new PathFindAck
+            {
+                Seq = request.Seq,
+                Code = PathFindCodes.InvalidTarget,
+                Message = "目标点为空"
+            });
+            return;
+        }
+
+        var start = new RcVec3f(0f, 0f, 0f);
+        lock (_playerLock)
+        {
+            start = new RcVec3f(player.X, player.Y, player.Z);
+        }
+
+        var target = new RcVec3f(request.Target.X, request.Target.Y, request.Target.Z);
+
+        if (!_navMesh.FindPath(start, target, out var corners, out var error))
+        {
+            var code = error.Contains("目标点", StringComparison.Ordinal)
+                ? PathFindCodes.InvalidTarget
+                : PathFindCodes.Unreachable;
+
+            await session.SendAsync(new PathFindAck
+            {
+                Seq = request.Seq,
+                Code = code,
+                Message = error
+            });
+
+            Log.Warn($"[path] playerId={player.PlayerId} 寻路失败: {error}");
+            return;
+        }
+
+        var points = new List<PathPoint>(corners.Count);
+        foreach (var corner in corners)
+            points.Add(new PathPoint(corner.X, corner.Y, corner.Z));
+
+        uint pathId;
+        lock (_playerLock)
+        {
+            pathId = player.SetPath(points, 4f);
+        }
+
+        var ack = new PathFindAck
+        {
+            Seq = request.Seq,
+            Code = PathFindCodes.Success,
+            Message = "OK",
+            PathId = pathId,
+            Speed = player.Speed
+        };
+
+        foreach (var point in points)
+            ack.Corners.Add(new Vec3 { X = point.X, Y = point.Y, Z = point.Z });
+
+        if (points.Count > 0)
+            ack.Start = new Vec3 { X = points[0].X, Y = points[0].Y, Z = points[0].Z };
+
+        await session.SendAsync(ack);
+
+        Log.Info($"[path] playerId={player.PlayerId} pathId={pathId} corners={points.Count} " +
+                 $"start=({points[0].X:F2},{points[0].Y:F2},{points[0].Z:F2}) " +
+                 $"end=({points[^1].X:F2},{points[^1].Y:F2},{points[^1].Z:F2})");
+    }
+
+    private async Task GameLoopAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        var lastTimestamp = Stopwatch.GetTimestamp();
+        var syncAccumulator = 0f;
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                var now = Stopwatch.GetTimestamp();
+                var dt = (float)(now - lastTimestamp) / Stopwatch.Frequency;
+                lastTimestamp = now;
+
+                // 心跳/切后台导致的超大 dt 限制一下，避免角色瞬移
+                if (dt > 0.2f)
+                    dt = 0.2f;
+
+                foreach (var player in _players.Values)
+                {
+                    // 与 HandlePathFindAsync 的 SetPath 串行化
+                    lock (_playerLock)
+                        player.Update(dt);
+                }
+
+                syncAccumulator += dt;
+                if (syncAccumulator < 0.1f)
+                    continue;
+
+                syncAccumulator = 0f;
+
+                lock (_playerLock)
+                    BroadcastMoveSync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void BroadcastMoveSync()
+    {
+        if (_players.IsEmpty)
+            return;
+
+        foreach (var player in _players.Values)
+        {
+            var message = BuildMoveSync(player);
+            foreach (var session in _sessions.Values)
+            {
+                if (session.Player == null)
+                    continue;
+
+                _ = SafeSendAsync(session, message);
+            }
+        }
+    }
+
+    private static MoveSync BuildMoveSync(PlayerEntity player) => new()
+    {
+        PlayerId = player.PlayerId,
+        PathId = player.PathId,
+        Position = new Vec3 { X = player.X, Y = player.Y, Z = player.Z },
+        RotationY = player.RotationY,
+        Moving = player.Moving,
+        CornerIndex = player.PathIndex
+    };
+
+    private async Task SafeSendAsync(ClientSession session, IMessage message)
+    {
+        try
+        {
+            await session.SendAsync(message);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"会话 {session.Id} 位置同步失败: {ex.Message}");
+            session.Close();
+        }
     }
 
     private async Task HeartbeatMonitorAsync(CancellationToken cancellationToken)

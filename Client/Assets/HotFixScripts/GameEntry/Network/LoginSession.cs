@@ -11,7 +11,7 @@ namespace GameEntry
     /// 负责：连接服务器 -> 发送 LoginReq -> 等待 LoginAck -> 登录成功后维持心跳。
     /// 网络底层完全复用 Framework.INetworkMgr（TCP + RSA/AES + LZ4 + protobuf）。
     /// </summary>
-    internal static class LoginSession
+    public static class LoginSession
     {
         private const float kHeartbeatInterval = 5f;
         private const float kLoginTimeout = 10f;
@@ -26,6 +26,13 @@ namespace GameEntry
         public static bool LoggedIn => _loggedIn;
 
         public static ulong PlayerId { get; private set; }
+
+        /// <summary>
+        /// 服务端下发的出生点（脚底坐标）。
+        /// </summary>
+        public static Vector3 SpawnPosition { get; private set; }
+
+        public static float SpawnRotationY { get; private set; }
 
         public static async UniTask LoginAsync(string account, string password, Action<bool, string> callback)
         {
@@ -108,6 +115,13 @@ namespace GameEntry
 
             _loggedIn = true;
             PlayerId = ack.PlayerId;
+
+            if (ack.SpawnPos != null)
+            {
+                SpawnPosition = new Vector3(ack.SpawnPos.X, ack.SpawnPos.Y, ack.SpawnPos.Z);
+            }
+            SpawnRotationY = ack.SpawnRotationY;
+
             StartHeartbeat();
 
             Debug.Log($"[Login] 登录成功 playerId={ack.PlayerId}");

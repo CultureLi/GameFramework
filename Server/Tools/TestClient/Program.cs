@@ -17,7 +17,7 @@ internal static class Program
 {
     private const string Usage =
         "用法: TestClient [--addr 127.0.0.1:19000] [--account test] [--password 123456] " +
-        "[--heartbeats 3] [--idle 0]";
+        "[--heartbeats 3] [--idle 0] [--path] [--target x,y,z]";
 
     private static async Task<int> Main(string[] args)
     {
@@ -35,6 +35,8 @@ internal static class Program
         var password = "123456";
         var heartbeats = 3;
         var idleSeconds = 0;
+        var pathTest = false;
+        var target = new Vec3 { X = -7.089f, Y = 0.7433f, Z = -11.9714f };
 
         try
         {
@@ -56,6 +58,12 @@ internal static class Program
                         break;
                     case "--idle":
                         idleSeconds = int.Parse(NextValue(args, ref i));
+                        break;
+                    case "--path":
+                        pathTest = true;
+                        break;
+                    case "--target":
+                        target = ParseVec3(NextValue(args, ref i));
                         break;
                     case "-h":
                     case "--help":
@@ -122,6 +130,12 @@ internal static class Program
 
                 if (loginAck.Code != 0)
                     return 2;
+
+                if (pathTest)
+                {
+                    if (!await RunPathTestAsync(stream, crypto, loginAck, target))
+                        return 4;
+                }
             }
 
             if (idleSeconds > 0)
@@ -136,7 +150,12 @@ internal static class Program
                 using var heartbeatCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 await SendAsync(stream, crypto, new HeartBeatReq { ClientTime = clientTime }, heartbeatCts.Token);
 
-                var response = await ReceiveAsync(stream, crypto, heartbeatCts.Token);
+                IMessage response;
+                do
+                {
+                    response = await ReceiveAsync(stream, crypto, heartbeatCts.Token);
+                } while (response is MoveSync);
+
                 if (response is not HeartBeatAck heartbeatAck)
                 {
                     Log.Error($"[client] 期望 HeartBeatAck，实际收到 {response.GetType().Name}");
@@ -159,11 +178,97 @@ internal static class Program
     }
 
     /// <summary>
+    /// 登录后发起一次寻路，打印服务端返回的路径，并持续接收位置同步直到移动结束。
+    /// </summary>
+    private static async Task<bool> RunPathTestAsync(
+        NetworkStream stream, AesCrypto crypto, LoginAck loginAck, Vec3 target)
+    {
+        var spawn = loginAck.SpawnPos ?? new Vec3();
+        Log.Info($"[client] 出生点 ({spawn.X:F3}, {spawn.Y:F3}, {spawn.Z:F3})");
+        Log.Info($"[client] 发送 PathFindReq target=({target.X:F3}, {target.Y:F3}, {target.Z:F3})");
+
+        using var requestCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await SendAsync(stream, crypto, new PathFindReq
+        {
+            Seq = 1,
+            Target = target,
+            ClientPos = spawn
+        }, requestCts.Token);
+
+        PathFindAck? ack = null;
+        while (ack == null)
+        {
+            var message = await ReceiveAsync(stream, crypto, requestCts.Token);
+            switch (message)
+            {
+                case PathFindAck pathAck:
+                    ack = pathAck;
+                    break;
+                case MoveSync sync:
+                    var syncPosition = sync.Position ?? new Vec3();
+                    Log.Info($"[client] 收到 MoveSync player={sync.PlayerId} pathId={sync.PathId} " +
+                             $"pos=({syncPosition.X:F2},{syncPosition.Y:F2},{syncPosition.Z:F2}) " +
+                             $"moving={sync.Moving}");
+                    break;
+            }
+        }
+
+        Log.Info($"[client] PathFindAck seq={ack.Seq} code={ack.Code} message={ack.Message} " +
+                 $"pathId={ack.PathId} corners={ack.Corners.Count} speed={ack.Speed}");
+
+        for (var i = 0; i < ack.Corners.Count; i++)
+        {
+            var corner = ack.Corners[i];
+            Log.Info($"[client]   corner[{i}] = ({corner.X:F3}, {corner.Y:F3}, {corner.Z:F3})");
+        }
+
+        if (ack.Code != 0)
+            return false;
+
+        using var moveCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        var syncCount = 0;
+        while (true)
+        {
+            var message = await ReceiveAsync(stream, crypto, moveCts.Token);
+            if (message is not MoveSync sync)
+                continue;
+
+            syncCount++;
+            var position = sync.Position ?? new Vec3();
+            Log.Info($"[client] MoveSync #{syncCount} player={sync.PlayerId} pathId={sync.PathId} " +
+                     $"pos=({position.X:F2},{position.Y:F2},{position.Z:F2}) " +
+                     $"rot={sync.RotationY:F1} moving={sync.Moving} corner={sync.CornerIndex}");
+
+            if (!sync.Moving && sync.PathId == ack.PathId)
+                break;
+        }
+
+        Log.Info("[client] 路径移动完成");
+        return true;
+    }
+
+    private static Vec3 ParseVec3(string value)
+    {
+        var parts = value.Split(',');
+        if (parts.Length != 3 ||
+            !float.TryParse(parts[0], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var x) ||
+            !float.TryParse(parts[1], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var y) ||
+            !float.TryParse(parts[2], System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var z))
+        {
+            throw new ArgumentException($"坐标格式应为 x,y,z，实际: {value}");
+        }
+
+        return new Vec3 { X = x, Y = y, Z = z };
+    }
+
+    /// <summary>
     /// 登录后不再发送心跳，等待服务端按 heartbeat-timeout 主动断开。
     /// </summary>
     private static async Task<int> RunIdleTestAsync(NetworkStream stream, AesCrypto crypto, int idleSeconds)
     {
-        Log.Info($"[client] 停止发送心跳 {idleSeconds}s，等待服务端断开...");
         await Task.Delay(TimeSpan.FromSeconds(idleSeconds));
 
         using var waitCts = new CancellationTokenSource(TimeSpan.FromSeconds(20));

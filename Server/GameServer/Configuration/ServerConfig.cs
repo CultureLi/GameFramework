@@ -8,6 +8,7 @@ namespace GameServer.Configuration;
 ///   --addr 0.0.0.0:19000
 ///   --handshake-timeout 10
 ///   --heartbeat-timeout 30
+///   --navmesh NavData/navmesh.rnav
 /// </summary>
 public sealed class ServerConfig
 {
@@ -15,9 +16,12 @@ public sealed class ServerConfig
     public int Port { get; init; } = 19000;
     public TimeSpan HandshakeTimeout { get; init; } = TimeSpan.FromSeconds(10);
     public TimeSpan HeartbeatTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    public string NavMeshPath { get; init; } =
+        Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
 
     public const string Usage =
-        "用法: GameServer [--addr 0.0.0.0:19000] [--handshake-timeout 10] [--heartbeat-timeout 30]";
+        "用法: GameServer [--addr 0.0.0.0:19000] [--handshake-timeout 10] " +
+        "[--heartbeat-timeout 30] [--navmesh NavData/navmesh.rnav]";
 
     public static ServerConfig Parse(string[] args)
     {
@@ -25,6 +29,7 @@ public sealed class ServerConfig
         var port = 19000;
         var handshakeTimeout = 10d;
         var heartbeatTimeout = 30d;
+        var navMeshPath = Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -38,6 +43,9 @@ public sealed class ServerConfig
                     break;
                 case "--heartbeat-timeout":
                     heartbeatTimeout = ParseSeconds(NextValue(args, ref i));
+                    break;
+                case "--navmesh":
+                    navMeshPath = NextValue(args, ref i);
                     break;
                 case "-h":
                 case "--help":
@@ -63,7 +71,8 @@ public sealed class ServerConfig
             Host = address,
             Port = port,
             HandshakeTimeout = TimeSpan.FromSeconds(handshakeTimeout),
-            HeartbeatTimeout = TimeSpan.FromSeconds(heartbeatTimeout)
+            HeartbeatTimeout = TimeSpan.FromSeconds(heartbeatTimeout),
+            NavMeshPath = navMeshPath
         };
     }
 

@@ -17,6 +17,12 @@ namespace GameMain
             FW.GameLogicMgr.CreateMgr<PlayerInfoMgr>();
 
             PlayerInfoMgr.I.Test();
+
+            // 寻路 Demo 只在 PathFinding 场景里创建
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "PathFinding")
+            {
+                new UnityEngine.GameObject("PathFindingDemo").AddComponent<PathFindingDemo>();
+            }
         }
     }
 }

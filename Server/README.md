@@ -1,8 +1,12 @@
 ﻿# Game Server (C# / .NET 9)
 
-Unity 客户端登录 / 心跳服务器的 C# 实现。协议、加密、压缩、消息 ID 全部复用
+Unity 客户端登录 / 心跳 / 寻路服务器的 C# 实现。协议、加密、压缩、消息 ID 全部复用
 [客户端既有网络结构](../Client/Assets/HotFixScripts/Framework/Network)，protobuf 仍然只有
 [`Protos/protos`](../Protos/protos) 一份，服务器直接编译客户端已经生成好的 C# 代码。
+
+寻路使用 [DotRecast](https://github.com/ikpil/DotRecast)（Recast Navigation 的 C# 移植）。
+Unity 端继续用 `NavMeshExporter` 把烘焙好的 NavMesh 导出成 `.rnav`，服务端把三角形网格
+组装成 Detour 导航网格后执行 `FindPath / FindStraightPath`。
 
 ## 为什么用 System.Net.Sockets 而不是 TouchSocket / SuperSocket
 
@@ -32,10 +36,17 @@ Server/
 │  │  ├─ PacketCodec.cs        9 字节消息头 + LZ4
 │  │  ├─ AesCrypto.cs          AES-CBC + PKCS7
 │  │  └─ MessageRegistry.cs    BKDRHash 消息 ID
+│  ├─ Pathfinding/
+│  │  ├─ NavMeshFileReader.cs  读取 Unity 导出的 .rnav
+│  │  ├─ NavMeshBuilder.cs     三角形网格 -> Detour 导航网格
+│  │  └─ NavMeshWorld.cs       DotRecast 查询封装（FindPath/FindStraightPath）
 │  ├─ Game/
 │  │  ├─ AccountStore.cs       内存账号表 + 登录校验
-│  │  └─ LoginCodes.cs         返回码
+│  │  ├─ LoginCodes.cs         登录返回码
+│  │  ├─ PlayerEntity.cs       服务端玩家位置、路径与移动
+│  │  └─ PathFindCodes.cs      寻路返回码
 │  └─ Utility/Log.cs
+├─ NavData/navmesh.rnav        Unity 导出的导航数据
 ├─ Tools/TestClient/           命令行测试客户端（不依赖 Unity）
 ├─ build.bat                   编译（dotnet publish）
 ├─ run.bat                     启动服务器
@@ -62,6 +73,7 @@ run.bat --addr 127.0.0.1:19000 --heartbeat-timeout 30
 | `--addr` | `0.0.0.0:19000` | 监听地址 |
 | `--handshake-timeout` | `10` 秒 | RSA/AES 握手超时 |
 | `--heartbeat-timeout` | `30` 秒 | 超过该时间没有收到任何消息则断开 |
+| `--navmesh` | `NavData/navmesh.rnav` | Unity 导出的导航数据路径 |
 
 ### 端口被占用
 
@@ -113,6 +125,49 @@ run.bat --addr 127.0.0.1:19001
 - **登录**：账号格式校验、首次登录自动注册、密码错误、重复在线、连续 5 次失败断开
 - **优雅退出**：Ctrl+C 取消监听、关闭所有会话并等待最多 2 秒
 
+## 寻路与移动同步
+
+### 导航数据
+
+1. 在 Unity 里打开 `Assets/Test/Scene/PathFinding.unity`（场景里有烘焙好的 NavMesh）
+2. 菜单 `Tools/RecastNavigationServer/Export NavMesh` 导出 `.rnav`
+3. 覆盖 `Server/NavData/navmesh.rnav`
+4. 重新编译服务器；`dotnet publish` 会把它复制到 `publish/server/NavData/`
+
+服务端启动时会加载它，并打印 poly 数、边界边、内部边和出生点。如果换了客户端场景，
+必须重新导出导航数据，保证服务端寻路和客户端可见地面一致。
+
+### 服务端实现
+
+- `NavMeshFileReader` 解析 `.rnav`
+- `NavMeshBuilder` 移植自 `RecastNavigationServer/src/NavMeshBuilder.cpp`：
+  顶点按体素精度量化焊接 -> 退化三角形过滤 -> 共享边邻接 -> 组装 `DtNavMeshCreateParams`
+- `NavMeshWorld` 使用 DotRecast 的 `DtNavMeshQuery` 执行 `FindNearestPoly`、`FindPath`、
+  `FindStraightPath`；查询用锁串行化（`DtNavMeshQuery` 不是线程安全的）
+- 登录成功时创建 `PlayerEntity`，出生点取导航网格第一个有效三角形的质心，并通过
+  `LoginAck.spawnPos` 下发给客户端
+- 游戏循环 50ms 一 tick，玩家按 4 单位/秒沿 `corners` 移动；每 100ms 广播一次 `MoveSync`
+
+### 协议
+
+```
+PathFindReq  { seq, target, clientPos }
+PathFindAck  { seq, code, message, pathId, corners[], start, speed }
+MoveSync     { playerId, pathId, position, rotationY, moving, cornerIndex }
+```
+
+流程：
+
+1. 客户端点击地面 -> `PathFindReq`
+2. 服务端以自己维护的玩家位置为起点，`FindNearestPoly` 吸附起点/终点，`FindPath` +
+   `FindStraightPath`
+3. 返回 `PathFindAck`（路径拐点），同时把路径挂到 `PlayerEntity`
+4. 服务端 tick 移动角色，每 100ms 广播 `MoveSync`
+5. 客户端按 `corners` 本地预测移动，并用 `MoveSync` 校正位置；到达后服务端下发
+   `moving=false`，客户端停止
+
+返回码：`0` 成功、`1` 未登录、`2` 目标无效、`3` 不可达、`4` 服务器错误。
+
 ## 测试客户端
 
 `Tools/TestClient` 是一个不依赖 Unity 的命令行客户端，完整走一遍 RSA/AES/LZ4/protobuf：
@@ -133,6 +188,9 @@ TestClient.exe --account test --password wrong
 :: 登录后停止心跳，验证服务端心跳超时断开
 :: 服务端需要用较短的心跳超时启动：run.bat --heartbeat-timeout 3
 TestClient.exe --account idle --password 123456 --idle 10
+
+:: 登录 + 寻路 + 接收位置同步（目标点是默认测试导航网格的另一端）
+TestClient.exe --account path --password 123456 --path --heartbeats 0
 ```
 
 ## 客户端接入
@@ -146,8 +204,21 @@ TestClient.exe --account idle --password 123456 --idle 10
 收到 `LoginAck.code == 0` 进入 GameMain -> 每 5 秒发送心跳。
 登录服地址来自 `Client/Assets/Resources/appConfig.json` 的 `loginServer[0]`。
 
+寻路 Demo：
+
+- `Client/Assets/HotFixScripts/GameMain/Pathfinding/PathFindingDemo.cs`
+- 登录后 `GameMainEntryMgr` 加载 `PathFinding` 场景（已加入 Build Settings），
+  `MainEntryStartStage` 创建 Demo
+- 场景里的 `Agent` 被激活并禁用 `NavMeshAgent`，左键点击地面发送 `PathFindReq`
+- 客户端沿 ack 返回的 `corners` 本地移动，收到 `MoveSync` 后校正位置
+
+如果要把 Demo 放回原来的 `Main` 场景，修改 `GameMainEntryMgr.Entry` 里的场景名即可；
+`MainEntryStartStage` 只在活动场景名为 `PathFinding` 时创建 Demo。
+
 ## 注意
 
 - 账号表在内存里，服务器重启后清空；生产环境应使用数据库，并对密码做哈希。
 - 当前 AES 固定 IV 是客户端既有协议，安全性有限；正式项目建议改为每条消息随机 IV / TLS。
+- 服务端目前移动的是所有登录玩家，`MoveSync` 会广播给所有会话；客户端 Demo 只处理自己的
+  位置，其他玩家显示可以后续扩展。
 - `Server_Go_Backup/` 是之前 Go 版本服务器的备份（清理 Server 目录时保留），确认不再需要后可以删除。

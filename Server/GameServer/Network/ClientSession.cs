@@ -2,6 +2,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using Google.Protobuf;
+using GameServer.Game;
 using GameServer.Protocol;
 using GameServer.Utility;
 
@@ -43,6 +44,11 @@ public sealed class ClientSession
     public long Id { get; }
 
     public string RemoteEndPoint { get; }
+
+    /// <summary>
+    /// 登录成功后绑定的服务端玩家实体。
+    /// </summary>
+    public PlayerEntity? Player { get; set; }
 
     public Task Completion => _completion.Task;
 
