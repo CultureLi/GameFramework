@@ -7,6 +7,10 @@ public readonly record struct PathPoint(float X, float Y, float Z);
 /// </summary>
 public sealed class PlayerEntity
 {
+    public const float DefaultSpeed = 4f;
+    public const float MinSpeed = 1f;
+    public const float MaxSpeed = 20f;
+
     private List<PathPoint> _path = new();
 
     public PlayerEntity(ulong playerId, PathPoint spawn)
@@ -24,13 +28,19 @@ public sealed class PlayerEntity
     public float Z { get; private set; }
     public float RotationY { get; private set; }
 
-    public float Speed { get; private set; } = 4f;
+    public float Speed { get; private set; } = DefaultSpeed;
     public uint PathId { get; private set; }
     public int PathIndex { get; private set; }
 
     public bool Moving => PathIndex < _path.Count;
 
     public IReadOnlyList<PathPoint> Path => _path;
+
+    /// <summary>设置移动速度（会被服务端限制在合法范围内）。</summary>
+    public void SetSpeed(float speed)
+    {
+        Speed = Math.Clamp(speed, MinSpeed, MaxSpeed);
+    }
 
     public void SetPosition(PathPoint position)
     {
@@ -41,11 +51,11 @@ public sealed class PlayerEntity
 
     /// <summary>
     /// 设置新路径。路径第一个点是服务端吸附后的起点，移动从第二个点开始。
+    /// 使用玩家当前移动速度，不会重置成默认值。
     /// </summary>
-    public uint SetPath(IReadOnlyList<PathPoint> corners, float speed)
+    public uint SetPath(IReadOnlyList<PathPoint> corners)
     {
         PathId++;
-        Speed = speed;
         _path = corners.ToList();
         PathIndex = _path.Count > 1 ? 1 : _path.Count;
 

@@ -13,9 +13,10 @@ if not exist "publish\server\GameServer.exe" (
 echo ==========================================
 echo  GameServer
 echo  Default: 0.0.0.0:19000
+echo  Config:  %~dp0..\Client\Assets\StreamingAssets\Config
 echo  Press Ctrl+C to stop
 echo ==========================================
-"%~dp0publish\server\GameServer.exe" %*
+"%~dp0publish\server\GameServer.exe" --config "%~dp0..\Client\Assets\StreamingAssets\Config" %*
 
 echo.
 echo Server stopped.

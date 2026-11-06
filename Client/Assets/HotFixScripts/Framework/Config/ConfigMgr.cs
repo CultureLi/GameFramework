@@ -7,20 +7,6 @@ using UnityEngine;
 
 namespace Framework
 {
-    public abstract class TableBase
-    {
-        public virtual bool UseOffset
-        {
-            get; private set;
-        }
-        public virtual void Initialize(string name, Func<string, MemoryStream> streamLoader, System.Func<string, int, int, ByteBuf> byteBufLoader)
-        {
-        }
-        public virtual void Initialize(string name, Func<string, MemoryStream> streamLoader)
-        {
-        }
-    }
-
     public class ConfigMgr : IConfigMgr, IFramework
     {
         private static byte[] BUFFER = new byte[1024 * 1024 * 5]; //来个5MB

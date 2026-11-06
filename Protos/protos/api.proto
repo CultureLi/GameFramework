@@ -75,6 +75,39 @@ message MoveSync {
   int32 cornerIndex = 6;
 }
 
+// ===== 移动速度 =====
+
+message SetMoveSpeedReq {
+  float speed = 1;
+}
+
+message SetMoveSpeedSync {
+  uint64 playerId = 1;
+  float speed = 2;
+  // 0=成功 1=速度非法 2=未登录
+  int32 code = 3;
+}
+
+// ===== 关卡门（动态障碍物）=====
+
+message GateStateQueryReq {
+}
+
+message GateStateReq {
+  int32 gateId = 1;
+  bool open = 2;
+}
+
+message GateStateSync {
+  int32 gateId = 1;
+  bool open = 2;
+  // 0=成功 1=关卡不存在 2=未登录
+  int32 code = 3;
+  Vec3 center = 4;   // 关卡门世界中心
+  Vec3 size = 5;     // 关卡门世界尺寸
+  float rotationY = 6;
+}
+
 message HeartBeatReq {
   int64 clientTime = 1; // 客户端毫秒时间戳
 }

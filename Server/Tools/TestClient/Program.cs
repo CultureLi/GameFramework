@@ -17,7 +17,7 @@ internal static class Program
 {
     private const string Usage =
         "用法: TestClient [--addr 127.0.0.1:19000] [--account test] [--password 123456] " +
-        "[--heartbeats 3] [--idle 0] [--path] [--target x,y,z]";
+        "[--heartbeats 3] [--idle 0] [--path] [--target x,y,z] [--gates] [--speed]";
 
     private static async Task<int> Main(string[] args)
     {
@@ -36,6 +36,8 @@ internal static class Program
         var heartbeats = 3;
         var idleSeconds = 0;
         var pathTest = false;
+        var gateTest = false;
+        var speedTest = false;
         var target = new Vec3 { X = -7.089f, Y = 0.7433f, Z = -11.9714f };
 
         try
@@ -61,6 +63,12 @@ internal static class Program
                         break;
                     case "--path":
                         pathTest = true;
+                        break;
+                    case "--gates":
+                        gateTest = true;
+                        break;
+                    case "--speed":
+                        speedTest = true;
                         break;
                     case "--target":
                         target = ParseVec3(NextValue(args, ref i));
@@ -131,6 +139,12 @@ internal static class Program
                 if (loginAck.Code != 0)
                     return 2;
 
+                if (speedTest)
+                    await RunSpeedTestAsync(stream, crypto);
+
+                if (gateTest)
+                    await RunGateTestAsync(stream, crypto);
+
                 if (pathTest)
                 {
                     if (!await RunPathTestAsync(stream, crypto, loginAck, target))
@@ -175,6 +189,94 @@ internal static class Program
             Log.Error("[client] 测试失败", ex);
             return 1;
         }
+    }
+
+    /// <summary>
+    /// 请求一次移动速度并恢复，验证服务端速度设置与广播。
+    /// </summary>
+    private static async Task RunSpeedTestAsync(NetworkStream stream, AesCrypto crypto)
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        await SendAsync(stream, crypto, new SetMoveSpeedReq { Speed = 8f }, cts.Token);
+        Log.Info("[client] 请求移动速度 8");
+
+        while (true)
+        {
+            var message = await ReceiveAsync(stream, crypto, cts.Token);
+            if (message is not SetMoveSpeedSync sync)
+                continue;
+
+            Log.Info($"[client] SetMoveSpeedSync player={sync.PlayerId} speed={sync.Speed} code={sync.Code}");
+            if (sync.Code == 0)
+                break;
+        }
+
+        await SendAsync(stream, crypto, new SetMoveSpeedReq { Speed = 4f }, cts.Token);
+        Log.Info("[client] 恢复移动速度 4");
+
+        while (true)
+        {
+            var message = await ReceiveAsync(stream, crypto, cts.Token);
+            if (message is SetMoveSpeedSync sync && sync.Code == 0)
+            {
+                Log.Info($"[client] SetMoveSpeedSync player={sync.PlayerId} speed={sync.Speed} code={sync.Code}");
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 查询关卡门状态并切换一次，验证服务端动态障碍物加载。
+    /// </summary>
+    private static async Task RunGateTestAsync(NetworkStream stream, AesCrypto crypto)
+    {
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await SendAsync(stream, crypto, new GateStateQueryReq(), cts.Token);
+        Log.Info("[client] 已发送 GateStateQueryReq");
+
+        GateStateSync? first = null;
+        while (first == null)
+        {
+            var message = await ReceiveAsync(stream, crypto, cts.Token);
+            if (message is MoveSync)
+                continue;
+            if (message is not GateStateSync sync)
+                continue;
+
+            var center = sync.Center ?? new Vec3();
+            var size = sync.Size ?? new Vec3();
+            Log.Info($"[client] GateStateSync gateId={sync.GateId} open={sync.Open} code={sync.Code} " +
+                     $"center=({center.X:F2},{center.Y:F2},{center.Z:F2}) size=({size.X:F2},{size.Y:F2},{size.Z:F2})");
+            if (sync.Code == 0 && sync.GateId > 0)
+                first = sync;
+        }
+
+        bool newOpen = !first.Open;
+        await SendAsync(stream, crypto, new GateStateReq
+        {
+            GateId = first.GateId,
+            Open = newOpen
+        }, cts.Token);
+        Log.Info($"[client] 请求关卡 {first.GateId} -> {(newOpen ? "打开" : "关闭")}");
+
+        while (true)
+        {
+            var message = await ReceiveAsync(stream, crypto, cts.Token);
+            if (message is not GateStateSync sync || sync.GateId != first.GateId)
+                continue;
+
+            Log.Info($"[client] 收到关卡同步 gateId={sync.GateId} open={sync.Open} code={sync.Code}");
+            break;
+        }
+
+        // 恢复原状态
+        await SendAsync(stream, crypto, new GateStateReq
+        {
+            GateId = first.GateId,
+            Open = first.Open
+        }, cts.Token);
+        Log.Info($"[client] 恢复关卡 {first.GateId} -> {(first.Open ? "打开" : "关闭")}");
     }
 
     /// <summary>

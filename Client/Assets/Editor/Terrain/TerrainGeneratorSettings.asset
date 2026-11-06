@@ -41,6 +41,21 @@ MonoBehaviour:
   ridgeFrequency: 0.003
   ridgeOctaves: 6
   ridgeSharpness: 1.4
+  enableMaze: 1
+  mazeCenter: {x: 0.5, y: 0.49}
+  mazeRadius: 0.38
+  mazeSpiralTurns: 3.75
+  mazeWallHeight: 0.7
+  mazeWallHalfWidth: 7
+  mazeWallFalloff: 8
+  mazeWallNoise: 0.3
+  mazeGateWidth: 10
+  mazeGateHeight: 5
+  mazeGateThickness: 1.5
+  mazeGateOpenByDefault: 1
+  mazeSuppressNaturalTerrain: 1
+  mazeSuppressRoadCarve: 1
+  mazeBakeNavMesh: 1
   mainRoad:
   - x: 0.02
     z: 0.1

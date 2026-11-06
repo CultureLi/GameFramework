@@ -47,7 +47,8 @@ namespace GameFramework.EditorTools.TerrainGen
             EditorGUILayout.LabelField("OpenWorld Terrain Generator", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
                 "Target scene: " + OpenWorldTerrainOrchestrator.ScenePath +
-                "\nGenerates heightmap, splatmap (desert/grass/mud/asphalt), procedural vegetation and buildings.",
+                "\nGenerates heightmap, splatmap (desert/grass/mud/asphalt), procedural vegetation and buildings." +
+                "\nMaze mode: explicit mountain walls + level gates, then bakes the NavMeshSurface.",
                 MessageType.Info);
 
             SerializedProperty iterator = _so.GetIterator();
@@ -79,6 +80,12 @@ namespace GameFramework.EditorTools.TerrainGen
                         "Reset heightmap, splatmap, trees, details, and building instances?", "Yes", "Cancel"))
                         OpenWorldTerrainOrchestrator.Run(_settings, OpenWorldTerrainOrchestrator.Step.Clear);
                 }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Bake NavMeshSurface", GUILayout.Height(32)))
+                    OpenWorldTerrainOrchestrator.Run(_settings, OpenWorldTerrainOrchestrator.Step.BakeNavMesh);
             }
 
             EditorGUILayout.Space(6);

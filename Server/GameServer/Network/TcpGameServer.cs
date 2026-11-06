@@ -38,15 +38,22 @@ public sealed class TcpGameServer
         Config = config;
         Rsa = RSA.Create(2048);
         PublicKeyXml = BuildPublicKeyXml(Rsa);
+        ConfigManager = new ServerConfigMgr(config.ConfigDirectory);
         _navMesh = NavMeshWorld.Load(config.NavMeshPath);
 
         MessageRegistry.Initialize();
         Register<LoginReq>(HandleLoginAsync);
         Register<HeartBeatReq>(HandleHeartbeatAsync);
         Register<PathFindReq>(HandlePathFindAsync);
+        Register<GateStateQueryReq>(HandleGateStateQueryAsync);
+        Register<GateStateReq>(HandleGateStateAsync);
+        Register<SetMoveSpeedReq>(HandleSetMoveSpeedAsync);
     }
 
     public ServerConfig Config { get; }
+
+    /// <summary>已加载的客户端配置表（与 Unity 工程共用同一份生成代码和数据）。</summary>
+    public ServerConfigMgr ConfigManager { get; }
 
     public RSA Rsa { get; }
 
@@ -308,6 +315,125 @@ public sealed class TcpGameServer
         });
     }
 
+    private async Task HandleGateStateQueryAsync(ClientSession session, GateStateQueryReq request)
+    {
+        if (!session.LoggedIn)
+        {
+            await session.SendAsync(new GateStateSync { Code = 2 });
+            return;
+        }
+
+        foreach (var gate in _navMesh.Gates)
+            await session.SendAsync(BuildGateSync(gate, 0));
+
+        Log.Info($"会话 {session.Id} 查询关卡状态，共 {_navMesh.Gates.Count} 个");
+    }
+
+    private async Task HandleGateStateAsync(ClientSession session, GateStateReq request)
+    {
+        if (!session.LoggedIn)
+        {
+            await session.SendAsync(new GateStateSync
+            {
+                GateId = request.GateId,
+                Open = request.Open,
+                Code = 2
+            });
+            return;
+        }
+
+        if (!_navMesh.TrySetGateState(request.GateId, request.Open))
+        {
+            await session.SendAsync(new GateStateSync
+            {
+                GateId = request.GateId,
+                Open = request.Open,
+                Code = 1
+            });
+            Log.Warn($"会话 {session.Id} 请求的关卡不存在: {request.GateId}");
+            return;
+        }
+
+        var gate = _navMesh.FindGate(request.GateId);
+        if (gate == null)
+        {
+            await session.SendAsync(new GateStateSync
+            {
+                GateId = request.GateId,
+                Open = request.Open,
+                Code = 1
+            });
+            return;
+        }
+
+        BroadcastGateState(BuildGateSync(gate, 0));
+        Log.Info($"[gate] 关卡 {gate.GateId} {(gate.Open ? "打开" : "关闭")}，广播给所有在线玩家");
+    }
+
+    private static GateStateSync BuildGateSync(NavMeshGate gate, int code) => new()
+    {
+        GateId = gate.GateId,
+        Open = gate.Open,
+        Code = code,
+        Center = new Vec3 { X = gate.Center.X, Y = gate.Center.Y, Z = gate.Center.Z },
+        Size = new Vec3 { X = gate.Size.X, Y = gate.Size.Y, Z = gate.Size.Z },
+        RotationY = gate.RotationY
+    };
+
+    private void BroadcastGateState(GateStateSync message)
+    {
+        BroadcastToPlayers(message);
+    }
+
+    private void BroadcastToPlayers(IMessage message)
+    {
+        foreach (var session in _sessions.Values)
+        {
+            if (session.Player == null)
+                continue;
+
+            _ = SafeSendAsync(session, message);
+        }
+    }
+
+    private async Task HandleSetMoveSpeedAsync(ClientSession session, SetMoveSpeedReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new SetMoveSpeedSync
+            {
+                Speed = request.Speed,
+                Code = 2
+            });
+            return;
+        }
+
+        float speed = request.Speed;
+        if (float.IsNaN(speed) || float.IsInfinity(speed) ||
+            speed < PlayerEntity.MinSpeed || speed > PlayerEntity.MaxSpeed)
+        {
+            await session.SendAsync(new SetMoveSpeedSync
+            {
+                PlayerId = player.PlayerId,
+                Speed = player.Speed,
+                Code = 1
+            });
+            Log.Warn($"玩家 {player.PlayerId} 请求的移动速度非法: {speed}");
+            return;
+        }
+
+        player.SetSpeed(speed);
+        BroadcastToPlayers(new SetMoveSpeedSync
+        {
+            PlayerId = player.PlayerId,
+            Speed = player.Speed,
+            Code = 0
+        });
+
+        Log.Info($"[speed] 玩家 {player.PlayerId} 移动速度设置为 {player.Speed:0.##}");
+    }
+
     private async Task HandlePathFindAsync(ClientSession session, PathFindReq request)
     {
         var player = session.Player;
@@ -365,7 +491,7 @@ public sealed class TcpGameServer
         uint pathId;
         lock (_playerLock)
         {
-            pathId = player.SetPath(points, 4f);
+            pathId = player.SetPath(points);
         }
 
         var ack = new PathFindAck

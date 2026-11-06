@@ -129,24 +129,32 @@ run.bat --addr 127.0.0.1:19001
 
 ### 导航数据
 
-1. 在 Unity 里打开 `Assets/Test/Scene/PathFinding.unity`（场景里有烘焙好的 NavMesh）
-2. 菜单 `Tools/RecastNavigationServer/Export NavMesh` 导出 `.rnav`
-3. 覆盖 `Server/NavData/navmesh.rnav`
-4. 重新编译服务器；`dotnet publish` 会把它复制到 `publish/server/NavData/`
+1. 在 Unity 里打开 `Assets/NoBundleRes/Scene/OpenWorld/OpenWorld.unity`（地形生成器的目标场景）
+2. `Tools/OpenWorld/Terrain Generator` → **Generate All**（生成地形、关卡门并烘焙 NavMeshSurface）
+3. 菜单 `Tools/RecastNavigationServer/Export NavMesh` 导出 `.rnav`，覆盖 `Server/NavData/navmesh.rnav`
+4. 重新编译/启动服务器；`dotnet publish` 会把它复制到 `publish/server/NavData/`
 
-服务端启动时会加载它，并打印 poly 数、边界边、内部边和出生点。如果换了客户端场景，
-必须重新导出导航数据，保证服务端寻路和客户端可见地面一致。
+导出的 `.rnav` 为 **v2**，除了三角形/NavMeshLink，还包含动态关卡门（`LevelGate`）：
+`gateId / center / size / rotationY / open`。服务端加载后会把每个门的 Box 覆盖到的导航多边形
+记录下来，关门时把这些多边形 flag 置 0，`FindPath` 会自动绕开或返回不可达。
+
+服务端启动时会打印 poly 数、边界边、内部边、关卡门数量和出生点。如果换了客户端场景，
+必须重新导出导航数据，保证服务端寻路和 Main 场景流式加载出来的地形一致。
 
 ### 服务端实现
 
-- `NavMeshFileReader` 解析 `.rnav`
+- `NavMeshFileReader` 解析 `.rnav`（兼容 v1 无门、v2 含关卡门）
 - `NavMeshBuilder` 移植自 `RecastNavigationServer/src/NavMeshBuilder.cpp`：
   顶点按体素精度量化焊接 -> 退化三角形过滤 -> 共享边邻接 -> 组装 `DtNavMeshCreateParams`
 - `NavMeshWorld` 使用 DotRecast 的 `DtNavMeshQuery` 执行 `FindNearestPoly`、`FindPath`、
   `FindStraightPath`；查询用锁串行化（`DtNavMeshQuery` 不是线程安全的）
-- 登录成功时创建 `PlayerEntity`，出生点取导航网格第一个有效三角形的质心，并通过
-  `LoginAck.spawnPos` 下发给客户端
+- `NavMeshWorld` 加载 v2 关卡门：用门的 AABB 做 `QueryPolygons` 映射多边形，开关门时
+  `SetPolyFlags` 修改通行性
+- 登录成功时创建 `PlayerEntity`，出生点从世界坐标 `(0,0,0)` 用 `FindNearestPoly` 找最近的
+  可行走点（搜索半径由 10m 逐步扩大到 5000m，并排除已关闭的关卡门）；找不到才回退到导航网格
+  第一个有效三角形质心。出生点通过 `LoginAck.spawnPos` 下发给客户端
 - 游戏循环 50ms 一 tick，玩家按 4 单位/秒沿 `corners` 移动；每 100ms 广播一次 `MoveSync`
+- 关卡门协议：客户端查询/请求，服务端校验后更新导航 flag 并广播给所有在线玩家
 
 ### 协议
 
@@ -154,6 +162,11 @@ run.bat --addr 127.0.0.1:19001
 PathFindReq  { seq, target, clientPos }
 PathFindAck  { seq, code, message, pathId, corners[], start, speed }
 MoveSync     { playerId, pathId, position, rotationY, moving, cornerIndex }
+GateStateQueryReq { }
+GateStateReq  { gateId, open }
+GateStateSync { gateId, open, code, center, size, rotationY }
+SetMoveSpeedReq  { speed }
+SetMoveSpeedSync { playerId, speed, code }
 ```
 
 流程：
@@ -191,6 +204,12 @@ TestClient.exe --account idle --password 123456 --idle 10
 
 :: 登录 + 寻路 + 接收位置同步（目标点是默认测试导航网格的另一端）
 TestClient.exe --account path --password 123456 --path --heartbeats 0
+
+:: 查询并切换一次关卡门（导航数据需要是 v2 且包含 LevelGate）
+TestClient.exe --account gate --password 123456 --gates --heartbeats 0
+
+:: 设置移动速度 8 再恢复 4
+TestClient.exe --account speed --password 123456 --speed --heartbeats 0
 ```
 
 ## 客户端接入
@@ -204,16 +223,69 @@ TestClient.exe --account path --password 123456 --path --heartbeats 0
 收到 `LoginAck.code == 0` 进入 GameMain -> 每 5 秒发送心跳。
 登录服地址来自 `Client/Assets/Resources/appConfig.json` 的 `loginServer[0]`。
 
-寻路 Demo：
+寻路正式脚本（Main 场景）：
 
-- `Client/Assets/HotFixScripts/GameMain/Pathfinding/PathFindingDemo.cs`
-- 登录后 `GameMainEntryMgr` 加载 `PathFinding` 场景（已加入 Build Settings），
-  `MainEntryStartStage` 创建 Demo
-- 场景里的 `Agent` 被激活并禁用 `NavMeshAgent`，左键点击地面发送 `PathFindReq`
-- 客户端沿 ack 返回的 `corners` 本地移动，收到 `MoveSync` 后校正位置
+- `Client/Assets/HotFixScripts/GameMain/Pathfinding/PathfindingMgr.cs`：网络消息、玩家、关卡门同步
+- `.../LocalPlayerController.cs`：点击寻路、本地预测、MoveSync 校正、相机跟随
+- `.../LevelGate.cs`：关卡门开关、`gateID`、`GateStateRequested` 事件
+- `.../MazeGateDebugToggle.cs`：按 `G` 请求开关所有门
 
-如果要把 Demo 放回原来的 `Main` 场景，修改 `GameMainEntryMgr.Entry` 里的场景名即可；
-`MainEntryStartStage` 只在活动场景名为 `PathFinding` 时创建 Demo。
+流程：
+
+- `GameMainEntryMgr` 通过 Addressables 加载 `Main` 场景
+- `MainEntryStartStage` 创建 `PathfindingMgr`，在服务端出生点创建本地玩家
+- `PathfindingMgr` 注册 `PathFindAck / MoveSync / GateStateSync`，并向服务端发送一次
+  `GateStateQueryReq`
+- 服务端把导出的关卡门（gateId/center/size/rotationY/open）同步回来，客户端动态创建
+  `LevelGate` 方块；Main 场景里如果已经有同 gateID 的 LevelGate，则直接复用
+- 手动调用 `LevelGate.RequestSetOpen` / 按 `G` 时，`PathfindingMgr` 发送 `GateStateReq`，
+  服务端更新动态障碍并广播 `GateStateSync`，客户端再应用权威状态
+- 设置窗口 `UISetting`：
+  - 速度输入框：`1~20` 的数值，调用 `PathfindingMgr.RequestMoveSpeed`，服务端广播
+    `SetMoveSpeedSync` 后更新本地移动速度
+  - 关卡输入框：只填 `gateId` 表示按当前状态切换；`gateId,open` / `gateId,close`
+    表示显式打开/关闭，调用 `PathfindingMgr.RequestGateState` / `RequestGateToggle`
+- 相机复用 Main 场景的 `WorldCameraController`，每帧 `MoveTo` 到玩家脚下，
+  `WorldChunkStreaming` 会按相机覆盖范围加载 OpenWorld 地形块
+
+## 配置表
+
+服务端和客户端**共用同一份配置表代码和数据**：
+
+- 服务端项目直接链接 `Client/Assets/HotFixScripts/GameMain/Config/Gen/*.cs`
+  （Luban 导出的表格类）以及 `Framework/Config` 下无 Unity 依赖的运行时类：
+  `BeanBase / ByteBuf / StringUtil / ITypeId / TableBase`
+- `TableBase` 已从 `ConfigMgr.cs` 抽成独立的
+  `Framework/Config/TableBase.cs`，客户端和服务端共用，不需要复制代码
+- 服务端 `Configuration/ServerConfigMgr.cs` 直接读取
+  `Client/Assets/StreamingAssets/Config/configData.zip`（以及可选的 `i18n.zip`），
+  按和客户端相同的 `TableBase.Initialize / LoadAll` 方式加载
+- `run.bat` 默认传：
+
+  ```
+  --config "%~dp0..\Client\Assets\StreamingAssets\Config"
+  ```
+
+  也可以手动指定：
+
+  ```
+  run.bat --config D:\GameServerConfig
+  ```
+
+服务端启动时会打印每张表的条数：
+
+```
+[config] TbBuildingSummaryCfg: 6 条
+[config] TbItemSummaryCfg: 8 条
+[config] TbLanguageCfg: 17 条
+[config] TbMapEntityCfg: 7 条
+[config] TbResourceSummaryCfg: 2 条
+[config] 配置目录 ...，共加载 5 张表
+```
+
+业务代码通过 `TcpGameServer.ConfigManager.GetTable<TbItemSummaryCfg>()` 读取。
+Luban 重新导出 Gen 代码或更新 `StreamingAssets/Config` 后，客户端和服务器自动使用同一份，
+不需要再往 Server 复制。服务端发布到其他机器时，把 `--config` 指向服务器上的配置目录即可。
 
 ## 注意
 

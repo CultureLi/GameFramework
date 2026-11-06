@@ -1,18 +1,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using GameFramework.Level;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace RecastNavigationServer
+namespace RecastNavigation
 {
     // 把当前已烘焙的 NavMesh(CalculateTriangulation)+ 场景里的 NavMeshLink 导出成 .rnav 二进制文件,
     // 格式定义见 E:/Work/RecastNavigationServer/DATA_FORMAT.md,供 RecastNavigationServer PoC 读取验证。
     public static class NavMeshExporter
     {
         private const string Magic = "RNAV";
-        private const uint FormatVersion = 1;
+        private const uint FormatVersion = 2;
 
         private struct LinkExportData
         {
@@ -21,6 +22,15 @@ namespace RecastNavigationServer
             public float radius;
             public bool bidirectional;
             public byte area;
+        }
+
+        private struct GateExportData
+        {
+            public int gateId;
+            public Vector3 center;
+            public Vector3 size;
+            public float rotationY;
+            public bool open;
         }
 
         [MenuItem("Tools/RecastNavigationServer/Export NavMesh")]
@@ -68,10 +78,11 @@ namespace RecastNavigationServer
             float cellHeight = cellSize;
 
             List<LinkExportData> links = CollectLinks();
+            List<GateExportData> gates = CollectGates();
 
-            WriteFile(path, tri, buildSettings, cellSize, cellHeight, links);
+            WriteFile(path, tri, buildSettings, cellSize, cellHeight, links, gates);
 
-            Debug.Log($"[NavMeshExporter] 导出完成: {tri.vertices.Length} 个顶点, {tri.indices.Length / 3} 个三角形, {links.Count} 个 NavMeshLink -> {path}");
+            Debug.Log($"[NavMeshExporter] 导出完成: {tri.vertices.Length} 个顶点, {tri.indices.Length / 3} 个三角形, {links.Count} 个 NavMeshLink, {gates.Count} 个动态关卡门 -> {path}");
         }
 
         private static List<LinkExportData> CollectLinks()
@@ -103,8 +114,69 @@ namespace RecastNavigationServer
             return result;
         }
 
+        /// <summary>
+        /// 导出动态关卡门（LevelGate）。门的 BoxCollider / NavMeshObstacle 就是服务端需要跳过的区域。
+        /// 服务端加载后会按 gateId 把门覆盖的导航多边形标记为不可通行。
+        /// </summary>
+        private static List<GateExportData> CollectGates()
+        {
+            var result = new List<GateExportData>();
+            var seenIds = new HashSet<int>();
+            var gates = Object.FindObjectsOfType<LevelGate>(true);
+
+            foreach (var gate in gates)
+            {
+                if (gate.gateID <= 0)
+                {
+                    Debug.LogWarning($"[NavMeshExporter] 关卡门 {gate.name} 没有设置 gateID，已跳过。");
+                    continue;
+                }
+
+                if (!seenIds.Add(gate.gateID))
+                {
+                    Debug.LogError($"[NavMeshExporter] 关卡门 gateID 重复: {gate.gateID}（{gate.name}），已跳过。");
+                    continue;
+                }
+
+                Vector3 center;
+                Vector3 size;
+
+                if (gate.obstacle != null)
+                {
+                    center = gate.transform.TransformPoint(gate.obstacle.center);
+                    size = Vector3.Scale(gate.obstacle.size, gate.transform.lossyScale);
+                }
+                else if (gate.blockingCollider is BoxCollider box)
+                {
+                    center = gate.transform.TransformPoint(box.center);
+                    size = Vector3.Scale(box.size, gate.transform.lossyScale);
+                }
+                else if (gate.blockingCollider != null)
+                {
+                    center = gate.blockingCollider.bounds.center;
+                    size = gate.blockingCollider.bounds.size;
+                }
+                else
+                {
+                    Debug.LogWarning($"[NavMeshExporter] 关卡门 {gate.name} 没有 Collider/Obstacle，已跳过。");
+                    continue;
+                }
+
+                result.Add(new GateExportData
+                {
+                    gateId = gate.gateID,
+                    center = center,
+                    size = size,
+                    rotationY = gate.transform.eulerAngles.y,
+                    open = gate.IsOpen,
+                });
+            }
+
+            return result;
+        }
+
         private static void WriteFile(string path, NavMeshTriangulation tri, NavMeshBuildSettings settings,
-            float cellSize, float cellHeight, List<LinkExportData> links)
+            float cellSize, float cellHeight, List<LinkExportData> links, List<GateExportData> gates)
         {
             using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
             using (var writer = new BinaryWriter(stream))
@@ -150,6 +222,21 @@ namespace RecastNavigationServer
                     writer.Write(link.radius);
                     writer.Write((byte)(link.bidirectional ? 1 : 0));
                     writer.Write(link.area);
+                }
+
+                // v2: 动态关卡门
+                writer.Write(gates.Count);
+                foreach (GateExportData gate in gates)
+                {
+                    writer.Write(gate.gateId);
+                    writer.Write(gate.center.x);
+                    writer.Write(gate.center.y);
+                    writer.Write(gate.center.z);
+                    writer.Write(gate.size.x);
+                    writer.Write(gate.size.y);
+                    writer.Write(gate.size.z);
+                    writer.Write(gate.rotationY);
+                    writer.Write((byte)(gate.open ? 1 : 0));
                 }
             }
         }

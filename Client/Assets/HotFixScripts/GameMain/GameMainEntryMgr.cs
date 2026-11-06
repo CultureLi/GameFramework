@@ -3,7 +3,8 @@ using Cysharp.Threading.Tasks;
 using Framework;
 using GameEntry;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 
 namespace GameMain
 {
@@ -14,25 +15,25 @@ namespace GameMain
             Utility.Test();
             Debug.Log("GameMainEntry");
 
-            // 寻路 Demo 使用 PathFinding 测试场景（场景里的烘焙导航数据与服务端 navmesh.rnav 一致）
-            UnityEngine.AsyncOperation sceneOperation;
+            // Main 是 Addressable 场景
+            AsyncOperationHandle<SceneInstance> sceneOperation;
             try
             {
-                sceneOperation = SceneManager.LoadSceneAsync("PathFinding", LoadSceneMode.Single);
+                sceneOperation = FW.ResMgr.LoadSceneAsync("Main");
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("PathFinding 场景没有加入 Build Settings：" + ex.Message);
+                Debug.LogError("Main 场景加载失败：" + ex.Message);
                 return;
             }
 
-            if (sceneOperation == null)
+            if (sceneOperation.Status == AsyncOperationStatus.Failed)
             {
-                Debug.LogError("PathFinding 场景没有加入 Build Settings，无法加载寻路 Demo");
+                Debug.LogError("Main 场景加载失败");
                 return;
             }
 
-            while (!sceneOperation.isDone)
+            while (!sceneOperation.IsDone)
             {
                 await UniTask.Yield();
             }

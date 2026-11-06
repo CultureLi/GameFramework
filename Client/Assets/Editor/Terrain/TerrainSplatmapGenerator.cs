@@ -79,6 +79,13 @@ namespace GameFramework.EditorTools.TerrainGen
                     }
                     wMud = Mathf.Clamp01(wMud * (1f - wAsphalt));
 
+                    // 迷宫模式不绘制道路，避免沥青带横穿山墙
+                    if (s.enableMaze)
+                    {
+                        wAsphalt = 0f;
+                        wMud = 0f;
+                    }
+
                     float remain = Mathf.Max(0f, 1f - wAsphalt - wMud);
 
                     // Desert bias: distance from map center + dryness noise + high slope (rocks/dune).

@@ -8,8 +8,10 @@
     <AssemblyName>GameServer</AssemblyName>
     <RootNamespace>GameServer</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- 生成的 protos 与 Google.Protobuf 包里的 WellKnownTypes 反射类同名，本地生成的类型优先，警告可忽略 -->
-    <NoWarn>$(NoWarn);CS0436</NoWarn>
+    <!-- 部分警告来自直接链接的客户端 ByteBuf / 生成的配置表代码 -->
+    <NoWarn>$(NoWarn);CS0436;CS8765;CS8767;CS8618;CS8602;CS8604;CS0169</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +26,23 @@
   <ItemGroup>
     <!-- 直接复用客户端已经生成好的 protobuf C# 代码，协议只维护 Protos/protos 一份 -->
     <Compile Include="..\..\Client\Assets\HotFixScripts\GameMain\Protos\*.cs" Link="Protos\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      配置表代码直接链接客户端生成目录，Luban 导出后服务端自动使用同一份 C#，
+      不需要再复制到 Server。
+    -->
+    <Compile Include="..\..\Client\Assets\HotFixScripts\GameMain\Config\Gen\*.cs" Link="Config\Gen\%(Filename)%(Extension)" />
+    <!-- TbLanguageCfg 引用的配置 Bean 生成在 Framework/Localization 下 -->
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Localization\LanguageCfg.cs" Link="Config\Gen\LanguageCfg.cs" />
+
+    <!-- 配置表运行时基础类（不含 Unity 依赖，且 TableBase 已抽成独立文件） -->
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\BeanBase.cs" Link="Config\Framework\BeanBase.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\ITypeId.cs" Link="Config\Framework\ITypeId.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\ByteBuf.cs" Link="Config\Framework\ByteBuf.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\StringUtil.cs" Link="Config\Framework\StringUtil.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\TableBase.cs" Link="Config\Framework\TableBase.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -25,12 +25,13 @@ namespace Google.Protobuf.WellKnownTypes {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CgplbnVtLnByb3RvEg9nb29nbGUucHJvdG9idWYqIwoLTW9uc3RlclR5cGUS",
-            "CgoGTm9ybWFsEAASCAoEQm9zcxABQlFaJWdhbWVmcmFtZXdvcmsvc2VydmVy",
-            "L3BiL2VudW1wYjtlbnVtcGL4AQGiAgNHUEKqAh5Hb29nbGUuUHJvdG9idWYu",
-            "V2VsbEtub3duVHlwZXNiBnByb3RvMw=="));
+            "CgoGTm9ybWFsEAASCAoEQm9zcxABKiwKDEJ1aWxkaW5nVHlwZRIICgROb25l",
+            "EAASCAoEQmFzZRABEggKBEdhdGUQAkJRWiVnYW1lZnJhbWV3b3JrL3NlcnZl",
+            "ci9wYi9lbnVtcGI7ZW51bXBi+AEBogIDR1BCqgIeR29vZ2xlLlByb3RvYnVm",
+            "LldlbGxLbm93blR5cGVzYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Google.Protobuf.WellKnownTypes.MonsterType), }, null, null));
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Google.Protobuf.WellKnownTypes.MonsterType), typeof(global::Google.Protobuf.WellKnownTypes.BuildingType), }, null, null));
     }
     #endregion
 
@@ -39,6 +40,12 @@ namespace Google.Protobuf.WellKnownTypes {
   public enum MonsterType {
     [pbr::OriginalName("Normal")] Normal = 0,
     [pbr::OriginalName("Boss")] Boss = 1,
+  }
+
+  public enum BuildingType {
+    [pbr::OriginalName("None")] None = 0,
+    [pbr::OriginalName("Base")] Base = 1,
+    [pbr::OriginalName("Gate")] Gate = 2,
   }
 
   #endregion

@@ -60,6 +60,27 @@ namespace GameMain
         [Tooltip("勾上则强行把每个地块的世界坐标改写成 (网格原点 + (i,j)*blockSize)。TerrainToMesh 已经把世界坐标烘进预制体时，保持关闭。")]
         public bool forcePositionByIndex = false;
 
+        /// <summary>已经加载完成的地块数量。地图实体流式加载会等首批地块完成后再开始创建。</summary>
+        public int LoadedChunkCount => _loaded.Count;
+
+        /// <summary>
+        /// 相机在地表上的投射矩形，和地块流式计算使用的是同一份覆盖范围（不含加载外扩）。
+        /// 地图实体流式加载用它决定创建/销毁范围。
+        /// </summary>
+        public bool TryGetCameraFootprintRect(out Rect rect)
+        {
+            rect = default;
+
+            if (_footprintSource != null && _footprintSource.TryGetFootprintRect(out rect))
+                return true;
+
+            if (targetCamera == null)
+                return false;
+
+            rect = ProjectFootprintRect();
+            return true;
+        }
+
         /// <summary>地块的网格下标，用作下面各个集合的键。</summary>
         struct BlockKey
         {

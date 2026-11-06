@@ -74,6 +74,38 @@ namespace GameFramework.EditorTools.TerrainGen
         [Tooltip("Exponent on the ridge value. >1 sharpens crests and deepens valleys.")]
         [Range(0.5f, 4f)] public float ridgeSharpness = 1.4f;
 
+        [Header("Maze - explicit mountain ridges and level gates")]
+        [Tooltip("启用后按迷宫布局生成明确的山体墙和关卡门，而不是随机山脉。")]
+        public bool enableMaze = true;
+        [Tooltip("迷宫中心，归一化坐标 [0,1]。")]
+        public Vector2 mazeCenter = new Vector2(0.50f, 0.49f);
+        [Tooltip("迷宫外圈半径，归一化到地图短边。")]
+        [Range(0.05f, 0.6f)] public float mazeRadius = 0.38f;
+        [Tooltip("螺旋墙旋转圈数。")]
+        [Range(1f, 6f)] public float mazeSpiralTurns = 3.75f;
+        [Tooltip("山体墙高度，terrainSize.y 的比例。0.7 * 40m = 28m。")]
+        [Range(0.1f, 1f)] public float mazeWallHeight = 0.70f;
+        [Tooltip("山体墙顶部半宽（米）。")]
+        [Range(2f, 20f)] public float mazeWallHalfWidth = 7f;
+        [Tooltip("山体墙向外过渡到地面的宽度（米）。")]
+        [Range(2f, 30f)] public float mazeWallFalloff = 8f;
+        [Tooltip("山体墙高度的噪声幅度，让山脊有起伏。")]
+        [Range(0f, 1f)] public float mazeWallNoise = 0.30f;
+        [Tooltip("关卡门宽度（米），也是墙上山口的宽度。")]
+        [Range(4f, 30f)] public float mazeGateWidth = 10f;
+        [Tooltip("关卡门高度（米）。")]
+        [Range(2f, 15f)] public float mazeGateHeight = 5f;
+        [Tooltip("关卡门厚度（米）。")]
+        [Range(0.5f, 5f)] public float mazeGateThickness = 1.5f;
+        [Tooltip("生成时关卡门默认是否打开。")]
+        public bool mazeGateOpenByDefault = true;
+        [Tooltip("迷宫模式下压制随机山脉/高台，只保留明确的山体墙。")]
+        public bool mazeSuppressNaturalTerrain = true;
+        [Tooltip("迷宫模式下取消道路对地形的走廊切割和压平，避免道路穿过山墙。")]
+        public bool mazeSuppressRoadCarve = true;
+        [Tooltip("生成完成后自动使用 NavMeshSurface 烘焙导航网格。")]
+        public bool mazeBakeNavMesh = true;
+
         [Header("Road")]
         public List<RoadControlPoint> mainRoad = new List<RoadControlPoint>
         {

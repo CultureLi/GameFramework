@@ -9,6 +9,7 @@ namespace GameServer.Configuration;
 ///   --handshake-timeout 10
 ///   --heartbeat-timeout 30
 ///   --navmesh NavData/navmesh.rnav
+///   --config ../Client/Assets/StreamingAssets/Config
 /// </summary>
 public sealed class ServerConfig
 {
@@ -18,10 +19,13 @@ public sealed class ServerConfig
     public TimeSpan HeartbeatTimeout { get; init; } = TimeSpan.FromSeconds(30);
     public string NavMeshPath { get; init; } =
         Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
+    public string ConfigDirectory { get; init; } =
+        Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
 
     public const string Usage =
         "用法: GameServer [--addr 0.0.0.0:19000] [--handshake-timeout 10] " +
-        "[--heartbeat-timeout 30] [--navmesh NavData/navmesh.rnav]";
+        "[--heartbeat-timeout 30] [--navmesh NavData/navmesh.rnav] " +
+        "[--config ../Client/Assets/StreamingAssets/Config]";
 
     public static ServerConfig Parse(string[] args)
     {
@@ -30,6 +34,8 @@ public sealed class ServerConfig
         var handshakeTimeout = 10d;
         var heartbeatTimeout = 30d;
         var navMeshPath = Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
+        var configDirectory = Path.GetFullPath(Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -46,6 +52,9 @@ public sealed class ServerConfig
                     break;
                 case "--navmesh":
                     navMeshPath = NextValue(args, ref i);
+                    break;
+                case "--config":
+                    configDirectory = NextValue(args, ref i);
                     break;
                 case "-h":
                 case "--help":
@@ -72,7 +81,8 @@ public sealed class ServerConfig
             Port = port,
             HandshakeTimeout = TimeSpan.FromSeconds(handshakeTimeout),
             HeartbeatTimeout = TimeSpan.FromSeconds(heartbeatTimeout),
-            NavMeshPath = navMeshPath
+            NavMeshPath = navMeshPath,
+            ConfigDirectory = configDirectory
         };
     }
 

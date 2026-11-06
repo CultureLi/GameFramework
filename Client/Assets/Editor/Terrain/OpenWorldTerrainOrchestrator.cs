@@ -11,7 +11,7 @@ namespace GameFramework.EditorTools.TerrainGen
         public const string ScenePath = "Assets/NoBundleRes/Scene/OpenWorld/OpenWorld.unity";
         public const string TerrainDataPath = "Assets/NoBundleRes/Scene/OpenWorld/OpenWorldTerrainData.asset";
 
-        public enum Step { All, Splatmap, Vegetation, Clear }
+        public enum Step { All, Splatmap, Vegetation, BakeNavMesh, Clear }
 
         public static void Run(TerrainGeneratorSettings s, Step step)
         {
@@ -35,6 +35,19 @@ namespace GameFramework.EditorTools.TerrainGen
                     return;
                 }
 
+                if (step == Step.BakeNavMesh)
+                {
+                    var mazeForBake = s.enableMaze ? MazeLayout.Build(s) : null;
+                    if (mazeForBake != null)
+                        MazeGateBuilder.Rebuild(terrain, mazeForBake, s);
+
+                    MazeNavMeshBaker.Bake(terrain);
+                    EditorSceneManager.MarkSceneDirty(terrain.gameObject.scene);
+                    EditorSceneManager.SaveOpenScenes();
+                    AssetDatabase.SaveAssets();
+                    return;
+                }
+
                 EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Ensuring shaders...", 0.05f);
                 ShaderCodegen.EnsureShaders(s.forceRegenerateAssets);
 
@@ -44,11 +57,13 @@ namespace GameFramework.EditorTools.TerrainGen
 
                 var main = RoadPath.BuildMain(s);
                 var muds = RoadPath.BuildMudBranches(s, main);
+                var maze = s.enableMaze ? MazeLayout.Build(s) : null;
 
                 if (step == Step.All)
                 {
                     EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Sculpting heightmap...", 0.30f);
-                    TerrainHeightmapGenerator.Generate(td, s, main, muds);
+                    TerrainHeightmapGenerator.Generate(td, s, main, muds, maze);
+                    terrain.Flush();
                 }
 
                 if (step == Step.All || step == Step.Splatmap)
@@ -65,6 +80,19 @@ namespace GameFramework.EditorTools.TerrainGen
                 {
                     EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Placing vegetation & buildings...", 0.85f);
                     TerrainVegetationPlacer.Apply(terrain, td, veg, main, muds, s);
+                }
+
+                if (step == Step.All && s.enableMaze && maze != null)
+                {
+                    terrain.Flush();
+                    EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Building maze gates...", 0.92f);
+                    MazeGateBuilder.Rebuild(terrain, maze, s);
+
+                    if (s.mazeBakeNavMesh)
+                    {
+                        EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Baking NavMeshSurface...", 0.97f);
+                        MazeNavMeshBaker.Bake(terrain);
+                    }
                 }
 
                 EditorUtility.DisplayProgressBar("OpenWorld Terrain", "Saving...", 0.98f);
@@ -113,10 +141,11 @@ namespace GameFramework.EditorTools.TerrainGen
                     td.SetDetailLayer(0, 0, i, new int[td.detailResolution, td.detailResolution]);
             terrain.Flush();
 
-            // Remove building instances
+            // Remove building instances and generated maze gates
             var scene = terrain.gameObject.scene;
             foreach (var root in scene.GetRootGameObjects())
-                if (root.name == "Buildings_Generated") Object.DestroyImmediate(root);
+                if (root.name == "Buildings_Generated" || root.name == MazeGateBuilder.RootName)
+                    Object.DestroyImmediate(root);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveOpenScenes();
         }

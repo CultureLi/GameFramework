@@ -7,7 +7,7 @@ namespace GameServer.Pathfinding;
 /// </summary>
 public static class NavMeshFileReader
 {
-    private const uint SupportedVersion = 1;
+    private const uint SupportedVersion = 2;
 
     public static NavMeshRawData Load(string path)
     {
@@ -19,7 +19,7 @@ public static class NavMeshFileReader
             throw new InvalidDataException($"导航数据 magic 非法: {magic}");
 
         var version = reader.ReadUInt32();
-        if (version != SupportedVersion)
+        if (version is < 1 or > SupportedVersion)
             throw new InvalidDataException($"不支持的导航数据版本: {version}");
 
         var data = new NavMeshRawData
@@ -70,6 +70,33 @@ public static class NavMeshFileReader
         {
             if (index < 0 || index >= vertexCount)
                 throw new InvalidDataException($"三角形索引越界: {index}");
+        }
+
+        // v2：动态关卡门。v1 文件没有这一段，按无门处理。
+        if (version >= 2)
+        {
+            var gateCount = reader.ReadInt32();
+            if (gateCount < 0)
+                throw new InvalidDataException($"关卡门数量非法: {gateCount}");
+
+            for (var i = 0; i < gateCount; i++)
+            {
+                var gate = new NavMeshGateData
+                {
+                    GateId = reader.ReadInt32(),
+                    Center = new[] { reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle() },
+                    Size = new[] { reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle() },
+                    RotationY = reader.ReadSingle(),
+                    Open = reader.ReadByte() != 0
+                };
+
+                if (gate.GateId <= 0)
+                    throw new InvalidDataException($"关卡门 gateID 非法: {gate.GateId}");
+                if (gate.Size[0] <= 0f || gate.Size[1] <= 0f || gate.Size[2] <= 0f)
+                    throw new InvalidDataException($"关卡门 {gate.GateId} 尺寸非法");
+
+                data.Gates.Add(gate);
+            }
         }
 
         return data;

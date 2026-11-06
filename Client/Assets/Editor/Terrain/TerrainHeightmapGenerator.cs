@@ -22,11 +22,20 @@ namespace GameFramework.EditorTools.TerrainGen
     /// </summary>
     public static class TerrainHeightmapGenerator
     {
-        public static void Generate(TerrainData td, TerrainGeneratorSettings s, RoadPath main, List<RoadPath> muds)
+        public static void Generate(TerrainData td, TerrainGeneratorSettings s, RoadPath main, List<RoadPath> muds,
+            MazeLayout maze = null)
         {
             int res = s.heightmapResolution;
             td.heightmapResolution = res;
             td.size = s.terrainSize;
+
+            if (s.enableMaze && maze == null)
+                maze = MazeLayout.Build(s);
+
+            var mazeWall = s.enableMaze && maze != null ? MazeHeightField.Build(s, maze, res) : null;
+            bool suppressRoad = mazeWall != null && s.mazeSuppressRoadCarve;
+            bool suppressNatural = mazeWall != null && s.mazeSuppressNaturalTerrain;
+            float naturalScale = suppressNatural ? 0f : 1f;
 
             var rng = new System.Random(s.seed);
             Vector2 oWarpA = RandOffset(rng);
@@ -63,17 +72,23 @@ namespace GameFramework.EditorTools.TerrainGen
                     float wzw = wz + (Mathf.PerlinNoise((wx + oWarpB.x) * 0.0030f, (wz + oWarpB.y) * 0.0030f) - 0.5f) * s.domainWarp;
 
                     // ---- road proximity ------------------------------------------------------
-                    float roadSqr = main.SqrDistanceTo(wx, wz);
-                    if (muds != null)
+                    float roadSqr = float.PositiveInfinity;
+                    float roadDist = float.PositiveInfinity;
+                    if (!suppressRoad)
                     {
-                        for (int m = 0; m < muds.Count; m++)
+                        roadSqr = main.SqrDistanceTo(wx, wz);
+                        if (muds != null)
                         {
-                            float d = muds[m].SqrDistanceTo(wx, wz);
-                            if (d < roadSqr) roadSqr = d;
+                            for (int m = 0; m < muds.Count; m++)
+                            {
+                                float d = muds[m].SqrDistanceTo(wx, wz);
+                                if (d < roadSqr) roadSqr = d;
+                            }
                         }
+                        roadDist = Mathf.Sqrt(roadSqr);
                     }
-                    float roadDist = Mathf.Sqrt(roadSqr);
-                    float corridor = roadSqr < corridorR2
+
+                    float corridor = !suppressRoad && roadSqr < corridorR2
                         ? 1f - Mathf.SmoothStep(0f, 1f, roadDist / corridorR)
                         : 0f;
                     float bigFeatureGate = 1f - corridor * carve;
@@ -87,10 +102,12 @@ namespace GameFramework.EditorTools.TerrainGen
                     // buried under a ridged massif reads as noise, and stacking both lifts can push
                     // the total past 1.0 where Clamp01 would shear peaks into flat tops.
                     float mountainN = Fbm(wxw, wzw, s.mountainFrequency, 3, s.lacunarity, 0.5f, oMountain);
-                    float mountainMask = Mask(mountainN, s.mountainThreshold, s.mountainEdgeWidth) * bigFeatureGate;
+                    float mountainMask = Mask(mountainN, s.mountainThreshold, s.mountainEdgeWidth)
+                                          * bigFeatureGate * naturalScale;
 
                     float plateauN = Fbm(wxw, wzw, s.plateauFrequency, 3, s.lacunarity, 0.5f, oPlateau);
-                    float plateauMask = Mask(plateauN, s.plateauThreshold, s.plateauEdgeWidth) * bigFeatureGate;
+                    float plateauMask = Mask(plateauN, s.plateauThreshold, s.plateauEdgeWidth)
+                                        * bigFeatureGate * naturalScale;
                     plateauMask *= 1f - mountainMask;
 
                     // ---- layer 2: plateaus --------------------------------------------------
@@ -113,11 +130,20 @@ namespace GameFramework.EditorTools.TerrainGen
                     // ---- road surface flatten (narrow) --------------------------------------
                     // The corridor above already removed plateau/mountain lift here, so this only
                     // has to iron out the remaining plains ripple to leave a drivable ribbon.
-                    if (roadDist < flattenR)
+                    if (!suppressRoad && roadDist < flattenR)
                     {
                         float pull = 1f - Mathf.SmoothStep(0f, 1f, roadDist / flattenR);
                         float roadTarget = s.plainsLevel + (plainsN * 2f - 1f) * s.plainsRelief * 0.25f;
                         h = Mathf.Lerp(h, roadTarget, pull * 0.9f);
+                    }
+
+                    // ---- explicit maze mountain walls ---------------------------------------
+                    // 红色曲线对应的山体墙。山口位置在 MazeHeightField 里已经削平。
+                    if (mazeWall != null)
+                    {
+                        float wall = mazeWall[y, x];
+                        if (wall > 0f)
+                            h = Mathf.Max(h, s.plainsLevel + wall);
                     }
 
                     // ---- flat rim ----------------------------------------------------------
