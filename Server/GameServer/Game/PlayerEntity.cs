@@ -32,6 +32,9 @@ public sealed class PlayerEntity
     public uint PathId { get; private set; }
     public int PathIndex { get; private set; }
 
+    /// <summary>本次会话的关卡通行位图，由 GateAccessStore 在登录/权限变化时重建。</summary>
+    public GateAccessMask? GateAccessMask { get; set; }
+
     public bool Moving => PathIndex < _path.Count;
 
     public IReadOnlyList<PathPoint> Path => _path;
@@ -63,6 +66,15 @@ public sealed class PlayerEntity
             SetPosition(_path[0]);
 
         return PathId;
+    }
+
+    /// <summary>
+    /// 权限变化时让玩家停下当前路径，但保留 pathId，客户端收到 moving=false 后会停住。
+    /// </summary>
+    public void Stop()
+    {
+        _path.Clear();
+        PathIndex = 0;
     }
 
     /// <summary>

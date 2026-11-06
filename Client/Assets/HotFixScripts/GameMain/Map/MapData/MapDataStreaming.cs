@@ -149,7 +149,8 @@ namespace GameMain
                     continue;
                 }
 
-                AddItem(data, MapEntityCategory.Building, config.AssetId, assetTable);
+                AddItem(data, MapEntityCategory.Building, config.AssetId, assetTable,
+                    MapBuildingTypeHelper.IsGate(config, assetTable));
             }
         }
 
@@ -174,7 +175,6 @@ namespace GameMain
                 AddItem(data, MapEntityCategory.Decorate, data.Id, assetTable);
             }
         }
-
         private void AddResourceItems(TbMapResourceCfg table, TbAssetPathCfg assetTable)
         {
             if (_resourceData == null || table == null)
@@ -194,7 +194,8 @@ namespace GameMain
             }
         }
 
-        private void AddItem(MapItemData data, MapEntityCategory category, int assetId, TbAssetPathCfg assetTable)
+        private void AddItem(MapItemData data, MapEntityCategory category, int assetId,
+            TbAssetPathCfg assetTable, bool isGate = false)
         {
             var asset = assetTable?.Get(assetId);
             if (asset == null || string.IsNullOrEmpty(asset.AssetPath))
@@ -211,11 +212,13 @@ namespace GameMain
             {
                 Index = _items.Count,
                 ConfigId = data.Id,
+                InstanceId = data.InstanceId,
                 Category = category,
                 Pos = data.Pos,
                 Size = size,
                 RotationY = data.RotationY,
                 AssetPath = asset.AssetPath,
+                IsGate = isGate,
             });
         }
 
@@ -365,8 +368,29 @@ namespace GameMain
             }
 
             go.transform.SetParent(_mapRoot, false);
-            go.transform.position = new Vector3(item.Pos.x, SampleGroundY(item.Pos), item.Pos.y);
+
+            // 编辑器里可能对 prefab 做了 XZ 缩放（例如墙体按长度拉伸）。
+            // 导出数据只有 Size 和 RotationY，这里在 0/90/180/270 度情况下根据 AABB 反推缩放。
+            ApplySizeScale(go, item);
+
+            // 不同 prefab 的 pivot 不一定在底部。用 collider/renderer 的最低点贴地，
+            // Wall_1 这类中心 pivot 的墙体也能正确站在地面上。
+            float groundOffset = GetPrefabGroundOffset(go);
+            go.transform.position = new Vector3(
+                item.Pos.x,
+                SampleGroundY(item.Pos) + groundOffset,
+                item.Pos.y);
             go.transform.rotation = Quaternion.Euler(0f, item.RotationY, 0f);
+
+            if (item.IsGate)
+            {
+                var gate = go.GetComponent<GateBuilding>();
+                if (gate == null)
+                    gate = go.AddComponent<GateBuilding>();
+
+                gate.Initialize(item.InstanceId, item.ConfigId);
+            }
+
             _loaded[item.Index] = go;
         }
 
@@ -381,6 +405,104 @@ namespace GameMain
 
             // 地形块还没加载到该点时退回地面高度，至少不会把实体放到 2000 米高空。
             return (_chunkStreaming != null ? _chunkStreaming.groundY : 0f) + heightOffset;
+        }
+
+        private static float GetPrefabGroundOffset(GameObject go)
+        {
+            if (!TryGetWorldBounds(go, out var bounds))
+                return 0f;
+
+            return go.transform.position.y - bounds.min.y;
+        }
+
+        private static void ApplySizeScale(GameObject go, MapRuntimeItem item)
+        {
+            if (item.Size.x <= 0.01f || item.Size.y <= 0.01f)
+                return;
+
+            if (!TryGetWorldBounds(go, out var bounds))
+                return;
+
+            if (bounds.size.x <= 0.0001f || bounds.size.z <= 0.0001f)
+                return;
+
+            float rotation = Mathf.Repeat(item.RotationY, 360f);
+
+            // 只有接近 0/90/180/270 时，AABB 才能和 prefab 本地轴一一对应。
+            // 任意角度旋转时 AABB 已经混入旋转后的投影，无法反推缩放，保持 prefab 默认缩放。
+            float toCardinal = Mathf.Min(
+                Mathf.Abs(Mathf.DeltaAngle(rotation, 0f)),
+                Mathf.Min(Mathf.Abs(Mathf.DeltaAngle(rotation, 90f)),
+                    Mathf.Min(Mathf.Abs(Mathf.DeltaAngle(rotation, 180f)),
+                        Mathf.Abs(Mathf.DeltaAngle(rotation, 270f)))));
+            if (toCardinal > 5f)
+                return;
+
+            bool alignedZ = Mathf.Abs(Mathf.DeltaAngle(rotation, 90f)) <= 5f ||
+                            Mathf.Abs(Mathf.DeltaAngle(rotation, 270f)) <= 5f;
+
+            var scale = go.transform.localScale;
+
+            if (!alignedZ)
+            {
+                scale.x *= item.Size.x / bounds.size.x;
+                scale.z *= item.Size.y / bounds.size.z;
+            }
+            else
+            {
+                // 绕 Y 旋转 90/270：prefab 本地 X 对应世界 Z，本地 Z 对应世界 X。
+                scale.x *= item.Size.y / bounds.size.x;
+                scale.z *= item.Size.x / bounds.size.z;
+            }
+
+            go.transform.localScale = scale;
+        }
+
+        private static bool TryGetWorldBounds(GameObject go, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+
+            var colliders = go.GetComponentsInChildren<Collider>(true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                var collider = colliders[i];
+                if (collider == null)
+                    continue;
+
+                if (!hasBounds)
+                {
+                    bounds = collider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(collider.bounds);
+                }
+            }
+
+            if (!hasBounds)
+            {
+                var renderers = go.GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    var renderer = renderers[i];
+                    if (renderer == null)
+                        continue;
+
+                    if (!hasBounds)
+                    {
+                        bounds = renderer.bounds;
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(renderer.bounds);
+                    }
+                }
+            }
+
+            return hasBounds;
         }
 
         private static void Release(GameObject go)

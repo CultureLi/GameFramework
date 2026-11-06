@@ -10,12 +10,13 @@ namespace GameMain
     ///
     /// 格式（小端）：
     ///   uint32 magic   = 'MAP1'
-    ///   int32  version = 1
+    ///   int32  version = 2
     ///   int32  count
-    ///   count × { int32 id, float posX, float posZ, float sizeX, float sizeZ, float rotationY }
+    ///   count × { string instanceId, int32 id, float posX, float posZ, float sizeX, float sizeZ, float rotationY }
     /// </summary>
     public struct MapBinaryEntry
     {
+        public string InstanceId;
         public int Id;
         public float PosX;
         public float PosZ;
@@ -28,7 +29,7 @@ namespace GameMain
     {
         // 小端写入后在文件里正好是 'M' 'A' 'P' '1'
         private const uint Magic = 0x3150414D;
-        public const int Version = 1;
+        public const int Version = 2;
 
         private const int MaxEntryCount = 10_000_000;
 
@@ -56,6 +57,7 @@ namespace GameMain
             for (int i = 0; i < count; i++)
             {
                 var entry = entries[i];
+                writer.Write(entry.InstanceId ?? string.Empty);
                 writer.Write(entry.Id);
                 writer.Write(entry.PosX);
                 writer.Write(entry.PosZ);
@@ -87,6 +89,7 @@ namespace GameMain
             {
                 entries.Add(new MapBinaryEntry
                 {
+                    InstanceId = reader.ReadString(),
                     Id = reader.ReadInt32(),
                     PosX = reader.ReadSingle(),
                     PosZ = reader.ReadSingle(),

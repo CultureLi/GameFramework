@@ -9,10 +9,12 @@ namespace GameMain
     {
         public int Index;
         public int ConfigId;
+        public string InstanceId;
         public MapEntityCategory Category;
         public Vector2 Pos;
         public Vector2 Size;
         public float RotationY;
         public string AssetPath;
+        public bool IsGate;
     }
 }

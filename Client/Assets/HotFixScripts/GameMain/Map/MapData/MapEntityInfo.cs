@@ -15,6 +15,9 @@ namespace GameMain
         [Tooltip("MapBuildingCfg / AssetPathCfg(装饰) / MapResourceCfg 中的 Id。")]
         public int ConfigId;
 
+        [Tooltip("地图实例唯一 ID，放置时生成，导出和服务端权限都使用它。")]
+        public string InstanceId;
+
         [Tooltip("配置表换算出来的 AssetPathCfg.Id，仅用于编辑器查看和排查。")]
         public int AssetId;
     }

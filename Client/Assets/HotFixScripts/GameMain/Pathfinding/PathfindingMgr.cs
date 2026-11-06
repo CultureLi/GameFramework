@@ -22,6 +22,7 @@ namespace GameMain
         private bool _initialized;
         private LocalPlayerController _player;
         private GameObject _gateRoot;
+        private GateInfoPanel _gatePanel;
         private readonly Dictionary<int, LevelGate> _gates = new Dictionary<int, LevelGate>();
 
         public override void Initialize()
@@ -35,9 +36,20 @@ namespace GameMain
             FW.NetMgr.RegisterMsg<MoveSync>(OnMoveSync);
             FW.NetMgr.RegisterMsg<GateStateSync>(OnGateStateSync);
             FW.NetMgr.RegisterMsg<SetMoveSpeedSync>(OnMoveSpeedSync);
+            FW.NetMgr.RegisterMsg<GateInfoAck>(OnGateInfoAck);
+            FW.NetMgr.RegisterMsg<GateApplyAck>(OnGateApplyAck);
+            FW.NetMgr.RegisterMsg<GateApproveAck>(OnGateApproveAck);
+            FW.NetMgr.RegisterMsg<GateRemoveAccessAck>(OnGateRemoveAccessAck);
+            FW.NetMgr.RegisterMsg<GateClaimAck>(OnGateClaimAck);
+            FW.NetMgr.RegisterMsg<GateAccessSync>(OnGateAccessSync);
             LevelGate.GateStateRequested += OnGateStateRequested;
 
             CreateLocalPlayer();
+
+            var panelObject = new GameObject("GateInfoPanel");
+            _gatePanel = panelObject.AddComponent<GateInfoPanel>();
+            _gatePanel.Bind(this);
+            _gatePanel.Hide();
 
             // Main 场景加载完成后主动问服务端要一次所有关卡门状态
             FW.NetMgr.SendMsg(new GateStateQueryReq());
@@ -56,7 +68,17 @@ namespace GameMain
             FW.NetMgr.UnregisterMsg<MoveSync>(OnMoveSync);
             FW.NetMgr.UnregisterMsg<GateStateSync>(OnGateStateSync);
             FW.NetMgr.UnregisterMsg<SetMoveSpeedSync>(OnMoveSpeedSync);
+            FW.NetMgr.UnregisterMsg<GateInfoAck>(OnGateInfoAck);
+            FW.NetMgr.UnregisterMsg<GateApplyAck>(OnGateApplyAck);
+            FW.NetMgr.UnregisterMsg<GateApproveAck>(OnGateApproveAck);
+            FW.NetMgr.UnregisterMsg<GateRemoveAccessAck>(OnGateRemoveAccessAck);
+            FW.NetMgr.UnregisterMsg<GateClaimAck>(OnGateClaimAck);
+            FW.NetMgr.UnregisterMsg<GateAccessSync>(OnGateAccessSync);
             LevelGate.GateStateRequested -= OnGateStateRequested;
+
+            if (_gatePanel != null)
+                Object.Destroy(_gatePanel.gameObject);
+            _gatePanel = null;
 
             if (_player != null)
                 Object.Destroy(_player.gameObject);
@@ -110,6 +132,52 @@ namespace GameMain
             }
 
             FW.NetMgr.SendMsg(new SetMoveSpeedReq { Speed = Mathf.Clamp(speed, 1f, 20f) });
+        }
+
+        public void RequestGateInfo(string instanceId)
+        {
+            if (string.IsNullOrEmpty(instanceId))
+                return;
+
+            if (!FW.NetMgr.IsConnected())
+            {
+                Debug.LogWarning("[Gate] 网络未连接，无法请求关卡信息");
+                return;
+            }
+
+            FW.NetMgr.SendMsg(new GateInfoReq { InstanceId = instanceId });
+        }
+
+        public void ApplyGate(string instanceId)
+        {
+            if (!FW.NetMgr.IsConnected())
+                return;
+
+            FW.NetMgr.SendMsg(new GateApplyReq { InstanceId = instanceId });
+        }
+
+        public void ApproveGate(string instanceId, ulong playerId)
+        {
+            if (!FW.NetMgr.IsConnected())
+                return;
+
+            FW.NetMgr.SendMsg(new GateApproveReq { InstanceId = instanceId, PlayerId = playerId });
+        }
+
+        public void RemoveGateAccess(string instanceId, ulong playerId)
+        {
+            if (!FW.NetMgr.IsConnected())
+                return;
+
+            FW.NetMgr.SendMsg(new GateRemoveAccessReq { InstanceId = instanceId, PlayerId = playerId });
+        }
+
+        public void ClaimGate(string instanceId)
+        {
+            if (!FW.NetMgr.IsConnected())
+                return;
+
+            FW.NetMgr.SendMsg(new GateClaimReq { InstanceId = instanceId });
         }
 
         private void CreateLocalPlayer()
@@ -168,6 +236,58 @@ namespace GameMain
 
             _player?.SetMoveSpeed(sync.Speed);
             Debug.Log($"[Speed] 服务端确认移动速度 = {sync.Speed:0.##}");
+        }
+
+        private void OnGateInfoAck(GateInfoAck ack)
+        {
+            if (ack.Code != 0)
+            {
+                Debug.LogWarning($"[Gate] 获取关卡信息失败 code={ack.Code} message={ack.Message}");
+                return;
+            }
+
+            _gatePanel?.Show(ack);
+        }
+
+        private void OnGateApplyAck(GateApplyAck ack)
+        {
+            if (ack.Code != 0)
+            {
+                Debug.LogWarning($"[Gate] 申请通行失败 code={ack.Code} message={ack.Message}");
+                _gatePanel?.SetMessage(ack.Message);
+                return;
+            }
+
+            _gatePanel?.ApplyStatus(ack.Status, ack.Message);
+        }
+
+        private void OnGateApproveAck(GateApproveAck ack)
+        {
+            if (ack.Code != 0)
+                Debug.LogWarning($"[Gate] 审批失败 code={ack.Code} message={ack.Message}");
+            else
+                _gatePanel?.SetMessage(ack.Message);
+        }
+
+        private void OnGateRemoveAccessAck(GateRemoveAccessAck ack)
+        {
+            if (ack.Code != 0)
+                Debug.LogWarning($"[Gate] 移除通行权失败 code={ack.Code} message={ack.Message}");
+            else
+                _gatePanel?.SetMessage(ack.Message);
+        }
+
+        private void OnGateClaimAck(GateClaimAck ack)
+        {
+            if (ack.Code != 0)
+                Debug.LogWarning($"[Gate] 认领关卡失败 code={ack.Code} message={ack.Message}");
+            else
+                _gatePanel?.SetMessage(ack.Message);
+        }
+
+        private void OnGateAccessSync(GateAccessSync sync)
+        {
+            _gatePanel?.ApplySync(sync);
         }
 
         private LevelGate GetOrCreateGate(GateStateSync sync)

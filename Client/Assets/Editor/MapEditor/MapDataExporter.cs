@@ -33,6 +33,7 @@ namespace MapEditor
         public readonly List<string> Errors = new List<string>();
         public readonly List<string> Warnings = new List<string>();
         public readonly HashSet<string> PrefabPaths = new HashSet<string>();
+        public readonly HashSet<string> InstanceIds = new HashSet<string>();
     }
 
     /// <summary>
@@ -44,6 +45,7 @@ namespace MapEditor
     public static class MapDataExporter
     {
         private const string MapDataRoot = "Assets/BundleRes/MapData";
+        private const string WallsRootName = "Walls";
 
         public static MapExportResult Export(
             TbMapBuildingCfg buildingTable,
@@ -89,6 +91,18 @@ namespace MapEditor
                 ? Collect(dataRoot, MapEntityCategory.Decorate,
                     buildingTable, resourceTable, assetTable, exportClient, result)
                 : new List<MapItemData>();
+
+            // Walls 节点下的墙体也是可以直接用 AssetPathCfg 表达的装饰数据，
+            // 导出时并入 DecorateData，运行时按 AssetPathCfg 301 实例化。
+            if (HasModule(modules, MapExportModule.Decorate))
+            {
+                var wallsRoot = MapEditorUtils.FindChild(dataRoot, WallsRootName);
+                if (wallsRoot != null)
+                {
+                    decorates.AddRange(CollectFromRoot(wallsRoot, MapEntityCategory.Decorate,
+                        buildingTable, resourceTable, assetTable, exportClient, result));
+                }
+            }
 
             var resources = HasModule(modules, MapExportModule.Resource)
                 ? Collect(dataRoot, MapEntityCategory.Resource,
@@ -186,14 +200,27 @@ namespace MapEditor
             bool requirePrefab,
             MapExportResult result)
         {
-            var items = new List<MapItemData>();
-
             var root = MapEditorUtils.GetCategoryRoot(dataRoot, category);
             if (root == null)
             {
                 result.Warnings.Add($"找不到分类目录: {MapEditorUtils.GetCategoryRootName(category)}");
-                return items;
+                return new List<MapItemData>();
             }
+
+            return CollectFromRoot(root, category,
+                buildingTable, resourceTable, assetTable, requirePrefab, result);
+        }
+
+        private static List<MapItemData> CollectFromRoot(
+            Transform root,
+            MapEntityCategory category,
+            TbMapBuildingCfg buildingTable,
+            TbMapResourceCfg resourceTable,
+            TbAssetPathCfg assetTable,
+            bool requirePrefab,
+            MapExportResult result)
+        {
+            var items = new List<MapItemData>();
 
             for (int i = 0; i < root.childCount; i++)
             {
@@ -208,6 +235,21 @@ namespace MapEditor
                 if (info.Category != category)
                 {
                     result.Warnings.Add($"{child.name} 的 Category 与所在目录不一致，按目录导出为 {category}");
+                }
+
+                string instanceId = info.InstanceId;
+                if (string.IsNullOrEmpty(instanceId))
+                {
+                    instanceId = System.Guid.NewGuid().ToString("N");
+                    Undo.RecordObject(info, "Assign Map Instance Id");
+                    info.InstanceId = instanceId;
+                    EditorUtility.SetDirty(info);
+                }
+
+                if (!result.InstanceIds.Add(instanceId))
+                {
+                    result.Errors.Add($"{child.name} 的 InstanceId 重复: {instanceId}");
+                    continue;
                 }
 
                 // 装饰物在 V3 直接使用 AssetPathCfg.Id；旧数据里 ConfigId 还是 MapDecorateCfg.Id，
@@ -250,6 +292,7 @@ namespace MapEditor
 
                 items.Add(new MapItemData
                 {
+                    InstanceId = instanceId,
                     Id = exportId,
                     Pos = new Vector2(child.position.x, child.position.z),
                     Size = size,
@@ -338,6 +381,7 @@ namespace MapEditor
                 var item = items[i];
                 entries.Add(new MapBinaryEntry
                 {
+                    InstanceId = item.InstanceId,
                     Id = item.Id,
                     PosX = item.Pos.x,
                     PosZ = item.Pos.y,

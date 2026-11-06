@@ -1,5 +1,7 @@
 using DotRecast.Core.Numerics;
 using DotRecast.Detour;
+using GameServer.Game;
+using GameServer.Map;
 using GameServer.Utility;
 
 namespace GameServer.Pathfinding;
@@ -23,6 +25,8 @@ public sealed class NavMeshWorld
     private static readonly RcVec3f QueryExtents = new(2f, 4f, 2f);
     private const int MaxPath = 256;
     private const int MaxStraightPath = 256;
+    private const int WalkableFlag = 1;
+    private const int GatePolyFlag = 1 << 1;
 
     private readonly DtNavMesh _navMesh;
     private readonly DtNavMeshQuery _query;
@@ -30,13 +34,15 @@ public sealed class NavMeshWorld
     private readonly DtQueryDefaultFilter _gateQueryFilter;
     private readonly object _queryLock = new();
     private readonly Dictionary<int, NavMeshGate> _gates = new();
+    private readonly Dictionary<long, int[]> _polyGateIndices = new();
+    private readonly List<MapGateDefinition> _mapGates = new();
 
     private NavMeshWorld(DtNavMesh navMesh, RcVec3f fallbackSpawnPoint, NavMeshBuildStats stats)
     {
         _navMesh = navMesh;
         _query = new DtNavMeshQuery(navMesh);
         _filter = new DtQueryDefaultFilter();
-        _filter.SetIncludeFlags(1);
+        _filter.SetIncludeFlags(WalkableFlag | GatePolyFlag);
         _gateQueryFilter = new DtQueryDefaultFilter();
         _gateQueryFilter.SetIncludeFlags(0xffff);
         SpawnPoint = fallbackSpawnPoint;
@@ -77,13 +83,26 @@ public sealed class NavMeshWorld
     /// </summary>
     public bool FindPath(RcVec3f start, RcVec3f end, out List<RcVec3f> corners, out string error)
     {
+        return FindPath(start, end, null, out corners, out error);
+    }
+
+    /// <summary>
+    /// 按玩家的关卡通行位图寻路。gateMask 为 null 时不检查建筑关卡权限。
+    /// </summary>
+    public bool FindPath(RcVec3f start, RcVec3f end, GateAccessMask? gateMask,
+        out List<RcVec3f> corners, out string error)
+    {
         corners = new List<RcVec3f>();
         error = string.Empty;
+
+        IDtQueryFilter filter = gateMask == null
+            ? _filter
+            : new GateAccessFilter(_filter, _polyGateIndices, gateMask);
 
         lock (_queryLock)
         {
             var startStatus = _query.FindNearestPoly(
-                start, QueryExtents, _filter, out var startRef, out var startNearest, out _);
+                start, QueryExtents, filter, out var startRef, out var startNearest, out _);
             if (startStatus.Failed() || startRef == 0)
             {
                 error = "起点不在导航网格上";
@@ -91,7 +110,7 @@ public sealed class NavMeshWorld
             }
 
             var endStatus = _query.FindNearestPoly(
-                end, QueryExtents, _filter, out var endRef, out var endNearest, out _);
+                end, QueryExtents, filter, out var endRef, out var endNearest, out _);
             if (endStatus.Failed() || endRef == 0)
             {
                 error = "目标点不在导航网格上";
@@ -100,7 +119,7 @@ public sealed class NavMeshWorld
 
             var path = new long[MaxPath];
             var pathStatus = _query.FindPath(
-                startRef, endRef, startNearest, endNearest, _filter, path, out var pathCount, path.Length);
+                startRef, endRef, startNearest, endNearest, filter, path, out var pathCount, path.Length);
             if (pathStatus.Failed() || pathCount == 0)
             {
                 error = $"寻路失败: {pathStatus.Value}";
@@ -141,6 +160,141 @@ public sealed class NavMeshWorld
             gate.Open = open;
             ApplyGateFlags(gate);
             return true;
+        }
+    }
+
+    /// <summary>
+    /// 把地图建筑关卡映射到导航多边形。每个关卡分配一个 GateIndex，
+    /// poly 上只写入 GatePolyFlag 标记，具体属于哪些关卡放在 _polyGateIndices 里。
+    /// </summary>
+    public void RegisterMapGates(IReadOnlyList<MapGateDefinition> gateDefinitions)
+    {
+        if (gateDefinitions.Count == 0)
+            return;
+
+        lock (_queryLock)
+        {
+            var polyGates = new Dictionary<long, List<int>>();
+
+            foreach (var gate in gateDefinitions)
+            {
+                var probe = new RcVec3f(gate.PosX, 0f, gate.PosZ);
+                var probeExtents = new RcVec3f(5f, 500f, 5f);
+                float groundY = 0f;
+
+                var nearestStatus = _query.FindNearestPoly(
+                    probe, probeExtents, _gateQueryFilter, out var nearestRef, out var nearest, out _);
+                if (nearestStatus.Succeeded() && nearestRef != 0)
+                    groundY = nearest.Y;
+
+                const float gateHeight = 10f;
+                float yaw = gate.RotationY * (MathF.PI / 180f);
+                float cos = MathF.Abs(MathF.Cos(yaw));
+                float sin = MathF.Abs(MathF.Sin(yaw));
+                float halfX = gate.SizeX * 0.5f;
+                float halfZ = gate.SizeZ * 0.5f;
+
+                var center = new RcVec3f(gate.PosX, groundY + gateHeight * 0.5f, gate.PosZ);
+                var extents = new RcVec3f(
+                    cos * halfX + sin * halfZ,
+                    gateHeight * 0.5f,
+                    sin * halfX + cos * halfZ);
+
+                var refs = new long[256];
+                var status = _query.QueryPolygons(
+                    center, extents, _gateQueryFilter, refs, out var count, refs.Length);
+
+                if (status.Failed())
+                {
+                    Log.Warn($"[navmesh] 建筑关卡 {gate.InstanceId} QueryPolygons 失败: {status.Value}");
+                    continue;
+                }
+
+                for (var i = 0; i < count; i++)
+                {
+                    long polyRef = refs[i];
+
+                    // 保留全局关卡门的开启/关闭状态，只额外加一个建筑关卡标记。
+                    int currentFlags = WalkableFlag;
+                    if (_navMesh.GetPolyFlags(polyRef, out int readFlags).Succeeded())
+                        currentFlags = readFlags;
+
+                    int flags = (currentFlags & WalkableFlag) != 0
+                        ? currentFlags | GatePolyFlag
+                        : 0;
+
+                    var setStatus = _navMesh.SetPolyFlags(polyRef, flags);
+                    if (setStatus.Failed())
+                        Log.Warn($"[navmesh] 建筑关卡 {gate.InstanceId} SetPolyFlags 失败: {setStatus.Value}");
+
+                    if (!polyGates.TryGetValue(polyRef, out var gateIndices))
+                    {
+                        gateIndices = new List<int>();
+                        polyGates[polyRef] = gateIndices;
+                    }
+
+                    if (!gateIndices.Contains(gate.GateIndex))
+                        gateIndices.Add(gate.GateIndex);
+                }
+
+                if (count == 0)
+                    Log.Warn($"[navmesh] 建筑关卡 {gate.InstanceId} 没有找到覆盖的导航多边形");
+
+                _mapGates.Add(gate);
+                Log.Info($"[navmesh] 建筑关卡 {gate.InstanceId} 覆盖 {count} 个多边形，GateIndex={gate.GateIndex}");
+            }
+
+            foreach (var pair in polyGates)
+                _polyGateIndices[pair.Key] = pair.Value.ToArray();
+        }
+    }
+
+    private sealed class GateAccessFilter : IDtQueryFilter
+    {
+        private readonly IDtQueryFilter _baseFilter;
+        private readonly IReadOnlyDictionary<long, int[]> _polyGateIndices;
+        private readonly GateAccessMask _allowedGates;
+
+        public GateAccessFilter(IDtQueryFilter baseFilter,
+            IReadOnlyDictionary<long, int[]> polyGateIndices,
+            GateAccessMask allowedGates)
+        {
+            _baseFilter = baseFilter;
+            _polyGateIndices = polyGateIndices;
+            _allowedGates = allowedGates;
+        }
+
+        public bool PassFilter(long polyRef, DtMeshTile tile, DtPoly poly)
+        {
+            if (!_baseFilter.PassFilter(polyRef, tile, poly))
+                return false;
+
+            if ((poly.flags & GatePolyFlag) == 0)
+                return true;
+
+            if (!_polyGateIndices.TryGetValue(polyRef, out var gateIndices))
+                return true;
+
+            for (int i = 0; i < gateIndices.Length; i++)
+            {
+                if (!_allowedGates.IsAllowed(gateIndices[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public float GetCost(
+            RcVec3f start, RcVec3f end,
+            long prevRef, DtMeshTile prevTile, DtPoly prevPoly,
+            long curRef, DtMeshTile curTile, DtPoly curPoly,
+            long nextRef, DtMeshTile nextTile, DtPoly nextPoly)
+        {
+            return _baseFilter.GetCost(
+                start, end,
+                prevRef, prevTile, prevPoly,
+                curRef, curTile, curPoly,
+                nextRef, nextTile, nextPoly);
         }
     }
 
@@ -251,10 +405,16 @@ public sealed class NavMeshWorld
 
     private void ApplyGateFlags(NavMeshGate gate)
     {
-        int flags = gate.Open ? 1 : 0;
+        int flags = gate.Open ? WalkableFlag : 0;
+
         foreach (var polyRef in gate.PolyRefs)
         {
-            var status = _navMesh.SetPolyFlags(polyRef, flags);
+            // 地图建筑关卡和全局门重叠时，开门要恢复 GatePolyFlag，关门则整块不可走。
+            int polyFlags = flags;
+            if (gate.Open && _polyGateIndices.ContainsKey(polyRef))
+                polyFlags |= GatePolyFlag;
+
+            var status = _navMesh.SetPolyFlags(polyRef, polyFlags);
             if (status.Failed())
                 Log.Warn($"[navmesh] 关卡门 {gate.GateId} SetPolyFlags 失败: {status.Value}");
         }

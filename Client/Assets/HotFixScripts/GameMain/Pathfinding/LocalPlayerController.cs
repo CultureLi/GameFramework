@@ -52,6 +52,9 @@ namespace GameMain
             if (!Input.GetMouseButtonDown(0))
                 return;
 
+            if (GateInfoPanel.IsOpen)
+                return;
+
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
                 return;
 
@@ -66,6 +69,16 @@ namespace GameMain
             {
                 if (hit.transform == transform || hit.transform.IsChildOf(transform))
                     return;
+
+                var gate = hit.collider != null
+                    ? hit.collider.GetComponentInParent<GateBuilding>()
+                    : null;
+                if (gate != null)
+                {
+                    PathfindingMgr.I?.RequestGateInfo(gate.InstanceId);
+                    return;
+                }
+
                 target = hit.point;
             }
             else

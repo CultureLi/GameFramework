@@ -21,11 +21,14 @@ public sealed class ServerConfig
         Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
     public string ConfigDirectory { get; init; } =
         Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
+    public string MapDataDirectory { get; init; } =
+        Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Client", "Assets", "BundleRes", "MapData", "OpenWorld"));
 
     public const string Usage =
         "用法: GameServer [--addr 0.0.0.0:19000] [--handshake-timeout 10] " +
         "[--heartbeat-timeout 30] [--navmesh NavData/navmesh.rnav] " +
-        "[--config ../Client/Assets/StreamingAssets/Config]";
+        "[--config ../Client/Assets/StreamingAssets/Config] " +
+        "[--mapdata ../Client/Assets/BundleRes/MapData/OpenWorld]";
 
     public static ServerConfig Parse(string[] args)
     {
@@ -36,6 +39,8 @@ public sealed class ServerConfig
         var navMeshPath = Path.Combine(AppContext.BaseDirectory, "NavData", "navmesh.rnav");
         var configDirectory = Path.GetFullPath(Path.Combine(
             Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
+        var mapDataDirectory = Path.GetFullPath(Path.Combine(
+            Directory.GetCurrentDirectory(), "..", "Client", "Assets", "BundleRes", "MapData", "OpenWorld"));
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -55,6 +60,9 @@ public sealed class ServerConfig
                     break;
                 case "--config":
                     configDirectory = NextValue(args, ref i);
+                    break;
+                case "--mapdata":
+                    mapDataDirectory = NextValue(args, ref i);
                     break;
                 case "-h":
                 case "--help":
@@ -82,7 +90,8 @@ public sealed class ServerConfig
             HandshakeTimeout = TimeSpan.FromSeconds(handshakeTimeout),
             HeartbeatTimeout = TimeSpan.FromSeconds(heartbeatTimeout),
             NavMeshPath = navMeshPath,
-            ConfigDirectory = configDirectory
+            ConfigDirectory = configDirectory,
+            MapDataDirectory = mapDataDirectory
         };
     }
 

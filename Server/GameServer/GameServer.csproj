@@ -43,6 +43,11 @@
     <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\ByteBuf.cs" Link="Config\Framework\ByteBuf.cs" />
     <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\StringUtil.cs" Link="Config\Framework\StringUtil.cs" />
     <Compile Include="..\..\Client\Assets\HotFixScripts\Framework\Config\TableBase.cs" Link="Config\Framework\TableBase.cs" />
+
+    <!-- 客户端/服务端共用的地图数据二进制格式和建筑类型判断 -->
+    <Compile Include="..\..\Client\Assets\HotFixScripts\GameMain\Map\MapData\MapDataBinary.cs" Link="Map\MapDataBinary.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\GameMain\Map\MapData\MapBuildingTypeHelper.cs" Link="Map\MapBuildingTypeHelper.cs" />
+    <Compile Include="..\..\Client\Assets\HotFixScripts\GameMain\Map\MapData\GateProtocolCodes.cs" Link="Map\GateProtocolCodes.cs" />
   </ItemGroup>
 
   <ItemGroup>

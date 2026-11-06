@@ -8,9 +8,11 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using GameServer.Configuration;
 using GameServer.Game;
+using GameServer.Map;
 using GameServer.Pathfinding;
 using GameServer.Protocol;
 using GameServer.Utility;
+using GameMain;
 using Type = System.Type;
 
 namespace GameServer.Network;
@@ -28,6 +30,8 @@ public sealed class TcpGameServer
     private readonly object _playerLock = new();
     private readonly Dictionary<string, ClientSession> _online = new(StringComparer.Ordinal);
     private readonly NavMeshWorld _navMesh;
+    private readonly MapDataStore _mapData;
+    private readonly GateAccessStore _gateAccess;
 
     private TcpListener? _listener;
     private Task? _gameLoopTask;
@@ -40,6 +44,9 @@ public sealed class TcpGameServer
         PublicKeyXml = BuildPublicKeyXml(Rsa);
         ConfigManager = new ServerConfigMgr(config.ConfigDirectory);
         _navMesh = NavMeshWorld.Load(config.NavMeshPath);
+        _mapData = MapDataStore.Load(config.MapDataDirectory, ConfigManager);
+        _gateAccess = new GateAccessStore(_mapData.Gates);
+        _navMesh.RegisterMapGates(_mapData.Gates);
 
         MessageRegistry.Initialize();
         Register<LoginReq>(HandleLoginAsync);
@@ -48,6 +55,11 @@ public sealed class TcpGameServer
         Register<GateStateQueryReq>(HandleGateStateQueryAsync);
         Register<GateStateReq>(HandleGateStateAsync);
         Register<SetMoveSpeedReq>(HandleSetMoveSpeedAsync);
+        Register<GateInfoReq>(HandleGateInfoAsync);
+        Register<GateApplyReq>(HandleGateApplyAsync);
+        Register<GateApproveReq>(HandleGateApproveAsync);
+        Register<GateRemoveAccessReq>(HandleGateRemoveAccessAsync);
+        Register<GateClaimReq>(HandleGateClaimAsync);
     }
 
     public ServerConfig Config { get; }
@@ -283,6 +295,7 @@ public sealed class TcpGameServer
         var spawn = _navMesh.SpawnPoint;
         var spawnPoint = new PathPoint(spawn.X, spawn.Y, spawn.Z);
         var player = new PlayerEntity(result.PlayerId, spawnPoint);
+        player.GateAccessMask = _gateAccess.BuildMask(player.PlayerId);
         _players[result.PlayerId] = player;
         session.Player = player;
 
@@ -396,8 +409,265 @@ public sealed class TcpGameServer
         }
     }
 
-    private async Task HandleSetMoveSpeedAsync(ClientSession session, SetMoveSpeedReq request)
+    private async Task HandleGateInfoAsync(ClientSession session, GateInfoReq request)
     {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new GateInfoAck
+            {
+                Code = GateResultCode.NotLoggedIn,
+                InstanceId = request.InstanceId,
+                Message = "未登录",
+            });
+            return;
+        }
+
+        var info = GetGateInfoForViewer(request.InstanceId, player.PlayerId);
+        if (info == null)
+        {
+            await session.SendAsync(new GateInfoAck
+            {
+                Code = GateResultCode.NotFound,
+                InstanceId = request.InstanceId,
+                Message = "关卡不存在",
+            });
+            return;
+        }
+
+        await session.SendAsync(BuildGateInfoAck(info));
+    }
+
+    private async Task HandleGateApplyAsync(ClientSession session, GateApplyReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new GateApplyAck
+            {
+                Code = GateResultCode.NotLoggedIn,
+                InstanceId = request.InstanceId,
+                Message = "未登录",
+            });
+            return;
+        }
+
+        var result = _gateAccess.Apply(request.InstanceId, player.PlayerId);
+        await session.SendAsync(new GateApplyAck
+        {
+            Code = result.Code,
+            InstanceId = request.InstanceId,
+            Status = result.Status,
+            Message = result.Message,
+        });
+
+        if (result.Code == GateResultCode.Success &&
+            result.Status == GateStatus.Pending &&
+            result.Snapshot is { OwnerPlayerId: > 0 } snapshot)
+        {
+            SendGateSyncTo(snapshot.OwnerPlayerId, request.InstanceId);
+        }
+    }
+
+    private async Task HandleGateApproveAsync(ClientSession session, GateApproveReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new GateApproveAck
+            {
+                Code = GateResultCode.NotLoggedIn,
+                InstanceId = request.InstanceId,
+                Message = "未登录",
+            });
+            return;
+        }
+
+        var result = _gateAccess.Approve(request.InstanceId, player.PlayerId, request.PlayerId);
+        await session.SendAsync(new GateApproveAck
+        {
+            Code = result.Code,
+            InstanceId = request.InstanceId,
+            Message = result.Message,
+        });
+
+        if (result.Code == GateResultCode.Success)
+        {
+            RefreshAllGateMasks();
+            SendGateSyncTo(player.PlayerId, request.InstanceId);
+            SendGateSyncTo(request.PlayerId, request.InstanceId);
+        }
+    }
+
+    private async Task HandleGateRemoveAccessAsync(ClientSession session, GateRemoveAccessReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new GateRemoveAccessAck
+            {
+                Code = GateResultCode.NotLoggedIn,
+                InstanceId = request.InstanceId,
+                Message = "未登录",
+            });
+            return;
+        }
+
+        var result = _gateAccess.RemoveAccess(request.InstanceId, player.PlayerId, request.PlayerId);
+        await session.SendAsync(new GateRemoveAccessAck
+        {
+            Code = result.Code,
+            InstanceId = request.InstanceId,
+            Message = result.Message,
+        });
+
+        if (result.Code == GateResultCode.Success)
+        {
+            RefreshAllGateMasks();
+            SendGateSyncTo(player.PlayerId, request.InstanceId);
+            SendGateSyncTo(request.PlayerId, request.InstanceId);
+        }
+    }
+
+    private async Task HandleGateClaimAsync(ClientSession session, GateClaimReq request)
+    {
+        var player = session.Player;
+        if (player == null)
+        {
+            await session.SendAsync(new GateClaimAck
+            {
+                Code = GateResultCode.NotLoggedIn,
+                InstanceId = request.InstanceId,
+                Message = "未登录",
+            });
+            return;
+        }
+
+        var result = _gateAccess.Claim(request.InstanceId, player.PlayerId);
+        await session.SendAsync(new GateClaimAck
+        {
+            Code = result.Code,
+            InstanceId = request.InstanceId,
+            Message = result.Message,
+        });
+
+        if (result.Code == GateResultCode.Success)
+        {
+            // 未归属门是公开的，认领后其他玩家会立即失去通行权。
+            RefreshAllGateMasks();
+            SendGateSyncTo(player.PlayerId, request.InstanceId);
+        }
+    }
+
+    private GateInfoSnapshot? GetGateInfoForViewer(string instanceId, ulong viewerPlayerId)
+    {
+        var basic = _gateAccess.GetInfo(instanceId, viewerPlayerId, includeLists: false);
+        if (basic == null)
+            return null;
+
+        return basic.MyStatus == GateStatus.Owner
+            ? _gateAccess.GetInfo(instanceId, viewerPlayerId, includeLists: true)
+            : basic;
+    }
+
+    private static GateInfoAck BuildGateInfoAck(GateInfoSnapshot info)
+    {
+        var ack = new GateInfoAck
+        {
+            Code = GateResultCode.Success,
+            InstanceId = info.InstanceId,
+            OwnerPlayerId = info.OwnerPlayerId,
+            IsOwner = info.MyStatus == GateStatus.Owner,
+            MyStatus = info.MyStatus,
+        };
+
+        foreach (ulong playerId in info.AllowedPlayers)
+            ack.AllowedPlayers.Add(new GatePlayerInfo { PlayerId = playerId });
+
+        foreach (ulong playerId in info.PendingRequests)
+            ack.PendingRequests.Add(new GatePlayerInfo { PlayerId = playerId });
+
+        return ack;
+    }
+
+    private static GateAccessSync BuildGateSync(GateInfoSnapshot info, int code = GateResultCode.Success)
+    {
+        var sync = new GateAccessSync
+        {
+            Code = code,
+            InstanceId = info.InstanceId,
+            OwnerPlayerId = info.OwnerPlayerId,
+            MyStatus = info.MyStatus,
+        };
+
+        foreach (ulong playerId in info.AllowedPlayers)
+            sync.AllowedPlayers.Add(new GatePlayerInfo { PlayerId = playerId });
+
+        foreach (ulong playerId in info.PendingRequests)
+            sync.PendingRequests.Add(new GatePlayerInfo { PlayerId = playerId });
+
+        return sync;
+    }
+
+    private void SendGateSyncTo(ulong playerId, string instanceId)
+    {
+        if (playerId == 0)
+            return;
+
+        var session = FindSessionByPlayerId(playerId);
+        if (session == null)
+            return;
+
+        var info = GetGateInfoForViewer(instanceId, playerId);
+        if (info != null)
+            _ = SafeSendAsync(session, BuildGateSync(info));
+    }
+
+    private ClientSession? FindSessionByPlayerId(ulong playerId)
+    {
+        foreach (var session in _sessions.Values)
+        {
+            if (session.Player?.PlayerId == playerId)
+                return session;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// 权限变化后重建所有在线玩家的位图。位图只是缓存，离线玩家下次登录时会重新构建。
+    /// 正在移动的玩家会被停下，下一帧重新寻路。
+    /// </summary>
+    private void RefreshAllGateMasks()
+    {
+        foreach (var session in _sessions.Values)
+        {
+            var player = session.Player;
+            if (player == null)
+                continue;
+
+            var newMask = _gateAccess.BuildMask(player.PlayerId);
+            bool maskChanged = player.GateAccessMask == null ||
+                               !player.GateAccessMask.ContentEquals(newMask);
+            player.GateAccessMask = newMask;
+
+            if (!maskChanged)
+                continue;
+
+            bool wasMoving;
+            lock (_playerLock)
+            {
+                wasMoving = player.Moving;
+                if (wasMoving)
+                    player.Stop();
+            }
+
+            if (wasMoving)
+                _ = SafeSendAsync(session, BuildMoveSync(player));
+        }
+    }
+
+    private async Task HandleSetMoveSpeedAsync(ClientSession session, SetMoveSpeedReq request)    {
         var player = session.Player;
         if (player == null)
         {
@@ -467,7 +737,7 @@ public sealed class TcpGameServer
 
         var target = new RcVec3f(request.Target.X, request.Target.Y, request.Target.Z);
 
-        if (!_navMesh.FindPath(start, target, out var corners, out var error))
+        if (!_navMesh.FindPath(start, target, player.GateAccessMask, out var corners, out var error))
         {
             var code = error.Contains("目标点", StringComparison.Ordinal)
                 ? PathFindCodes.InvalidTarget

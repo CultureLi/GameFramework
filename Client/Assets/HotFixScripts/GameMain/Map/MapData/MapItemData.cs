@@ -14,6 +14,9 @@ namespace GameMain
         /// <summary>对应 MapBuildingCfg / AssetPathCfg(装饰) / MapResourceCfg 的 Id。</summary>
         public int Id;
 
+        /// <summary>地图实例唯一 ID，放置时生成，客户端和服务端保持一致。</summary>
+        public string InstanceId;
+
         /// <summary>世界坐标（X/Z）。</summary>
         public Vector2 Pos;
 

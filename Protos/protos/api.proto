@@ -108,6 +108,82 @@ message GateStateSync {
   float rotationY = 6;
 }
 
+// ===== 建筑关卡通行权限 =====
+
+message GateInfoReq {
+  string instanceId = 1;
+}
+
+message GatePlayerInfo {
+  uint64 playerId = 1;
+}
+
+message GateInfoAck {
+  // 0=成功 1=关卡不存在 2=不是关卡 3=未登录
+  int32 code = 1;
+  string instanceId = 2;
+  uint64 ownerPlayerId = 3;
+  bool isOwner = 4;
+  repeated GatePlayerInfo allowedPlayers = 5;
+  repeated GatePlayerInfo pendingRequests = 6;
+  // 0=无 1=待审批 2=已通过 3=已拒绝 4=归属人 5=未归属（禁止通行）
+  int32 myStatus = 7;
+  string message = 8;
+}
+
+message GateApplyReq {
+  string instanceId = 1;
+}
+
+message GateApplyAck {
+  int32 code = 1;
+  string instanceId = 2;
+  int32 status = 3;
+  string message = 4;
+}
+
+message GateApproveReq {
+  string instanceId = 1;
+  uint64 playerId = 2;
+}
+
+message GateApproveAck {
+  int32 code = 1;
+  string instanceId = 2;
+  string message = 3;
+}
+
+message GateRemoveAccessReq {
+  string instanceId = 1;
+  uint64 playerId = 2;
+}
+
+message GateRemoveAccessAck {
+  int32 code = 1;
+  string instanceId = 2;
+  string message = 3;
+}
+
+message GateClaimReq {
+  string instanceId = 1;
+}
+
+message GateClaimAck {
+  int32 code = 1;
+  string instanceId = 2;
+  string message = 3;
+}
+
+message GateAccessSync {
+  int32 code = 1;
+  string instanceId = 2;
+  uint64 ownerPlayerId = 3;
+  repeated GatePlayerInfo allowedPlayers = 4;
+  repeated GatePlayerInfo pendingRequests = 5;
+  int32 myStatus = 6;
+  string message = 7;
+}
+
 message HeartBeatReq {
   int64 clientTime = 1; // 客户端毫秒时间戳
 }

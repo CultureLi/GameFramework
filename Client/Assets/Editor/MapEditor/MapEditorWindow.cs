@@ -102,6 +102,8 @@ namespace MapEditor
                 ReloadConfig();
             if (GUILayout.Button("创建/定位节点"))
                 EnsureNodes();
+            if (GUILayout.Button("补全/修复 UID"))
+                RepairInstanceIds();
             EditorGUILayout.EndHorizontal();
 
             int newTab = EditorGUILayout.Popup("类型", _tab, CategoryNames);
@@ -384,6 +386,32 @@ namespace MapEditor
             Debug.Log("[MapEditor] DataEditor/Building、Decorate、Resource 节点已就绪");
         }
 
+        /// <summary>
+        /// 补全缺失 UID，并给复制/合并产生的重复 UID 重新生成。
+        /// 已上线地图如果依赖 UID 存了服务端归属数据，执行前要先确认。
+        /// </summary>
+        private void RepairInstanceIds()
+        {
+            var infos = Object.FindObjectsOfType<MapEntityInfo>(true);
+            var seen = new HashSet<string>();
+            int repaired = 0;
+
+            foreach (var info in infos)
+            {
+                if (string.IsNullOrEmpty(info.InstanceId) || !seen.Add(info.InstanceId))
+                {
+                    Undo.RecordObject(info, "Repair Map Instance Id");
+                    info.InstanceId = System.Guid.NewGuid().ToString("N");
+                    EditorUtility.SetDirty(info);
+                    seen.Add(info.InstanceId);
+                    repaired++;
+                }
+            }
+
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            Debug.Log($"[MapEditor] UID 检查完成，补全/修复 {repaired} 个");
+        }
+
         private MapExportModule BuildModuleMask()
         {
             MapExportModule modules = MapExportModule.None;
@@ -555,6 +583,10 @@ namespace MapEditor
             info.Category = GetCategory();
             info.ConfigId = choice.Id;
             info.AssetId = choice.AssetId;
+
+            // 每个地图实例生成一次稳定 UID；导出、服务端权限都使用它。
+            if (string.IsNullOrEmpty(info.InstanceId))
+                info.InstanceId = System.Guid.NewGuid().ToString("N");
 
             Undo.RegisterCreatedObjectUndo(go, "Place Map Entity");
             EditorUtility.SetDirty(go);
