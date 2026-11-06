@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace GameFramework.EditorTools.TerrainGen
 {
@@ -11,9 +12,12 @@ namespace GameFramework.EditorTools.TerrainGen
     /// 整理 TerrainToMesh 导出的场景资产，把散在同一个文件夹里的预制体 / Mesh / 材质 / 贴图
     /// 拆到 BundleRes 下各自该去的位置，方便按文件夹配 Addressable 分组规则。
     ///
-    /// 用法：在场景文件夹（例如 <c>Assets/NoBundleRes/Scene/OpenWorld</c>）上右键 →「整理场景资产」。
+    /// 用法：
+    ///   1. 在场景文件夹（例如 <c>Assets/NoBundleRes/Scene/OpenWorld</c>）上右键 →「整理场景资产」；
+    ///   2. 或者打开场景后，在 MapEditor 窗口点击「整理当前场景资产」，
+    ///      源目录与输出目录全部由当前打开的场景路径推导。
     ///
-    /// 以文件夹名 <c>OpenWorld</c> 为例，处理流程：
+    /// 以场景 <c>Assets/NoBundleRes/Scene/OpenWorld/OpenWorld.unity</c> 为例，处理流程：
     /// <list type="number">
     /// <item>校验子文件夹 <c>OpenWorldTerrainData</c> 与其中的 <c>OpenWorldTerrainData.prefab</c> 存在，否则终止。</item>
     /// <item>创建或清空 <c>BundleRes/SceneChunk/OpenWorld</c>。</item>
@@ -52,7 +56,7 @@ namespace GameFramework.EditorTools.TerrainGen
         // ---------------------------------------------------------------- 菜单入口
 
         /// <summary>只有选中了文件夹才让菜单项可点。</summary>
-        [MenuItem("Assets/整理场景资产", true, 1001)]
+        //[MenuItem("Assets/整理场景资产", true, 1001)]
         static bool ValidateOrganize()
         {
             foreach (string folder in GetSelectedFolders())
@@ -60,7 +64,7 @@ namespace GameFramework.EditorTools.TerrainGen
             return false;
         }
 
-        [MenuItem("Assets/整理场景资产", false, 1001)]
+        //[MenuItem("Assets/整理场景资产", false, 1001)]
         static void Organize()
         {
             var folders = GetSelectedFolders();
@@ -77,18 +81,76 @@ namespace GameFramework.EditorTools.TerrainGen
             {
                 OrganizePlan plan;
                 string error;
-                if (!TryBuildPlan(folder, out plan, out error))
+                if (!TryBuildPlan(folder, Path.GetFileName(folder), out plan, out error))
                 {
                     Debug.LogError("[整理场景资产] 跳过 " + folder + "：" + error);
                     continue;
                 }
                 plans.Add(plan);
             }
-            if (plans.Count == 0) return;
 
-            if (!ConfirmPlans(plans)) return;
+            OrganizePlans(plans);
+        }
+
+        /// <summary>
+        /// 当前打开场景对应的整理信息。目录名按场景文件名推导；
+        /// 场景未保存到 Assets 下时返回 false 且 info 为 null。
+        /// </summary>
+        public static bool TryGetCurrentSceneInfo(out SceneAssetOrganizeInfo info)
+        {
+            info = null;
+
+            var scene = SceneManager.GetActiveScene();
+            if (string.IsNullOrEmpty(scene.path))
+                return false;
+
+            string sceneFolder = Path.GetDirectoryName(scene.path);
+            if (string.IsNullOrEmpty(sceneFolder))
+                return false;
+
+            sceneFolder = sceneFolder.Replace('\\', '/');
+            if (!sceneFolder.StartsWith("Assets", System.StringComparison.Ordinal))
+                return false;
+
+            string sceneName = Path.GetFileNameWithoutExtension(scene.path);
+            if (string.IsNullOrEmpty(sceneName))
+                sceneName = Path.GetFileName(sceneFolder);
+
+            return TryGetSceneInfo(sceneFolder, sceneName, scene.path, out info);
+        }
+
+        /// <summary>整理当前打开的场景，所有目录都由场景路径推导。</summary>
+        public static bool OrganizeCurrentScene()
+        {
+            if (!TryGetCurrentSceneInfo(out var info))
+            {
+                Debug.LogError("[整理场景资产] 当前场景无法确定资产目录：" +
+                               (info != null ? info.Error : "场景未保存到 Assets 下"));
+                return false;
+            }
+
+            OrganizePlan plan;
+            string error;
+            if (!TryBuildPlan(info.SceneFolder, info.SceneName, out plan, out error))
+            {
+                Debug.LogError("[整理场景资产] " + error);
+                return false;
+            }
+
+            return OrganizePlans(new List<OrganizePlan> { plan });
+        }
+
+        /// <summary>确认并执行已经构建好的整理方案。</summary>
+        static bool OrganizePlans(List<OrganizePlan> plans)
+        {
+            if (plans.Count == 0)
+                return false;
+
+            if (!ConfirmPlans(plans))
+                return false;
 
             int okCount = 0;
+            bool canceled = false;
             try
             {
                 foreach (var plan in plans)
@@ -100,7 +162,12 @@ namespace GameFramework.EditorTools.TerrainGen
             catch (System.OperationCanceledException)
             {
                 // 用户点了进度条上的取消。已经改掉的部分保留原样，不做回滚。
+                canceled = true;
                 Debug.LogWarning("[整理场景资产] 已取消，注意目标文件夹处于半整理状态，重新执行一次即可。");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
             }
             finally
             {
@@ -110,6 +177,7 @@ namespace GameFramework.EditorTools.TerrainGen
             }
 
             Debug.Log("[整理场景资产] 完成，共处理 " + okCount + " 个场景文件夹。");
+            return !canceled && okCount == plans.Count;
         }
 
         static List<string> GetSelectedFolders()
@@ -126,12 +194,41 @@ namespace GameFramework.EditorTools.TerrainGen
 
         // ---------------------------------------------------------------- 方案（只读阶段）
 
+        /// <summary>
+        /// 由场景路径推导出的整理信息，只做只读校验，不修改任何资产。
+        /// MapEditor 窗口用它展示源目录、输出目录和处理数量。
+        /// </summary>
+        public sealed class SceneAssetOrganizeInfo
+        {
+            public string ScenePath;
+            /// <summary>场景所在文件夹。</summary>
+            public string SceneFolder;
+            /// <summary>场景文件名（不含扩展名），所有输出目录都由它命名。</summary>
+            public string SceneName;
+            public string SourceFolder;
+            public string SourcePrefab;
+            public string ChunkRoot;
+            public string TextureRoot;
+            public string MaterialRoot;
+
+            public readonly List<string> ChunkNames = new List<string>();
+            public readonly List<string> Textures = new List<string>();
+            public readonly List<string> Materials = new List<string>();
+
+            public string Error;
+
+            public bool IsValid
+            {
+                get { return string.IsNullOrEmpty(Error); }
+            }
+        }
+
         /// <summary>一个场景文件夹要做的全部改动，在动手之前先算清楚。</summary>
         class OrganizePlan
         {
             /// <summary>右键选中的场景文件夹，例如 <c>Assets/NoBundleRes/Scene/OpenWorld</c>。</summary>
             public string SceneFolder;
-            /// <summary>场景文件夹名，例如 <c>OpenWorld</c>，后面所有目标路径都由它拼出来。</summary>
+            /// <summary>场景文件名，例如 <c>OpenWorld</c>，后面所有目标路径都由它拼出来。</summary>
             public string SceneName;
             /// <summary>TerrainToMesh 的导出子文件夹，例如 <c>.../OpenWorld/OpenWorldTerrainData</c>。</summary>
             public string SourceFolder;
@@ -150,57 +247,91 @@ namespace GameFramework.EditorTools.TerrainGen
             public List<string> Materials = new List<string>();
         }
 
-        static bool TryBuildPlan(string sceneFolder, out OrganizePlan plan, out string error)
+        static bool TryBuildPlan(string sceneFolder, string sceneName,
+            out OrganizePlan plan, out string error)
         {
             plan = null;
-            string sceneName = Path.GetFileName(sceneFolder);
-            string dataName = sceneName + TerrainDataSuffix;
-            string sourceFolder = sceneFolder + "/" + dataName;
 
-            // 需求：子文件夹不存在就直接终止。
-            if (!AssetDatabase.IsValidFolder(sourceFolder))
+            if (!TryGetSceneInfo(sceneFolder, sceneName, null, out var info))
             {
-                error = "找不到子文件夹 " + dataName;
+                error = info != null ? info.Error : "无法读取场景目录";
                 return false;
             }
 
-            string sourcePrefab = sourceFolder + "/" + dataName + ".prefab";
-            var root = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePrefab);
-            if (root == null)
-            {
-                error = "找不到预制体 " + sourcePrefab;
-                return false;
-            }
-
-            var p = new OrganizePlan
+            plan = new OrganizePlan
             {
                 SceneFolder = sceneFolder,
                 SceneName = sceneName,
-                SourceFolder = sourceFolder,
-                SourcePrefab = sourcePrefab,
-                ChunkRoot = string.Format(ChunkRootFormat, sceneName),
-                TextureRoot = string.Format(TextureRootFormat, sceneName),
-                MaterialRoot = string.Format(MaterialRootFormat, sceneName),
+                SourceFolder = info.SourceFolder,
+                SourcePrefab = info.SourcePrefab,
+                ChunkRoot = info.ChunkRoot,
+                TextureRoot = info.TextureRoot,
+                MaterialRoot = info.MaterialRoot,
+                ChunkNames = info.ChunkNames,
+                Textures = info.Textures,
+                Materials = info.Materials,
+            };
+            error = null;
+            return true;
+        }
+
+        /// <summary>
+        /// 根据场景文件夹名与场景名推导所有目录，并做只读校验：
+        /// TerrainToMesh 的导出子文件夹、主预制体、地块节点都存在才算通过。
+        /// </summary>
+        static bool TryGetSceneInfo(string sceneFolder, string sceneName,
+            string scenePath, out SceneAssetOrganizeInfo info)
+        {
+            info = new SceneAssetOrganizeInfo
+            {
+                ScenePath = scenePath,
+                SceneFolder = sceneFolder,
+                SceneName = sceneName,
             };
 
-            // 只读遍历预制体资源本身即可拿到地块名，不必 LoadPrefabContents。
-            CollectChunkNames(root.transform, p.ChunkNames);
-            if (p.ChunkNames.Count == 0)
+            string dataName = sceneName + TerrainDataSuffix;
+            info.SourceFolder = sceneFolder + "/" + dataName;
+            info.SourcePrefab = info.SourceFolder + "/" + dataName + ".prefab";
+            info.ChunkRoot = string.Format(ChunkRootFormat, sceneName);
+            info.TextureRoot = string.Format(TextureRootFormat, sceneName);
+            info.MaterialRoot = string.Format(MaterialRootFormat, sceneName);
+
+            if (!AssetDatabase.IsValidFolder(sceneFolder))
             {
-                error = "预制体里没有找到形如「<前缀> x(i) y(j)」的地块节点";
+                info.Error = "找不到场景文件夹 " + sceneFolder;
                 return false;
             }
 
-            foreach (string assetPath in ListAssetFiles(sourceFolder))
+            // 需求：子文件夹不存在就直接终止。
+            if (!AssetDatabase.IsValidFolder(info.SourceFolder))
+            {
+                info.Error = "找不到子文件夹 " + dataName;
+                return false;
+            }
+
+            var root = AssetDatabase.LoadAssetAtPath<GameObject>(info.SourcePrefab);
+            if (root == null)
+            {
+                info.Error = "找不到预制体 " + info.SourcePrefab;
+                return false;
+            }
+
+            // 只读遍历预制体资源本身即可拿到地块名，不必 LoadPrefabContents。
+            CollectChunkNames(root.transform, info.ChunkNames);
+            if (info.ChunkNames.Count == 0)
+            {
+                info.Error = "预制体里没有找到形如「<前缀> x(i) y(j)」的地块节点";
+                return false;
+            }
+
+            foreach (string assetPath in ListAssetFiles(info.SourceFolder))
             {
                 System.Type type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
                 if (type == null) continue;
-                if (typeof(Texture).IsAssignableFrom(type)) p.Textures.Add(assetPath);
-                else if (typeof(Material).IsAssignableFrom(type)) p.Materials.Add(assetPath);
+                if (typeof(Texture).IsAssignableFrom(type)) info.Textures.Add(assetPath);
+                else if (typeof(Material).IsAssignableFrom(type)) info.Materials.Add(assetPath);
             }
 
-            plan = p;
-            error = null;
             return true;
         }
 

@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace MapEditor
 {
@@ -16,7 +17,8 @@ namespace MapEditor
         Building = 1,
         Decorate = 2,
         Resource = 4,
-        All = Building | Decorate | Resource,
+        Obstacle = 8,
+        All = Building | Decorate | Resource | Obstacle,
     }
 
     public sealed class MapExportResult
@@ -29,6 +31,7 @@ namespace MapEditor
         public int BuildingCount;
         public int DecorateCount;
         public int ResourceCount;
+        public int ObstacleCount;
 
         public readonly List<string> Errors = new List<string>();
         public readonly List<string> Warnings = new List<string>();
@@ -37,10 +40,10 @@ namespace MapEditor
     }
 
     /// <summary>
-    /// 把 DataEditor 下的 Building/Decorate/Resource 分类目录导出为：
+    /// 把 DataEditor 下的 Building/Decorate/Resource/Obstacle 分类目录导出为：
     ///   客户端：Assets/BundleRes/MapData/&lt;场景名&gt;/BuildingData.asset 等 ScriptableObject
     ///   服务端：同目录下的 BuildingData.bytes 等二进制文件
-    /// 支持按模块多选，All 由编辑器窗口换算成三个模块的位掩码。
+    /// 支持按模块多选，All 由编辑器窗口换算成四个模块的位掩码。
     /// </summary>
     public static class MapDataExporter
     {
@@ -74,7 +77,7 @@ namespace MapEditor
                 return result;
             }
 
-            // 导出时确保 DataEditor 作为 Building/Decorate/Resource 的父节点；旧布局会被迁移。
+            // 导出时确保 DataEditor 作为 Building/Decorate/Resource/Obstacle 的父节点；旧布局会被迁移。
             MapEditorUtils.EnsureHierarchy(true, out var dataRoot);
             if (dataRoot == null)
             {
@@ -92,22 +95,27 @@ namespace MapEditor
                     buildingTable, resourceTable, assetTable, exportClient, result)
                 : new List<MapItemData>();
 
-            // Walls 节点下的墙体也是可以直接用 AssetPathCfg 表达的装饰数据，
-            // 导出时并入 DecorateData，运行时按 AssetPathCfg 301 实例化。
-            if (HasModule(modules, MapExportModule.Decorate))
-            {
-                var wallsRoot = MapEditorUtils.FindChild(dataRoot, WallsRootName);
-                if (wallsRoot != null)
-                {
-                    decorates.AddRange(CollectFromRoot(wallsRoot, MapEntityCategory.Decorate,
-                        buildingTable, resourceTable, assetTable, exportClient, result));
-                }
-            }
-
             var resources = HasModule(modules, MapExportModule.Resource)
                 ? Collect(dataRoot, MapEntityCategory.Resource,
                     buildingTable, resourceTable, assetTable, exportClient, result)
                 : new List<MapItemData>();
+
+            var obstacles = HasModule(modules, MapExportModule.Obstacle)
+                ? Collect(dataRoot, MapEntityCategory.Obstacle,
+                    buildingTable, resourceTable, assetTable, exportClient, result)
+                : new List<MapItemData>();
+
+            // Walls 节点下的墙体也是可以直接用 AssetPathCfg 表达的数据，但它们要挡住导航网格，
+            // 所以按障碍物导出（不挂 ignoreFromBuild），运行时按 AssetPathCfg 301 实例化。
+            if (HasModule(modules, MapExportModule.Obstacle))
+            {
+                var wallsRoot = MapEditorUtils.FindChild(dataRoot, WallsRootName);
+                if (wallsRoot != null)
+                {
+                    obstacles.AddRange(CollectFromRoot(wallsRoot, MapEntityCategory.Obstacle,
+                        buildingTable, resourceTable, assetTable, exportClient, result));
+                }
+            }
 
             if (result.Errors.Count > 0)
                 return result;
@@ -130,6 +138,9 @@ namespace MapEditor
 
                     if (HasModule(modules, MapExportModule.Resource))
                         WriteModule<ResourceData>(folder, "ResourceData", resources);
+
+                    if (HasModule(modules, MapExportModule.Obstacle))
+                        WriteModule<ObstacleData>(folder, "ObstacleData", obstacles);
                 }
 
                 if (exportServer)
@@ -142,6 +153,9 @@ namespace MapEditor
 
                     if (HasModule(modules, MapExportModule.Resource))
                         WriteBinary(folder, "ResourceData.bytes", resources);
+
+                    if (HasModule(modules, MapExportModule.Obstacle))
+                        WriteBinary(folder, "ObstacleData.bytes", obstacles);
                 }
             }
             catch (System.Exception ex)
@@ -167,6 +181,10 @@ namespace MapEditor
                 if (HasModule(modules, MapExportModule.Resource))
                     MakeAddressable($"{folder}/ResourceData.asset", "CommonSOData",
                         $"{folder}/ResourceData.asset", result);
+
+                if (HasModule(modules, MapExportModule.Obstacle))
+                    MakeAddressable($"{folder}/ObstacleData.asset", "CommonSOData",
+                        $"{folder}/ObstacleData.asset", result);
             }
 
             AssetDatabase.SaveAssets();
@@ -175,6 +193,7 @@ namespace MapEditor
             result.BuildingCount = buildings.Count;
             result.DecorateCount = decorates.Count;
             result.ResourceCount = resources.Count;
+            result.ObstacleCount = obstacles.Count;
             result.Success = true;
 
             string target = exportClient && exportServer
@@ -182,7 +201,7 @@ namespace MapEditor
                 : exportClient ? "客户端" : "服务端";
 
             Debug.Log($"[MapEditor] 导出完成({target}) -> {folder} " +
-                      $"建筑={buildings.Count} 装饰={decorates.Count} 资源={resources.Count}");
+                      $"建筑={buildings.Count} 装饰={decorates.Count} 资源={resources.Count} 障碍={obstacles.Count}");
             return result;
         }
 
@@ -252,10 +271,12 @@ namespace MapEditor
                     continue;
                 }
 
-                // 装饰物在 V3 直接使用 AssetPathCfg.Id；旧数据里 ConfigId 还是 MapDecorateCfg.Id，
+                // 装饰物/障碍物在 V3 直接使用 AssetPathCfg.Id；旧数据里 ConfigId 还是 MapDecorateCfg.Id，
                 // AssetId 已经保存了对应的 AssetPathCfg.Id，这里优先用它做迁移。
                 int exportId = info.ConfigId;
-                if (category == MapEntityCategory.Decorate && info.AssetId > 0)
+                bool usesAssetPathDirectly = category == MapEntityCategory.Decorate ||
+                                              category == MapEntityCategory.Obstacle;
+                if (usesAssetPathDirectly && info.AssetId > 0)
                     exportId = info.AssetId;
 
                 if (exportId <= 0)
@@ -266,6 +287,11 @@ namespace MapEditor
 
                 if (!TryGetAssetId(category, exportId, buildingTable, resourceTable, assetTable, result, out int assetId))
                     continue;
+
+                // 装饰物要忽略导航网格烘焙，障碍物要挡住导航网格；导出前顺手补全/纠正这个标记，
+                // 这样手动拖进场景或者由其他工具（例如围墙生成器）创建的对象也不会漏挂。
+                if (category == MapEntityCategory.Decorate)
+                    EnsureIgnoreFromBuildModifier(child.gameObject);
 
                 // 服务端二进制只需要 Id/Pos/Size/RotationY，不依赖客户端 prefab 是否存在。
                 if (requirePrefab)
@@ -303,6 +329,31 @@ namespace MapEditor
             return items;
         }
 
+        /// <summary>
+        /// 装饰物不应该影响导航网格：确保挂着 NavMeshModifier 并勾选 Ignore From Build。
+        /// 障碍物反过来不能挂这个，否则烘焙 NavMesh 时会被忽略，起不到阻挡作用。
+        /// </summary>
+        private static void EnsureIgnoreFromBuildModifier(GameObject go)
+        {
+            var modifier = go.GetComponent<NavMeshModifier>();
+            if (modifier == null)
+            {
+                modifier = Undo.AddComponent<NavMeshModifier>(go);
+            }
+            else if (!modifier.ignoreFromBuild || !modifier.enabled)
+            {
+                Undo.RecordObject(modifier, "Set NavMeshModifier Ignore");
+            }
+            else
+            {
+                return;
+            }
+
+            modifier.ignoreFromBuild = true;
+            modifier.enabled = true;
+            EditorUtility.SetDirty(modifier);
+        }
+
         private static bool TryGetAssetId(
             MapEntityCategory category,
             int configId,
@@ -327,9 +378,9 @@ namespace MapEditor
                 return true;
             }
 
-            if (category == MapEntityCategory.Decorate)
+            if (category == MapEntityCategory.Decorate || category == MapEntityCategory.Obstacle)
             {
-                // V3：装饰物直接使用 AssetPathCfg.Id 作为导出 Id。
+                // V3：装饰物/障碍物直接使用 AssetPathCfg.Id 作为导出 Id。
                 var asset = assetTable?.Get(configId);
                 if (asset == null)
                 {

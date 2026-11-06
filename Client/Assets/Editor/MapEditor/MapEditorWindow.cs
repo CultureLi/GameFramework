@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using cfg;
 using Framework;
+using GameFramework.EditorTools.TerrainGen;
 using GameMain;
+using RecastNavigation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
@@ -15,13 +18,13 @@ namespace MapEditor
     ///   - 从 MapBuildingCfg / AssetPathCfg / MapResourceCfg 生成左侧列表；
     ///   - 通过 AssetPathCfg 解析 prefab；
     ///   - 在 Scene 视图里用真实 prefab 预览、网格吸附或自由摆放；
-    ///   - 导出 BuildingData / DecorateData / ResourceData 的 ScriptableObject 和二进制文件。
+    ///   - 导出 BuildingData / DecorateData / ResourceData / ObstacleData 的 ScriptableObject 和二进制文件。
     /// </summary>
     public sealed class MapEditorWindow : EditorWindow
     {
         private const string MenuPath = "Tools/Map Editor";
 
-        private static readonly string[] CategoryNames = { "建筑物", "装饰物", "采集资源" };
+        private static readonly string[] CategoryNames = { "建筑物", "装饰物", "采集资源", "障碍物" };
 
         private sealed class Choice
         {
@@ -46,6 +49,7 @@ namespace MapEditor
         private bool _exportBuilding = true;
         private bool _exportDecorate = true;
         private bool _exportResource = true;
+        private bool _exportObstacle = true;
 
         private ConfigMgr _configMgr;
         private TbMapBuildingCfg _buildingTable;
@@ -179,15 +183,17 @@ namespace MapEditor
                 _exportBuilding = newExportAll;
                 _exportDecorate = newExportAll;
                 _exportResource = newExportAll;
+                _exportObstacle = newExportAll;
             }
 
             EditorGUILayout.BeginHorizontal();
             _exportBuilding = EditorGUILayout.ToggleLeft("Building", _exportBuilding);
             _exportDecorate = EditorGUILayout.ToggleLeft("Decorate", _exportDecorate);
             _exportResource = EditorGUILayout.ToggleLeft("Resource", _exportResource);
+            _exportObstacle = EditorGUILayout.ToggleLeft("Obstacle", _exportObstacle);
             EditorGUILayout.EndHorizontal();
 
-            _exportAll = _exportBuilding && _exportDecorate && _exportResource;
+            _exportAll = _exportBuilding && _exportDecorate && _exportResource && _exportObstacle;
 
             MapExportModule modules = BuildModuleMask();
 
@@ -200,12 +206,14 @@ namespace MapEditor
                     Export(modules, false, true);
             }
 
+            DrawSceneToolsSection();
+
             if (_lastExport == null)
                 return;
 
             EditorGUILayout.HelpBox(
                 $"{(_lastExport.Client ? "客户端" : "")}{(_lastExport.Client && _lastExport.Server ? "+" : "")}{(_lastExport.Server ? "服务端" : "")}  " +
-                $"建筑 {_lastExport.BuildingCount}，装饰 {_lastExport.DecorateCount}，资源 {_lastExport.ResourceCount}",
+                $"建筑 {_lastExport.BuildingCount}，装饰 {_lastExport.DecorateCount}，资源 {_lastExport.ResourceCount}，障碍 {_lastExport.ObstacleCount}",
                 _lastExport.Success ? MessageType.Info : MessageType.Error);
 
             for (int i = 0; i < _lastExport.Errors.Count && i < 10; i++)
@@ -213,6 +221,65 @@ namespace MapEditor
 
             for (int i = 0; i < _lastExport.Warnings.Count && i < 10; i++)
                 EditorGUILayout.HelpBox(_lastExport.Warnings[i], MessageType.Warning);
+        }
+
+        /// <summary>
+        /// 场景资产整理 + NavMesh 烘焙/导出入口，都以「当前打开的场景」为准，
+        /// 不需要像导出建筑/装饰/资源数据那样先选中文件夹或输入场景名。
+        /// </summary>
+        private void DrawSceneToolsSection()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("场景资产整理", EditorStyles.boldLabel);
+
+            bool hasSceneInfo = SceneAssetOrganizer.TryGetCurrentSceneInfo(out var sceneInfo);
+            if (hasSceneInfo && sceneInfo.IsValid)
+            {
+                EditorGUILayout.HelpBox(
+                    $"场景: {sceneInfo.SceneName}\n" +
+                    $"源目录: {sceneInfo.SourceFolder}\n" +
+                    $"（{sceneInfo.ChunkNames.Count} 块地形，{sceneInfo.Textures.Count} 张贴图，{sceneInfo.Materials.Count} 个材质）\n" +
+                    $"输出到: {sceneInfo.ChunkRoot}",
+                    MessageType.Info);
+
+                if (GUILayout.Button("整理当前场景资产"))
+                    SceneAssetOrganizer.OrganizeCurrentScene();
+            }
+            else
+            {
+                string reason = sceneInfo != null ? sceneInfo.Error : "当前场景未保存到 Assets 目录下";
+                EditorGUILayout.HelpBox("当前场景不能整理资产: " + reason, MessageType.Warning);
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("NavMesh", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("导出目标", NavMeshExporter.GetServerNavDataPath());
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("烘焙 NavMesh（当前场景）"))
+            {
+                if (EditorUtility.DisplayDialog("烘焙 NavMesh",
+                        "使用当前场景的 NavMeshSurface 重新烘焙？\n" +
+                        "烘焙前会临时打开所有关卡门，保证门洞在静态导航网格里是通的。",
+                        "烘焙", "取消"))
+                {
+                    MazeNavMeshBaker.BakeActiveScene();
+                }
+            }
+
+            if (GUILayout.Button("导出 NavMesh (.rnav)"))
+            {
+                if (EditorUtility.DisplayDialog("导出 NavMesh",
+                        "将覆盖服务端读取的导航数据:\n" + NavMeshExporter.GetServerNavDataPath(),
+                        "导出", "取消"))
+                {
+                    if (NavMeshExporter.ExportToServerNavData())
+                        Debug.Log("[MapEditor] NavMesh 已导出到 " + NavMeshExporter.GetServerNavDataPath());
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.HelpBox("导出后需要重启 GameServer 才会加载新的导航数据。", MessageType.None);
         }
 
         private void ReloadConfig()
@@ -282,6 +349,12 @@ namespace MapEditor
                 {
                     foreach (var config in _resourceTable.DataList)
                         AddChoice(config.Id, config.Name, config.AssetId, config.Level, config.Type);
+                }
+                else if (_tab == (int)MapEntityCategory.Obstacle && _assetTable != null)
+                {
+                    // 障碍物和装饰物一样直接用 AssetPathCfg，区别只在放置时是否挂 NavMeshModifier。
+                    foreach (var config in _assetTable.DataList)
+                        AddDecorationChoice(config);
                 }
             }
 
@@ -375,7 +448,7 @@ namespace MapEditor
 
         private MapEntityCategory GetCategory()
         {
-            return (MapEntityCategory)Mathf.Clamp(_tab, 0, 2);
+            return (MapEntityCategory)Mathf.Clamp(_tab, 0, 3);
         }
 
         private void EnsureNodes()
@@ -383,7 +456,7 @@ namespace MapEditor
             MapEditorUtils.EnsureHierarchy(true, out _);
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             SceneView.RepaintAll();
-            Debug.Log("[MapEditor] DataEditor/Building、Decorate、Resource 节点已就绪");
+            Debug.Log("[MapEditor] DataEditor/Building、Decorate、Resource、Obstacle 节点已就绪");
         }
 
         /// <summary>
@@ -421,6 +494,8 @@ namespace MapEditor
                 modules |= MapExportModule.Decorate;
             if (_exportResource)
                 modules |= MapExportModule.Resource;
+            if (_exportObstacle)
+                modules |= MapExportModule.Obstacle;
             return modules;
         }
 
@@ -588,12 +663,34 @@ namespace MapEditor
             if (string.IsNullOrEmpty(info.InstanceId))
                 info.InstanceId = System.Guid.NewGuid().ToString("N");
 
+            ApplyNavMeshModifier(go, info.Category);
+
             Undo.RegisterCreatedObjectUndo(go, "Place Map Entity");
             EditorUtility.SetDirty(go);
             Selection.activeGameObject = go;
 
             EditorSceneManager.MarkSceneDirty(go.scene);
             SceneView.RepaintAll();
+        }
+
+        /// <summary>
+        /// 装饰物不应该影响导航网格，挂 NavMeshModifier 并勾选 Ignore From Build；
+        /// 障碍物反过来要挡住导航网格，不挂这个组件。
+        /// </summary>
+        private static void ApplyNavMeshModifier(GameObject go, MapEntityCategory category)
+        {
+            if (category != MapEntityCategory.Decorate)
+                return;
+
+            var modifier = go.GetComponent<NavMeshModifier>();
+            if (modifier == null)
+                modifier = Undo.AddComponent<NavMeshModifier>(go);
+            else
+                Undo.RecordObject(modifier, "Set NavMeshModifier Ignore");
+
+            modifier.ignoreFromBuild = true;
+            modifier.enabled = true;
+            EditorUtility.SetDirty(modifier);
         }
 
         private void DrawGrid(Vector3 point)

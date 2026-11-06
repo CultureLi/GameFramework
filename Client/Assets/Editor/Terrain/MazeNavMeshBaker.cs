@@ -17,7 +17,19 @@ namespace GameFramework.EditorTools.TerrainGen
     {
         public static void Bake(Terrain terrain)
         {
-            var scene = terrain.gameObject.scene;
+            BakeScene(terrain.gameObject.scene);
+        }
+
+        /// <summary>
+        /// 直接烘焙当前打开场景，不依赖 Terrain 参数；MapEditor 窗口用这个入口。
+        /// </summary>
+        public static void BakeActiveScene()
+        {
+            BakeScene(SceneManager.GetActiveScene());
+        }
+
+        private static void BakeScene(Scene scene)
+        {
             var surface = Object.FindObjectOfType<NavMeshSurface>();
             if (surface == null)
             {

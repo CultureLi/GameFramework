@@ -31,6 +31,7 @@ namespace GameMain
         private BuildingData _buildingData;
         private DecorateData _decorateData;
         private ResourceData _resourceData;
+        private ObstacleData _obstacleData;
 
         private readonly List<MapRuntimeItem> _items = new List<MapRuntimeItem>();
         private readonly List<int> _toUnload = new List<int>();
@@ -49,12 +50,13 @@ namespace GameMain
         private bool _destroyed;
 
         public void Initialize(WorldChunkStreaming chunkStreaming, BuildingData buildingData,
-            DecorateData decorateData, ResourceData resourceData)
+            DecorateData decorateData, ResourceData resourceData, ObstacleData obstacleData)
         {
             _chunkStreaming = chunkStreaming;
             _buildingData = buildingData;
             _decorateData = decorateData;
             _resourceData = resourceData;
+            _obstacleData = obstacleData;
         }
 
         private void Start()
@@ -88,6 +90,7 @@ namespace GameMain
                 AddBuildingItems(buildingTable, assetTable);
                 AddDecorateItems(assetTable);
                 AddResourceItems(resourceTable, assetTable);
+                AddObstacleItems(assetTable);
             }
             catch (System.Exception ex)
             {
@@ -98,7 +101,7 @@ namespace GameMain
             if (_items.Count > 0)
                 BuildQuadtree();
 
-            Debug.Log($"[MapData] 地图实体数据加载完成，建筑/装饰/资源共 {_items.Count} 个");
+            Debug.Log($"[MapData] 地图实体数据加载完成，建筑/装饰/资源/障碍共 {_items.Count} 个");
         }
 
         private void BuildQuadtree()
@@ -175,6 +178,30 @@ namespace GameMain
                 AddItem(data, MapEntityCategory.Decorate, data.Id, assetTable);
             }
         }
+
+        /// <summary>
+        /// 障碍物和装饰物一样直接用 AssetPathCfg.Id，区别只在编辑器放置时是否挂 NavMeshModifier；
+        /// 运行时两者都只是按导出数据实例化 prefab，没有额外差异。
+        /// </summary>
+        private void AddObstacleItems(TbAssetPathCfg assetTable)
+        {
+            if (_obstacleData == null || assetTable == null)
+                return;
+
+            for (int i = 0; i < _obstacleData.Items.Count; i++)
+            {
+                var data = _obstacleData.Items[i];
+                var asset = assetTable.Get(data.Id);
+                if (asset == null || string.IsNullOrEmpty(asset.AssetPath))
+                {
+                    Debug.LogWarning($"[MapData] 找不到障碍资源 AssetPathCfg Id={data.Id}");
+                    continue;
+                }
+
+                AddItem(data, MapEntityCategory.Obstacle, data.Id, assetTable);
+            }
+        }
+
         private void AddResourceItems(TbMapResourceCfg table, TbAssetPathCfg assetTable)
         {
             if (_resourceData == null || table == null)

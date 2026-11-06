@@ -11,7 +11,7 @@ namespace GameMain
     /// <summary>
     /// Main 场景的地图数据入口：
     ///   - 按 WorldChunkStreaming.sceneName（没有则当前场景名）定位
-    ///     Assets/BundleRes/MapData/&lt;场景名&gt;/ 下的三个 ScriptableObject；
+    ///     Assets/BundleRes/MapData/&lt;场景名&gt;/ 下的四个 ScriptableObject；
     ///   - 通过 Addressables 加载；
     ///   - 创建 MapDataStreaming，由四叉树按玩家位置创建/销毁实体。
     /// </summary>
@@ -22,6 +22,7 @@ namespace GameMain
         private BuildingData _building;
         private DecorateData _decorate;
         private ResourceData _resource;
+        private ObstacleData _obstacle;
         private WorldChunkStreaming _chunkStreaming;
         private MapDataStreaming _streaming;
 
@@ -45,7 +46,7 @@ namespace GameMain
                 : SceneManager.GetActiveScene().name;
 
             string basePath = $"Assets/BundleRes/MapData/{mapName}";
-            _pending = 3;
+            _pending = 4;
 
             Load<BuildingData>($"{basePath}/BuildingData.asset",
                 data => { _building = data; OnOneDone(); },
@@ -58,6 +59,10 @@ namespace GameMain
             Load<ResourceData>($"{basePath}/ResourceData.asset",
                 data => { _resource = data; OnOneDone(); },
                 () => OnLoadFailed("ResourceData"));
+
+            Load<ObstacleData>($"{basePath}/ObstacleData.asset",
+                data => { _obstacle = data; OnOneDone(); },
+                () => OnLoadFailed("ObstacleData"));
         }
 
         /// <summary>
@@ -142,16 +147,16 @@ namespace GameMain
             if (_pending > 0)
                 return;
 
-            if (_building == null && _decorate == null && _resource == null)
+            if (_building == null && _decorate == null && _resource == null && _obstacle == null)
             {
-                Debug.LogWarning("[MapData] 三个地图数据模块都不存在，本次不创建地图实体");
+                Debug.LogWarning("[MapData] 四个地图数据模块都不存在，本次不创建地图实体");
                 ReleaseHandles();
                 return;
             }
 
             var go = new GameObject("MapDataStreaming");
             _streaming = go.AddComponent<MapDataStreaming>();
-            _streaming.Initialize(_chunkStreaming, _building, _decorate, _resource);
+            _streaming.Initialize(_chunkStreaming, _building, _decorate, _resource, _obstacle);
 
             Debug.Log("[MapData] 地图数据加载完成，开始按玩家位置流式创建实体");
         }
@@ -170,6 +175,7 @@ namespace GameMain
             _building = null;
             _decorate = null;
             _resource = null;
+            _obstacle = null;
         }
 
         private void ReleaseHandles()

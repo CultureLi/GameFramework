@@ -318,8 +318,8 @@ namespace GameFramework.EditorTools.TerrainGen
         }
 
         /// <summary>
-        /// 围墙也作为地图实体导出：使用 AssetPathCfg 301，Category 归入 Decorate，
-        /// InstanceId 留空，由 MapDataExporter 在实际导出时生成并保存。
+        /// 围墙也作为地图实体导出：使用 AssetPathCfg 301，Category 归入 Obstacle（要挡住导航网格，
+        /// 不能挂 ignoreFromBuild），InstanceId 留空，由 MapDataExporter 在实际导出时生成并保存。
         /// </summary>
         private static void AddMapEntityInfoToWalls(GameObject dataEditor)
         {
@@ -336,7 +336,7 @@ namespace GameFramework.EditorTools.TerrainGen
                 else
                     Undo.RecordObject(info, "Configure Wall MapEntityInfo");
 
-                info.Category = MapEntityCategory.Decorate;
+                info.Category = MapEntityCategory.Obstacle;
                 info.ConfigId = 301;
                 info.AssetId = 301;
 

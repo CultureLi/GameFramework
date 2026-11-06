@@ -33,7 +33,7 @@ namespace RecastNavigation
             public bool open;
         }
 
-        [MenuItem("Tools/RecastNavigationServer/Export NavMesh")]
+        //[MenuItem("Tools/RecastNavigationServer/Export NavMesh")]
         public static void ExportActiveScene()
         {
             string path = EditorUtility.SaveFilePanel("Export NavMesh (.rnav)", Application.dataPath, "navmesh", "rnav");
@@ -43,13 +43,28 @@ namespace RecastNavigation
             Export(path);
         }
 
-        private static void Export(string path)
+        /// <summary>
+        /// 服务端实际读取的 .rnav 路径：GameServer.csproj 把 Server/NavData/navmesh.rnav 链接进了
+        /// 各个构建输出，所以这里直接固定到仓库里的这一份，而不是跟当前打开的场景走。
+        /// </summary>
+        public static string GetServerNavDataPath()
+        {
+            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "Server", "NavData", "navmesh.rnav"));
+        }
+
+        /// <summary>给 MapEditor 窗口用的导出入口：直接写到 Server/NavData/navmesh.rnav。</summary>
+        public static bool ExportToServerNavData()
+        {
+            return Export(GetServerNavDataPath());
+        }
+
+        private static bool Export(string path)
         {
             NavMeshTriangulation tri = NavMesh.CalculateTriangulation();
             if (tri.vertices.Length == 0 || tri.indices.Length == 0)
             {
                 Debug.LogError("[NavMeshExporter] NavMesh.CalculateTriangulation() 返回空数据,请先在场景里 Bake NavMesh。");
-                return;
+                return false;
             }
 
             // Agent 参数(agentHeight/agentRadius/agentClimb)和体素量化步长取自场景里第一个 NavMeshSurface 的 agentTypeID。
@@ -80,9 +95,14 @@ namespace RecastNavigation
             List<LinkExportData> links = CollectLinks();
             List<GateExportData> gates = CollectGates();
 
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
             WriteFile(path, tri, buildSettings, cellSize, cellHeight, links, gates);
 
             Debug.Log($"[NavMeshExporter] 导出完成: {tri.vertices.Length} 个顶点, {tri.indices.Length / 3} 个三角形, {links.Count} 个 NavMeshLink, {gates.Count} 个动态关卡门 -> {path}");
+            return true;
         }
 
         private static List<LinkExportData> CollectLinks()
