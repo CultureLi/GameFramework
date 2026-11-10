@@ -14,9 +14,10 @@ echo ==========================================
 echo  GameServer
 echo  Default: 0.0.0.0:19000
 echo  Config:  %~dp0..\Client\Assets\StreamingAssets\Config
+echo  MapData: %~dp0MapData\OpenWorld
 echo  Press Ctrl+C to stop
 echo ==========================================
-"%~dp0publish\server\GameServer.exe" --config "%~dp0..\Client\Assets\StreamingAssets\Config" --mapdata "%~dp0..\Client\Assets\BundleRes\MapData\OpenWorld" %*
+"%~dp0publish\server\GameServer.exe" --config "%~dp0..\Client\Assets\StreamingAssets\Config" --mapdata "%~dp0MapData\OpenWorld" %*
 
 echo.
 echo Server stopped.

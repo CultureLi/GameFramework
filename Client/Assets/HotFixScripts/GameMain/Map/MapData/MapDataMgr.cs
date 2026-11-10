@@ -11,7 +11,7 @@ namespace GameMain
     /// <summary>
     /// Main 场景的地图数据入口：
     ///   - 按 WorldChunkStreaming.sceneName（没有则当前场景名）定位
-    ///     Assets/BundleRes/MapData/&lt;场景名&gt;/ 下的四个 ScriptableObject；
+    ///     Assets/AssetBundles/MapData/&lt;场景名&gt;/ 下的四个 ScriptableObject；
     ///   - 通过 Addressables 加载；
     ///   - 创建 MapDataStreaming，由四叉树按玩家位置创建/销毁实体。
     /// </summary>
@@ -45,7 +45,7 @@ namespace GameMain
                 ? _chunkStreaming.sceneName
                 : SceneManager.GetActiveScene().name;
 
-            string basePath = $"Assets/BundleRes/MapData/{mapName}";
+            string basePath = $"Assets/AssetBundles/MapData/{mapName}";
             _pending = 4;
 
             Load<BuildingData>($"{basePath}/BuildingData.asset",

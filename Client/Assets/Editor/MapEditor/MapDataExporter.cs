@@ -41,13 +41,15 @@ namespace MapEditor
 
     /// <summary>
     /// 把 DataEditor 下的 Building/Decorate/Resource/Obstacle 分类目录导出为：
-    ///   客户端：Assets/BundleRes/MapData/&lt;场景名&gt;/BuildingData.asset 等 ScriptableObject
-    ///   服务端：同目录下的 BuildingData.bytes 等二进制文件
+    ///   客户端：Assets/AssetBundles/MapData/&lt;场景名&gt;/BuildingData.asset 等 ScriptableObject
+    ///   服务端：&lt;仓库根&gt;/Server/MapData/&lt;场景名&gt;/BuildingData.bytes 等二进制文件
     /// 支持按模块多选，All 由编辑器窗口换算成四个模块的位掩码。
     /// </summary>
     public static class MapDataExporter
     {
-        private const string MapDataRoot = "Assets/BundleRes/MapData";
+        private const string MapDataRoot = "Assets/AssetBundles/MapData";
+        /// <summary>服务端二进制数据的根目录，相对于仓库根（Application.dataPath 往上两级）。</summary>
+        private const string ServerMapDataRoot = "Server/MapData";
         private const string WallsRootName = "Walls";
 
         public static MapExportResult Export(
@@ -85,24 +87,27 @@ namespace MapEditor
                 return result;
             }
 
+            // 同一个 prefab 会被大量场景对象复用，LoadAssetAtPath 的存在性检查按路径缓存一次即可。
+            var prefabExistsCache = new Dictionary<string, bool>(System.StringComparer.Ordinal);
+
             var buildings = HasModule(modules, MapExportModule.Building)
                 ? Collect(dataRoot, MapEntityCategory.Building,
-                    buildingTable, resourceTable, assetTable, exportClient, result)
+                    buildingTable, resourceTable, assetTable, exportClient, prefabExistsCache, result)
                 : new List<MapItemData>();
 
             var decorates = HasModule(modules, MapExportModule.Decorate)
                 ? Collect(dataRoot, MapEntityCategory.Decorate,
-                    buildingTable, resourceTable, assetTable, exportClient, result)
+                    buildingTable, resourceTable, assetTable, exportClient, prefabExistsCache, result)
                 : new List<MapItemData>();
 
             var resources = HasModule(modules, MapExportModule.Resource)
                 ? Collect(dataRoot, MapEntityCategory.Resource,
-                    buildingTable, resourceTable, assetTable, exportClient, result)
+                    buildingTable, resourceTable, assetTable, exportClient, prefabExistsCache, result)
                 : new List<MapItemData>();
 
             var obstacles = HasModule(modules, MapExportModule.Obstacle)
                 ? Collect(dataRoot, MapEntityCategory.Obstacle,
-                    buildingTable, resourceTable, assetTable, exportClient, result)
+                    buildingTable, resourceTable, assetTable, exportClient, prefabExistsCache, result)
                 : new List<MapItemData>();
 
             // Walls 节点下的墙体也是可以直接用 AssetPathCfg 表达的数据，但它们要挡住导航网格，
@@ -113,7 +118,7 @@ namespace MapEditor
                 if (wallsRoot != null)
                 {
                     obstacles.AddRange(CollectFromRoot(wallsRoot, MapEntityCategory.Obstacle,
-                        buildingTable, resourceTable, assetTable, exportClient, result));
+                        buildingTable, resourceTable, assetTable, exportClient, prefabExistsCache, result));
                 }
             }
 
@@ -122,8 +127,10 @@ namespace MapEditor
 
             string mapName = MapEditorUtils.SanitizeFileName(MapEditorUtils.GetMapName());
             string folder = $"{MapDataRoot}/{mapName}";
+            string serverFolder = GetServerMapDataFolder(mapName);
 
-            if (!EnsureFolder(folder, mapName, result))
+            // 只有客户端数据需要建 Assets 下的目录；服务端二进制写到仓库根的 Server/MapData 下。
+            if (exportClient && !EnsureFolder(folder, mapName, result))
                 return result;
 
             try
@@ -146,16 +153,16 @@ namespace MapEditor
                 if (exportServer)
                 {
                     if (HasModule(modules, MapExportModule.Building))
-                        WriteBinary(folder, "BuildingData.bytes", buildings);
+                        WriteBinary(serverFolder, "BuildingData.bytes", buildings);
 
                     if (HasModule(modules, MapExportModule.Decorate))
-                        WriteBinary(folder, "DecorateData.bytes", decorates);
+                        WriteBinary(serverFolder, "DecorateData.bytes", decorates);
 
                     if (HasModule(modules, MapExportModule.Resource))
-                        WriteBinary(folder, "ResourceData.bytes", resources);
+                        WriteBinary(serverFolder, "ResourceData.bytes", resources);
 
                     if (HasModule(modules, MapExportModule.Obstacle))
-                        WriteBinary(folder, "ObstacleData.bytes", obstacles);
+                        WriteBinary(serverFolder, "ObstacleData.bytes", obstacles);
                 }
             }
             catch (System.Exception ex)
@@ -171,19 +178,19 @@ namespace MapEditor
                     MakeAddressable(prefabPath, "Prefab", prefabPath, result);
 
                 if (HasModule(modules, MapExportModule.Building))
-                    MakeAddressable($"{folder}/BuildingData.asset", "CommonSOData",
+                    MakeAddressable($"{folder}/BuildingData.asset", "CommonData",
                         $"{folder}/BuildingData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Decorate))
-                    MakeAddressable($"{folder}/DecorateData.asset", "CommonSOData",
+                    MakeAddressable($"{folder}/DecorateData.asset", "CommonData",
                         $"{folder}/DecorateData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Resource))
-                    MakeAddressable($"{folder}/ResourceData.asset", "CommonSOData",
+                    MakeAddressable($"{folder}/ResourceData.asset", "CommonData",
                         $"{folder}/ResourceData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Obstacle))
-                    MakeAddressable($"{folder}/ObstacleData.asset", "CommonSOData",
+                    MakeAddressable($"{folder}/ObstacleData.asset", "CommonData",
                         $"{folder}/ObstacleData.asset", result);
             }
 
@@ -199,8 +206,11 @@ namespace MapEditor
             string target = exportClient && exportServer
                 ? "客户端+服务端"
                 : exportClient ? "客户端" : "服务端";
+            string output = exportClient && exportServer
+                ? folder + " 与 " + serverFolder
+                : exportClient ? folder : serverFolder;
 
-            Debug.Log($"[MapEditor] 导出完成({target}) -> {folder} " +
+            Debug.Log($"[MapEditor] 导出完成({target}) -> {output} " +
                       $"建筑={buildings.Count} 装饰={decorates.Count} 资源={resources.Count} 障碍={obstacles.Count}");
             return result;
         }
@@ -217,6 +227,7 @@ namespace MapEditor
             TbMapResourceCfg resourceTable,
             TbAssetPathCfg assetTable,
             bool requirePrefab,
+            Dictionary<string, bool> prefabExistsCache,
             MapExportResult result)
         {
             var root = MapEditorUtils.GetCategoryRoot(dataRoot, category);
@@ -227,7 +238,7 @@ namespace MapEditor
             }
 
             return CollectFromRoot(root, category,
-                buildingTable, resourceTable, assetTable, requirePrefab, result);
+                buildingTable, resourceTable, assetTable, requirePrefab, prefabExistsCache, result);
         }
 
         private static List<MapItemData> CollectFromRoot(
@@ -237,6 +248,7 @@ namespace MapEditor
             TbMapResourceCfg resourceTable,
             TbAssetPathCfg assetTable,
             bool requirePrefab,
+            Dictionary<string, bool> prefabExistsCache,
             MapExportResult result)
         {
             var items = new List<MapItemData>();
@@ -303,7 +315,13 @@ namespace MapEditor
                         continue;
                     }
 
-                    if (AssetDatabase.LoadAssetAtPath<GameObject>(asset.AssetPath) == null)
+                    if (!prefabExistsCache.TryGetValue(asset.AssetPath, out bool prefabExists))
+                    {
+                        prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(asset.AssetPath) != null;
+                        prefabExistsCache[asset.AssetPath] = prefabExists;
+                    }
+
+                    if (!prefabExists)
                     {
                         result.Errors.Add($"{child.name} 的资源不存在: {asset.AssetPath}");
                         continue;
@@ -442,22 +460,34 @@ namespace MapEditor
                 });
             }
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName
-                                 ?? Directory.GetCurrentDirectory();
-            string path = Path.Combine(projectRoot, folder, fileName);
+            // folder 传的是绝对路径（<repo>/Server/MapData/<场景名>），
+            // MapDataBinary.Write 内部会创建目录。
+            string path = Path.Combine(folder, fileName);
             MapDataBinary.Write(path, entries);
+        }
+
+        /// <summary>
+        /// 服务端二进制输出目录：<c>&lt;repo&gt;/Server/MapData/&lt;场景名&gt;</c>。
+        /// <see cref="Application.dataPath"/> 是 <c>&lt;repo&gt;/Client/Assets</c>，往上两级即仓库根。
+        /// </summary>
+        private static string GetServerMapDataFolder(string mapName)
+        {
+            string clientRoot = Directory.GetParent(Application.dataPath)?.FullName
+                                ?? Directory.GetCurrentDirectory();
+            string repoRoot = Directory.GetParent(clientRoot)?.FullName ?? clientRoot;
+            return Path.Combine(repoRoot, ServerMapDataRoot, mapName);
         }
 
         private static bool EnsureFolder(string folder, string mapName, MapExportResult result)
         {
-            if (!AssetDatabase.IsValidFolder("Assets/BundleRes"))
+            if (!AssetDatabase.IsValidFolder("Assets/AssetBundles"))
             {
-                result.Errors.Add("找不到 Assets/BundleRes 目录");
+                result.Errors.Add("找不到 Assets/AssetBundles 目录");
                 return false;
             }
 
             if (!AssetDatabase.IsValidFolder(MapDataRoot))
-                AssetDatabase.CreateFolder("Assets/BundleRes", "MapData");
+                AssetDatabase.CreateFolder("Assets/AssetBundles", "MapData");
 
             if (!AssetDatabase.IsValidFolder(folder))
                 AssetDatabase.CreateFolder(MapDataRoot, mapName);

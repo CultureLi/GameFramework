@@ -12,7 +12,7 @@ namespace Assets.Editor.AssetPostProcessor
 {
     internal class SpriteAtlasHandler : IAssetPostprocessorHandler
     {
-        private const string UIRoot = "Assets/BundleRes/Arts/UI";
+        private const string UIRoot = "Assets/Arts/UI";
 
         public void OnPostprocessAllAssets(string[] importedAssets,
             string[] deletedAssets,

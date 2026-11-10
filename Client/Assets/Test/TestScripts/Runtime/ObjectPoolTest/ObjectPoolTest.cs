@@ -17,12 +17,12 @@ namespace TestRuntime
         Queue<GameObject> nowAliveObject = new Queue<GameObject>();
         private void Awake()
         {
-            _pool = PrefabObjectPool.Create( "CustomPool", 10, 5);
+            _pool = PrefabObjectPool.Create("CustomPool", 10, 5);
         }
 
         public void Spawn()
         {
-            var go = _pool.Spawn("Assets/BundleRes/Prefab/Sphere.prefab");
+            var go = _pool.Spawn("Assets/AssetBundles/Prefab/Sphere.prefab");
             SetGo(go);
         }
 
@@ -34,7 +34,7 @@ namespace TestRuntime
 
         public void SpawnAsync()
         {
-            _pool.SpawnAsync("Assets/BundleRes/Prefab/Sphere.prefab", (go) =>
+            _pool.SpawnAsync("Assets/AssetBundles/Prefab/Sphere.prefab", (go) =>
             {
                 SetGo(go);
             });
@@ -59,7 +59,7 @@ namespace TestRuntime
             }
         }
 
-        public void Count() 
+        public void Count()
         {
             Debug.Log($"Active: {nowAliveObject.Count}  pool: {_pool.Count}");
         }

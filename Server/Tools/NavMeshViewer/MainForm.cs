@@ -72,7 +72,7 @@ public sealed class MainForm : Form
         string? mapPath = args.FirstOrDefault(a => a.EndsWith(".bytes", StringComparison.OrdinalIgnoreCase));
 
         navPath ??= FindDefaultFile(Path.Combine("NavData", "navmesh.rnav"));
-        mapPath ??= FindDefaultFile(Path.Combine("Client", "Assets", "BundleRes", "MapData", "OpenWorld", "BuildingData.bytes"));
+        mapPath ??= FindDefaultFile(Path.Combine("Server", "MapData", "OpenWorld", "BuildingData.bytes"));
 
         if (!string.IsNullOrEmpty(navPath) && File.Exists(navPath))
             _view.LoadNavMesh(navPath);

@@ -51,6 +51,10 @@ namespace MapEditor
         private bool _exportResource = true;
         private bool _exportObstacle = true;
 
+        /// <summary>导出目标：客户端（ScriptableObject）与服务端（二进制），可多选，默认全选。</summary>
+        private bool _exportClient = true;
+        private bool _exportServer = true;
+
         private ConfigMgr _configMgr;
         private TbMapBuildingCfg _buildingTable;
         private TbMapResourceCfg _resourceTable;
@@ -195,16 +199,24 @@ namespace MapEditor
 
             _exportAll = _exportBuilding && _exportDecorate && _exportResource && _exportObstacle;
 
+            EditorGUILayout.BeginHorizontal();
+            _exportClient = EditorGUILayout.ToggleLeft("客户端", _exportClient);
+            _exportServer = EditorGUILayout.ToggleLeft("服务端", _exportServer);
+            EditorGUILayout.EndHorizontal();
+
             MapExportModule modules = BuildModuleMask();
+            bool canExport = !_configError
+                             && modules != MapExportModule.None
+                             && (_exportClient || _exportServer);
 
-            using (new EditorGUI.DisabledScope(_configError || modules == MapExportModule.None))
+            using (new EditorGUI.DisabledScope(!canExport))
             {
-                if (GUILayout.Button("导出客户端数据"))
-                    Export(modules, true, false);
-
-                if (GUILayout.Button("导出服务端数据"))
-                    Export(modules, false, true);
+                if (GUILayout.Button("导出数据"))
+                    Export(modules, _exportClient, _exportServer);
             }
+
+            if (!_exportClient && !_exportServer)
+                EditorGUILayout.HelpBox("至少勾选客户端或服务端。", MessageType.Warning);
 
             DrawSceneToolsSection();
 
@@ -255,31 +267,81 @@ namespace MapEditor
             EditorGUILayout.LabelField("NavMesh", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("导出目标", NavMeshExporter.GetServerNavDataPath());
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("烘焙 NavMesh（当前场景）"))
+            var navSurfaces = Object.FindObjectsOfType<NavMeshSurface>();
+            bool baking = false;
+            foreach (var surface in navSurfaces)
             {
-                if (EditorUtility.DisplayDialog("烘焙 NavMesh",
-                        "使用当前场景的 NavMeshSurface 重新烘焙？\n" +
-                        "烘焙前会临时打开所有关卡门，保证门洞在静态导航网格里是通的。",
-                        "烘焙", "取消"))
+                if (UnityEditor.AI.NavMeshAssetManager.instance.IsSurfaceBaking(surface))
                 {
-                    MazeNavMeshBaker.BakeActiveScene();
+                    baking = true;
+                    break;
                 }
             }
 
-            if (GUILayout.Button("导出 NavMesh (.rnav)"))
+            EditorGUILayout.BeginHorizontal();
+
+            using (new EditorGUI.DisabledScope(Application.isPlaying || baking || navSurfaces.Length == 0))
             {
-                if (EditorUtility.DisplayDialog("导出 NavMesh",
-                        "将覆盖服务端读取的导航数据:\n" + NavMeshExporter.GetServerNavDataPath(),
-                        "导出", "取消"))
+                if (GUILayout.Button("烘焙 NavMesh (" + navSurfaces.Length + ")"))
+                    BakeNavMesh(navSurfaces);
+            }
+
+            using (new EditorGUI.DisabledScope(Application.isPlaying || baking))
+            {
+                if (GUILayout.Button("导出 NavMesh (.rnav)"))
                 {
-                    if (NavMeshExporter.ExportToServerNavData())
-                        Debug.Log("[MapEditor] NavMesh 已导出到 " + NavMeshExporter.GetServerNavDataPath());
+                    if (EditorUtility.DisplayDialog("导出 NavMesh",
+                            "将覆盖服务端读取的导航数据:\n" + NavMeshExporter.GetServerNavDataPath(),
+                            "导出", "取消"))
+                    {
+                        if (NavMeshExporter.ExportToServerNavData())
+                            Debug.Log("[MapEditor] NavMesh 已导出到 " + NavMeshExporter.GetServerNavDataPath());
+                    }
                 }
             }
+
             EditorGUILayout.EndHorizontal();
 
+            if (baking)
+            {
+                EditorGUILayout.HelpBox("正在烘焙 NavMesh，完成后才能导出。", MessageType.Info);
+                Repaint();
+            }
+            else if (Application.isPlaying)
+            {
+                EditorGUILayout.HelpBox("Play 模式下不能烘焙，请先退出播放。", MessageType.Warning);
+            }
+            else if (navSurfaces.Length == 0)
+            {
+                EditorGUILayout.HelpBox("当前场景没有 NavMeshSurface，无法烘焙。", MessageType.Warning);
+            }
+
             EditorGUILayout.HelpBox("导出后需要重启 GameServer 才会加载新的导航数据。", MessageType.None);
+        }
+
+        /// <summary>
+        /// 烘焙当前场景里的所有 <see cref="NavMeshSurface"/>。
+        ///
+        /// 注意：<c>NavMeshSurface.BuildNavMesh()</c> 生成的 NavMeshData 只是内存对象，编辑器里
+        /// 场景重新加载后引用会丢失，也不会产生 <c>NavMesh-&lt;Surface 名&gt;.asset</c>。
+        /// 所以这里走组件 Inspector 上「Bake」按钮用的同一条编辑器入口
+        /// <see cref="UnityEditor.AI.NavMeshAssetManager.StartBakingSurfaces"/> ——
+        /// 它异步驱动 NavMeshSurface 烘焙，并把结果落盘到场景同目录。
+        /// </summary>
+        private void BakeNavMesh(NavMeshSurface[] surfaces)
+        {
+            if (surfaces == null || surfaces.Length == 0)
+                return;
+
+            if (!EditorUtility.DisplayDialog("烘焙 NavMesh",
+                    "将重新烘焙当前场景中的 " + surfaces.Length + " 个 NavMeshSurface，\n" +
+                    "并覆盖场景同目录下对应的 NavMeshData 资产。",
+                    "烘焙", "取消"))
+                return;
+
+            UnityEditor.AI.NavMeshAssetManager.instance.StartBakingSurfaces(surfaces);
+            Debug.Log("[MapEditor] 已开始烘焙 " + surfaces.Length + " 个 NavMeshSurface。");
+            Repaint();
         }
 
         private void ReloadConfig()
@@ -501,11 +563,10 @@ namespace MapEditor
 
         private void Export(MapExportModule modules, bool exportClient, bool exportServer)
         {
+            // MapDataExporter.Export 内部已经做过 SaveAssets/Refresh，这里不再重复刷。
             _lastExport = MapDataExporter.Export(
                 _buildingTable, _resourceTable, _assetTable,
                 modules, exportClient, exportServer);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
             SceneView.RepaintAll();
             Repaint();
         }

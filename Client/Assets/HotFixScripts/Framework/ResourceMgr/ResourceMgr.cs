@@ -106,7 +106,7 @@ namespace Framework
 
         public void SetInternalIdTransform(Func<IResourceLocation, string> func = null)
         {
-            Addressables.InternalIdTransformFunc = func??InternalIdTransform;
+            Addressables.InternalIdTransformFunc = func ?? InternalIdTransform;
         }
 
         public AsyncOperationHandle<List<string>> CheckForCatalogUpdates(bool autoReleaseHandle = true)
@@ -236,7 +236,7 @@ namespace Framework
 
         public AsyncOperationHandle<GameObject> InstantiateAsync(IResourceLocation location, InstantiationParameters instantiateParameters, bool trackHandle = true)
         {
-            return Addressables.InstantiateAsync( location, instantiateParameters, trackHandle);
+            return Addressables.InstantiateAsync(location, instantiateParameters, trackHandle);
         }
 
         public AsyncOperationHandle<TObject> LoadAssetAsync<TObject>(IResourceLocation location)
@@ -289,14 +289,14 @@ namespace Framework
         /// <summary>
         /// 加载场景
         /// </summary>
-        /// <param name="path">对于"Assets/BundleRes/Scene"的相对路径</param>
+        /// <param name="path">对于"Assets/AssetBundles/Scene"的相对路径</param>
         /// <param name="loadMode"></param>
         /// <param name="activateOnLoad"></param>
         /// <param name="priority"></param>
         /// <returns></returns>
         public AsyncOperationHandle<SceneInstance> LoadSceneAsync(string path, LoadSceneMode loadMode = LoadSceneMode.Single, bool activateOnLoad = true, int priority = 100)
         {
-            var scenePath = $"Assets/BundleRes/Scene/{path}.unity";
+            var scenePath = $"Assets/AssetBundles/Scene/{path}.unity";
             var oldScene = SceneManager.GetActiveScene();
             // 如果是single模式，会自动卸载之前的场景
             var handle = Addressables.LoadSceneAsync(scenePath, loadMode, activateOnLoad, priority);

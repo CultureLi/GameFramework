@@ -48,7 +48,7 @@ namespace Assets.Editor
         [MenuItem("Tools/UI/生成所有图集", false, 1000)]
         static void GenerateAtlasAll()
         {
-            var guids = AssetDatabase.FindAssets("t:Folder Sprite", new[] { "Assets/BundleRes/UISprite" });
+            var guids = AssetDatabase.FindAssets("t:Folder Sprite", new[] { "Assets/Arts/UI" });
 
             foreach (var guid in guids)
             {
@@ -72,7 +72,7 @@ namespace Assets.Editor
             SpriteAtlasUtility.PackAllAtlases(EditorUserBuildSettings.activeBuildTarget);
             BuildTools.LogTime("PackAllAtlases", st.ElapsedMilliseconds);
             Debug.Log("PackAllAtlases ----- End");
-        }   
+        }
 
         static bool GenerateAtlas(string spriteRoot)
         {

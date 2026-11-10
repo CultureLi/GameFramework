@@ -34,9 +34,9 @@ namespace Framework
         /// </summary>
         public UIManager()
         {
-            UIAssetRootPath = "Assets/BundleRes/UI";
+            UIAssetRootPath = "Assets/AssetBundles/UI";
             _groups = new Dictionary<EUIGroupType, UIGroupBase>();
-            UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool", expireTime:5);
+            UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool", expireTime: 5);
         }
 
         public void Init(IResourceMgr resMgr)
@@ -45,7 +45,7 @@ namespace Framework
             {
                 return;
             }
-            var handle = resMgr.InstantiateAsync("Assets/BundleRes/UI/Root/UIRoot.prefab");
+            var handle = resMgr.InstantiateAsync("Assets/AssetBundles/UI/Root/UIRoot.prefab");
             handle.WaitForCompletion();
             UIRoot = handle.Result.GetComponent<UIRoot>();
             GameObject.DontDestroyOnLoad(handle.Result);

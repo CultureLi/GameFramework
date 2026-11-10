@@ -9,40 +9,47 @@ using UnityEngine.SceneManagement;
 namespace GameFramework.EditorTools.TerrainGen
 {
     /// <summary>
-    /// 整理 TerrainToMesh 导出的场景资产，把散在同一个文件夹里的预制体 / Mesh / 材质 / 贴图
-    /// 拆到 BundleRes 下各自该去的位置，方便按文件夹配 Addressable 分组规则。
+    /// 整理 TerrainToMesh 导出的场景资产：按【资源类型】把场景文件夹下散落的资源移动到
+    /// <c>Assets/Arts/Map/&lt;场景名&gt;/</c> 下对应的文件夹，方便按文件夹配 Addressable 分组规则。
     ///
-    /// 用法：
-    ///   1. 在场景文件夹（例如 <c>Assets/NoBundleRes/Scene/OpenWorld</c>）上右键 →「整理场景资产」；
-    ///   2. 或者打开场景后，在 MapEditor 窗口点击「整理当前场景资产」，
-    ///      源目录与输出目录全部由当前打开的场景路径推导。
-    ///
-    /// 以场景 <c>Assets/NoBundleRes/Scene/OpenWorld/OpenWorld.unity</c> 为例，处理流程：
-    /// <list type="number">
-    /// <item>校验子文件夹 <c>OpenWorldTerrainData</c> 与其中的 <c>OpenWorldTerrainData.prefab</c> 存在，否则终止。</item>
-    /// <item>创建或清空 <c>BundleRes/SceneChunk/OpenWorld</c>。</item>
-    /// <item>把源预制体里每个 <c>OpenWorldTerrainData x(i) y(j)</c> 节点单独存成预制体，
-    ///       放进各自的子文件夹 <c>BundleRes/SceneChunk/OpenWorld/OpenWorldTerrainData x(i) y(j)/</c>。</item>
-    /// <item>把每块对应的 <c>... x(i) y(j) Mesh.asset</c> 移到同一个子文件夹里 —— 一块地形的
-    ///       预制体和 Mesh 同处一个文件夹，就能整块打成一个 bundle。</item>
-    /// <item>创建或清空 <c>BundleRes/Texture/Scene/OpenWorld</c>，把源文件夹里所有贴图移进去。</item>
-    /// <item>创建或清空 <c>BundleRes/Material/Scene/OpenWorld</c>，把源文件夹里所有材质移进去。</item>
+    /// 类型 → 目录映射：
+    /// <list type="bullet">
+    /// <item>Mesh      → <c>Assets/Arts/Map/&lt;场景名&gt;/Mesh</c></item>
+    /// <item>Material  → <c>Assets/Arts/Map/&lt;场景名&gt;/Material</c></item>
+    /// <item>Texture   → <c>Assets/Arts/Map/&lt;场景名&gt;/Texture</c></item>
+    /// <item>Shader    → <c>Assets/Arts/Shader/&lt;场景名&gt;</c>（不放在 Map 下）</item>
+    /// <item>地块预制体 → <c>Assets/Arts/Map/&lt;场景名&gt;/Chunk/&lt;块名&gt;/&lt;块名&gt;.prefab</c></item>
     /// </list>
     ///
-    /// Mesh / 材质 / 贴图一律走 <see cref="AssetDatabase.MoveAsset"/>，GUID 与 localId 都不变，
-    /// 所以新旧预制体对它们的引用都不会断。
+    /// 用法：
+    ///   1. 在场景文件夹（例如 <c>Assets/AssetNoBundles/Scene/OpenWorld</c>）上右键 →「整理场景资产」；
+    ///   2. 或者打开场景后，在 MapEditor 窗口点击「整理当前场景资产」。
+    ///
+    /// 以场景 <c>Assets/AssetNoBundles/Scene/OpenWorld/OpenWorld.unity</c> 为例，处理流程：
+    /// <list type="number">
+    /// <item>校验子文件夹 <c>OpenWorldTerrainData</c> 与其中的 <c>OpenWorldTerrainData.prefab</c> 存在，否则终止。</item>
+    /// <item>以场景文件夹为根【递归扫描】，按 <see cref="AssetDatabase.GetMainAssetTypeAtPath"/> 的
+    ///       主资源类型归类，而不是按文件名或目录名猜。</item>
+    /// <item>创建或清空 Chunk / Mesh / Material / Texture / Shader 五个目标目录。</item>
+    /// <item>把源预制体里每个 <c>OpenWorldTerrainData x(i) y(j)</c> 节点单独存成预制体，
+    ///       放进 <c>.../Chunk/OpenWorldTerrainData x(i) y(j)/</c>。</item>
+    /// <item>其余资源按类型整批 <see cref="AssetDatabase.MoveAsset"/> 到对应目录。</item>
+    /// </list>
+    ///
+    /// 所有移动都走 <see cref="AssetDatabase.MoveAsset"/>，GUID 与 localId 都不变，
+    /// 所以新旧预制体对它们的引用都不会断。未被识别的资源会留在原位并在结束时汇总提示。
     /// </summary>
     public static class SceneAssetOrganizer
     {
         /// <summary>TerrainToMesh 的导出子文件夹与主预制体的名字后缀：&lt;文件夹名&gt; + 这个后缀。</summary>
         const string TerrainDataSuffix = "TerrainData";
 
-        /// <summary>地块 Mesh 资源的文件名后缀：&lt;地块名&gt; + 这个后缀。</summary>
-        const string MeshAssetSuffix = " Mesh.asset";
-
-        const string ChunkRootFormat = "Assets/BundleRes/SceneChunk/{0}";
-        const string TextureRootFormat = "Assets/BundleRes/Texture/Scene/{0}";
-        const string MaterialRootFormat = "Assets/BundleRes/Material/Scene/{0}";
+        const string ChunkRootFormat = "Assets/Arts/Map/{0}/Chunk";
+        const string MeshRootFormat = "Assets/Arts/Map/{0}/Mesh";
+        const string TextureRootFormat = "Assets/Arts/Map/{0}/Texture";
+        const string MaterialRootFormat = "Assets/Arts/Map/{0}/Material";
+        /// <summary>Shader 不进 Map 目录，而是按场景名放到 <c>Assets/Arts/Shader/&lt;场景名&gt;</c>。</summary>
+        const string ShaderRootFormat = "Assets/Arts/Shader/{0}";
 
         /// <summary>
         /// 地块节点的命名规则：<c>&lt;前缀&gt; x(数字) y(数字)</c>。
@@ -208,12 +215,17 @@ namespace GameFramework.EditorTools.TerrainGen
             public string SourceFolder;
             public string SourcePrefab;
             public string ChunkRoot;
+            public string MeshRoot;
             public string TextureRoot;
             public string MaterialRoot;
+            /// <summary>场景专属的 shader 目录，位于 <c>Assets/Arts/Shader/&lt;场景名&gt;</c>。</summary>
+            public string ShaderRoot;
 
             public readonly List<string> ChunkNames = new List<string>();
+            public readonly List<string> Meshes = new List<string>();
             public readonly List<string> Textures = new List<string>();
             public readonly List<string> Materials = new List<string>();
+            public readonly List<string> Shaders = new List<string>();
 
             public string Error;
 
@@ -236,15 +248,21 @@ namespace GameFramework.EditorTools.TerrainGen
             public string SourcePrefab;
 
             public string ChunkRoot;
+            public string MeshRoot;
             public string TextureRoot;
             public string MaterialRoot;
+            public string ShaderRoot;
 
             /// <summary>源预制体里所有地块节点的名字，例如 <c>OpenWorldTerrainData x(0) y(0)</c>。</summary>
             public List<string> ChunkNames = new List<string>();
-            /// <summary>源文件夹里的贴图资源路径。</summary>
+            /// <summary>场景文件夹下递归扫描到的 Mesh 资源路径。</summary>
+            public List<string> Meshes = new List<string>();
+            /// <summary>场景文件夹下递归扫描到的贴图资源路径。</summary>
             public List<string> Textures = new List<string>();
-            /// <summary>源文件夹里的材质资源路径。</summary>
+            /// <summary>场景文件夹下递归扫描到的材质资源路径。</summary>
             public List<string> Materials = new List<string>();
+            /// <summary>场景文件夹下递归扫描到的 Shader 资源路径。</summary>
+            public List<string> Shaders = new List<string>();
         }
 
         static bool TryBuildPlan(string sceneFolder, string sceneName,
@@ -265,11 +283,15 @@ namespace GameFramework.EditorTools.TerrainGen
                 SourceFolder = info.SourceFolder,
                 SourcePrefab = info.SourcePrefab,
                 ChunkRoot = info.ChunkRoot,
+                MeshRoot = info.MeshRoot,
                 TextureRoot = info.TextureRoot,
                 MaterialRoot = info.MaterialRoot,
+                ShaderRoot = info.ShaderRoot,
                 ChunkNames = info.ChunkNames,
+                Meshes = info.Meshes,
                 Textures = info.Textures,
                 Materials = info.Materials,
+                Shaders = info.Shaders,
             };
             error = null;
             return true;
@@ -293,8 +315,10 @@ namespace GameFramework.EditorTools.TerrainGen
             info.SourceFolder = sceneFolder + "/" + dataName;
             info.SourcePrefab = info.SourceFolder + "/" + dataName + ".prefab";
             info.ChunkRoot = string.Format(ChunkRootFormat, sceneName);
+            info.MeshRoot = string.Format(MeshRootFormat, sceneName);
             info.TextureRoot = string.Format(TextureRootFormat, sceneName);
             info.MaterialRoot = string.Format(MaterialRootFormat, sceneName);
+            info.ShaderRoot = string.Format(ShaderRootFormat, sceneName);
 
             if (!AssetDatabase.IsValidFolder(sceneFolder))
             {
@@ -324,13 +348,12 @@ namespace GameFramework.EditorTools.TerrainGen
                 return false;
             }
 
-            foreach (string assetPath in ListAssetFiles(info.SourceFolder))
-            {
-                System.Type type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-                if (type == null) continue;
-                if (typeof(Texture).IsAssignableFrom(type)) info.Textures.Add(assetPath);
-                else if (typeof(Material).IsAssignableFrom(type)) info.Materials.Add(assetPath);
-            }
+            // 以场景文件夹为根递归扫描，按主资源类型归类。TerrainToMesh 常把 Mesh / 材质
+            // 放在以地形命名的兄弟目录（例如 "New Terrain/"）里，只看 TerrainData 子目录会漏。
+            info.Meshes.AddRange(CollectAssets<Mesh>(sceneFolder));
+            info.Materials.AddRange(CollectAssets<Material>(sceneFolder));
+            info.Textures.AddRange(CollectAssets<Texture>(sceneFolder));
+            info.Shaders.AddRange(CollectAssets<Shader>(sceneFolder));
 
             return true;
         }
@@ -356,13 +379,16 @@ namespace GameFramework.EditorTools.TerrainGen
             foreach (var p in plans)
             {
                 sb.AppendLine("▍" + p.SceneName + "（" + p.ChunkNames.Count + " 块地形，"
-                              + p.Textures.Count + " 张贴图，" + p.Materials.Count + " 个材质）");
+                              + p.Meshes.Count + " 个 Mesh，" + p.Materials.Count + " 个材质，"
+                              + p.Textures.Count + " 张贴图，" + p.Shaders.Count + " 个 Shader）");
                 sb.AppendLine("   清空 " + p.ChunkRoot);
-                sb.AppendLine("   清空 " + p.TextureRoot);
+                sb.AppendLine("   清空 " + p.MeshRoot);
                 sb.AppendLine("   清空 " + p.MaterialRoot);
+                sb.AppendLine("   清空 " + p.TextureRoot);
+                sb.AppendLine("   清空 " + p.ShaderRoot);
                 sb.AppendLine();
             }
-            sb.AppendLine("贴图 / 材质 / Mesh 是【移动】，会从源文件夹消失（GUID 不变，引用不会断）。");
+            sb.AppendLine("Mesh / 材质 / 贴图 / Shader 是【移动】，会从源文件夹消失（GUID 不变，引用不会断）。");
             return EditorUtility.DisplayDialog("整理场景资产", sb.ToString(), "开始整理", "取消");
         }
 
@@ -373,11 +399,8 @@ namespace GameFramework.EditorTools.TerrainGen
             // 1) 创建或清空地块根目录
             CreateOrClearFolder(plan.ChunkRoot);
 
-            // 2)(3) 拆预制体 + 移动 Mesh：两件事都按块来，放在同一个循环里，
-            //       保证一块的预制体和它的 Mesh 落在同一个子文件夹。
+            // 2) 拆预制体：每个地块节点单独存成预制体。
             int savedPrefabs = 0;
-            int movedMeshes = 0;
-            var missingMeshes = new List<string>();
 
             GameObject contents = PrefabUtility.LoadPrefabContents(plan.SourcePrefab);
             try
@@ -411,20 +434,6 @@ namespace GameFramework.EditorTools.TerrainGen
                     PrefabUtility.SaveAsPrefabAsset(chunk.gameObject, chunkFolder + "/" + chunkName + ".prefab", out ok);
                     if (ok) savedPrefabs++;
                     else Debug.LogError("[整理场景资产] 预制体保存失败：" + chunkName, contents);
-
-                    // 该块的 Mesh 资源挪到同一个子文件夹里。
-                    string meshSrc = plan.SourceFolder + "/" + chunkName + MeshAssetSuffix;
-                    if (AssetDatabase.LoadMainAssetAtPath(meshSrc) == null)
-                    {
-                        missingMeshes.Add(chunkName + MeshAssetSuffix);
-                    }
-                    else
-                    {
-                        string meshDst = chunkFolder + "/" + chunkName + MeshAssetSuffix;
-                        string moveError = AssetDatabase.MoveAsset(meshSrc, meshDst);
-                        if (string.IsNullOrEmpty(moveError)) movedMeshes++;
-                        else Debug.LogError("[整理场景资产] Mesh 移动失败：" + meshSrc + " -> " + meshDst + "  " + moveError);
-                    }
                 }
             }
             finally
@@ -433,37 +442,42 @@ namespace GameFramework.EditorTools.TerrainGen
                 EditorUtility.ClearProgressBar();
             }
 
-            // 4) 贴图
-            CreateOrClearFolder(plan.TextureRoot);
-            int movedTextures = MoveAll(plan.Textures, plan.TextureRoot, "贴图");
+            // 3) 按资源类型移动。
+            //    Mesh / 材质 / 贴图 -> Assets/Arts/Map/<场景名>/<类型>
+            //    Shader             -> Assets/Arts/Shader/<场景名>
+            CreateOrClearFolder(plan.MeshRoot);
+            int movedMeshes = MoveAll(plan.Meshes, plan.MeshRoot, "Mesh");
 
-            // 5) 材质
             CreateOrClearFolder(plan.MaterialRoot);
             int movedMaterials = MoveAll(plan.Materials, plan.MaterialRoot, "材质");
 
-            // 报告残留：源文件夹里没被认领的资源，避免有东西被静默漏掉。
+            CreateOrClearFolder(plan.TextureRoot);
+            int movedTextures = MoveAll(plan.Textures, plan.TextureRoot, "贴图");
+
+            CreateOrClearFolder(plan.ShaderRoot);
+            int movedShaders = MoveAll(plan.Shaders, plan.ShaderRoot, "Shader");
+
+            // 报告残留：场景文件夹里没被认领的资源，避免有东西被静默漏掉。
             var leftover = new List<string>();
-            foreach (string assetPath in ListAssetFiles(plan.SourceFolder))
+            foreach (string assetPath in ListAssetFilesRecursive(plan.SceneFolder))
             {
                 if (assetPath == plan.SourcePrefab) continue;
-                leftover.Add(Path.GetFileName(assetPath));
+                if (assetPath.EndsWith(".unity", System.StringComparison.OrdinalIgnoreCase)) continue;
+                leftover.Add(assetPath.Substring(plan.SceneFolder.Length).TrimStart('/'));
             }
 
             var sb = new StringBuilder();
             sb.AppendLine("[整理场景资产] " + plan.SceneName + " 整理完成");
             sb.AppendLine("  地块预制体  " + savedPrefabs + "/" + plan.ChunkNames.Count + "  -> " + plan.ChunkRoot + "/<块名>/<块名>.prefab");
-            sb.AppendLine("  地块 Mesh   " + movedMeshes + "/" + plan.ChunkNames.Count + "  -> " + plan.ChunkRoot + "/<块名>/<块名> Mesh.asset");
-            sb.AppendLine("  贴图        " + movedTextures + "/" + plan.Textures.Count + "  -> " + plan.TextureRoot);
+            sb.AppendLine("  Mesh        " + movedMeshes + "/" + plan.Meshes.Count + "  -> " + plan.MeshRoot);
             sb.AppendLine("  材质        " + movedMaterials + "/" + plan.Materials.Count + "  -> " + plan.MaterialRoot);
+            sb.AppendLine("  贴图        " + movedTextures + "/" + plan.Textures.Count + "  -> " + plan.TextureRoot);
+            sb.AppendLine("  Shader      " + movedShaders + "/" + plan.Shaders.Count + "  -> " + plan.ShaderRoot);
             Debug.Log(sb.ToString());
 
-            if (missingMeshes.Count > 0)
-                Debug.LogWarning("[整理场景资产] " + plan.SceneName + " 有 " + missingMeshes.Count
-                                 + " 块找不到对应的 Mesh 资源：\n  " + string.Join("\n  ", missingMeshes.ToArray()));
-
             if (leftover.Count > 0)
-                Debug.LogWarning("[整理场景资产] " + plan.SceneName + " 源文件夹仍有 " + leftover.Count
-                                 + " 个未被整理的资源（既不是贴图也不是材质，也没匹配上任何地块）：\n  "
+                Debug.LogWarning("[整理场景资产] " + plan.SceneName + " 场景文件夹仍有 " + leftover.Count
+                                 + " 个未被整理的资源（不是 Mesh / 材质 / 贴图 / Shader，也不是地块预制体）：\n  "
                                  + string.Join("\n  ", leftover.ToArray()));
         }
 
@@ -517,18 +531,46 @@ namespace GameFramework.EditorTools.TerrainGen
             }
         }
 
-        /// <summary>列出文件夹内一层的资源路径（跳过 .meta，不进子文件夹）。</summary>
-        static List<string> ListAssetFiles(string folder)
+        /// <summary>
+        /// 递归收集 <paramref name="root"/> 下某一类主资源（Mesh / Material / Texture / Shader …）。
+        /// 按 <see cref="AssetDatabase.FindAssets"/> 的类型过滤，而不是看扩展名或目录名 ——
+        /// TerrainToMesh 常把 Mesh 导到以地形命名的兄弟目录里，按目录名猜会漏。
+        /// </summary>
+        static List<string> CollectAssets<T>(string root) where T : Object
         {
             var result = new List<string>();
-            string abs = Path.Combine(Directory.GetCurrentDirectory(), folder);
+            if (!AssetDatabase.IsValidFolder(root)) return result;
+
+            var seen = new HashSet<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:" + typeof(T).Name, new[] { root }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid).Replace('\\', '/');
+                if (string.IsNullOrEmpty(path) || !seen.Add(path)) continue;
+                if (AssetDatabase.LoadMainAssetAtPath(path) is T) result.Add(path);
+            }
+
+            result.Sort(System.StringComparer.Ordinal);
+            return result;
+        }
+
+        /// <summary>递归列出文件夹内的资源路径（跳过 .meta），返回以 <c>Assets/</c> 开头的相对路径。</summary>
+        static List<string> ListAssetFilesRecursive(string folder)
+        {
+            var result = new List<string>();
+            string projectRoot = Directory.GetCurrentDirectory().TrimEnd('\\', '/').Replace('\\', '/');
+            string abs = Path.Combine(projectRoot, folder);
             if (!Directory.Exists(abs)) return result;
 
-            foreach (string file in Directory.GetFiles(abs, "*", SearchOption.TopDirectoryOnly))
+            string rootWithSlash = projectRoot + "/";
+            foreach (string file in Directory.GetFiles(abs, "*", SearchOption.AllDirectories))
             {
                 if (file.EndsWith(".meta", System.StringComparison.OrdinalIgnoreCase)) continue;
-                result.Add(folder + "/" + Path.GetFileName(file));
+                string full = file.Replace('\\', '/');
+                if (!full.StartsWith(rootWithSlash, System.StringComparison.OrdinalIgnoreCase)) continue;
+                result.Add(full.Substring(rootWithSlash.Length));
             }
+
+            result.Sort(System.StringComparer.Ordinal);
             return result;
         }
     }

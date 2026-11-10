@@ -293,7 +293,7 @@ namespace GameMain
         {
             _loading.Add(key);
             var chunkName = $"{sceneName}TerrainData x({key.x}) y({key.y})";
-            var addr = $"Assets/BundleRes/SceneChunk/{sceneName}/{chunkName}/{chunkName}.prefab";
+            var addr = $"Assets/Arts/Map/{sceneName}/Chunk/{chunkName}.prefab";
             _pool.SpawnAsync(addr, go =>
             {
                 _loading.Remove(key);

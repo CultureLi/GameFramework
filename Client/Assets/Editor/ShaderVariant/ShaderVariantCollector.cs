@@ -14,8 +14,9 @@ using UnityEngine.SceneManagement;
 namespace Assets.Editor.ShaderVariant
 {
     /// <summary>
-    /// Shader 变体收集器：按 <c>Assets/BundleRes/Material</c> 下的子目录逐个收集变体，
-    /// 结果写入 <c>Assets/BundleRes/Shader/&lt;子目录名&gt;/&lt;子目录名&gt;SVC.shadervariants</c>。
+    /// Shader 变体收集器：扫描项目中的全部材质，按材质所用 shader 所属的
+    /// <c>Assets/Arts/Shader/&lt;子目录名&gt;</c> 分桶，逐桶收集变体，
+    /// 结果写入 <c>Assets/Arts/Shader/&lt;子目录名&gt;/&lt;子目录名&gt;SVC.shadervariants</c>。
     ///
     /// 整体流程：
     /// 1. 打开一个专用场景 <see cref="SceneAssetPath"/>；
@@ -30,8 +31,7 @@ namespace Assets.Editor.ShaderVariant
     /// </summary>
     public static class ShaderVariantCollector
     {
-        private const string ShaderRootDir = "Assets/BundleRes/Shader";
-        private const string MaterialRootDir = "Assets/BundleRes/Material";
+        private const string ShaderRootDir = "Assets/Arts/Shader";
         private const string SceneAssetPath = "Assets/Test/Scene/ShaderVariantTest.unity";
         private const string RootNodeName = "Root";
 
@@ -82,9 +82,9 @@ namespace Assets.Editor.ShaderVariant
                 return;
             }
 
-            if (!Directory.Exists(MaterialRootDir))
+            if (!Directory.Exists(ShaderRootDir))
             {
-                Debug.LogError($"[SVC] Material directory not found: {MaterialRootDir}");
+                Debug.LogError($"[SVC] Shader directory not found: {ShaderRootDir}");
                 return;
             }
 
@@ -148,10 +148,11 @@ namespace Assets.Editor.ShaderVariant
         }
 
         /// <summary>
-        /// 主收集协程。以子目录为单位循环，每个子目录内部按下面的时序运行：
+        /// 主收集协程。以 <see cref="ShaderRootDir"/> 的一级子目录（按材质所用 shader 分桶）为单位循环，
+        /// 每个子目录内部按下面的时序运行：
         /// <list type="number">
-        /// <item>加载该子目录下的所有材质 <see cref="LoadMaterialsInFolder"/>。</item>
-        /// <item>为需要的"孤儿 shader"建临时 Material（<see cref="CreateOrphanShaderMaterials"/>），
+        /// <item>取得项目中所有使用该目录 shader 的材质 <see cref="CollectMaterialsByShaderFolder"/>。</item>
+        /// <item>为孤儿 shader 和目录内未被任何材质使用的 shader 建临时 Material（<see cref="CreateSupplementalMaterials"/>），
         ///       让它们的变体也能被收集到当前子目录的 SVC。</item>
         /// <item>确保子目录对应的 SVC 资源存在 <see cref="EnsureSubFolderCollection"/>，重置 Root 节点。</item>
         /// <item>反射清空 Unity 内部变体 tracker，然后等 <see cref="FramesAfterClear"/> 帧让 Clear 生效。</item>
@@ -159,7 +160,7 @@ namespace Assets.Editor.ShaderVariant
         /// <item>轮询 <see cref="ShaderUtil.anythingCompiling"/> 等 shader 编译完成，然后再多等 <see cref="FramesAfterCompile"/> 帧。</item>
         /// <item>反射把 tracker 落到 .shadervariants 文件，再等 <see cref="FramesAfterSave"/> 帧确保写盘。</item>
         /// <item>Post-process：遍历本轮渲染的所有材质，用 <see cref="EnsureShaderInSVC"/> 补录 tracker 不会自动记录的 UsePass-only 壳 shader。</item>
-        /// <item>销毁临时孤儿 Material，进入下一个子目录。</item>
+        /// <item>销毁临时 Material，进入下一个子目录。</item>
         /// </list>
         /// </summary>
         private static IEnumerator CollectRoutine()
@@ -167,23 +168,24 @@ namespace Assets.Editor.ShaderVariant
             PrepareShaderDependencyData();
             yield return null;
 
-            foreach (var subDir in Directory.GetDirectories(MaterialRootDir))
+            var materialsByFolder = CollectMaterialsByShaderFolder();
+            if (materialsByFolder.Count == 0)
             {
-                var folderName = Path.GetFileName(subDir);
-                var normalizedSubDir = subDir.Replace('\\', '/');
-                var materials = LoadMaterialsInFolder(normalizedSubDir);
-                Debug.Log($"[SVC] [{folderName}] Folder='{normalizedSubDir}', materials found: {materials.Count}");
-                if (materials.Count == 0)
-                {
-                    Debug.LogWarning($"[SVC] No materials found under {normalizedSubDir}, skip.");
-                    continue;
-                }
+                Debug.LogWarning($"[SVC] No shader folder found under {ShaderRootDir}, nothing to collect.");
+                yield break;
+            }
 
-                var orphanMats = CreateOrphanShaderMaterials(materials);
-                if (orphanMats.Count > 0)
+            foreach (var pair in materialsByFolder)
+            {
+                var folderName = pair.Key;
+                var materials = pair.Value;
+                Debug.Log($"[SVC] [{folderName}] Materials using shaders in '{ShaderRootDir}/{folderName}': {materials.Count}");
+
+                var supplementalMats = CreateSupplementalMaterials(folderName, materials);
+                if (supplementalMats.Count > 0)
                 {
-                    Debug.Log($"[SVC] [{folderName}] Added {orphanMats.Count} orphan shader material(s) for variant collection.");
-                    materials.AddRange(orphanMats);
+                    Debug.Log($"[SVC] [{folderName}] Added {supplementalMats.Count} supplemental material(s) for orphan/unused shader variant collection.");
+                    materials.AddRange(supplementalMats);
                 }
 
                 var svcPath = EnsureSubFolderCollection(folderName);
@@ -271,7 +273,7 @@ namespace Assets.Editor.ShaderVariant
                 AssetDatabase.SaveAssets();
                 Debug.Log($"[SVC] [{folderName}] Saved {materials.Count} material(s) variants to: {svcPath}");
 
-                foreach (var m in orphanMats)
+                foreach (var m in supplementalMats)
                 {
                     if (m != null) UnityEngine.Object.DestroyImmediate(m);
                 }
@@ -541,52 +543,89 @@ namespace Assets.Editor.ShaderVariant
         }
 
         /// <summary>
-        /// 找出当前子目录材质需要伴随渲染的孤儿 shader，为它们建 <see cref="HideFlags.DontSave"/> 的临时 Material。
-        /// 从每个材质的 shader 出发做 BFS 遍历 <see cref="_shaderToShaderDeps"/>：
-        /// 路径上任何出现在 <see cref="_orphanShaderPaths"/> 里的节点，都会被建一个临时 Material。
-        /// BFS 而不是只看直接依赖，是为了覆盖"材质 → shader A → 孤儿 B → 孤儿 C"这种链式引用。
+        /// 为当前 shader 目录补充"没有材质直接使用"的 shader，建 <see cref="HideFlags.DontSave"/> 的临时 Material 参与渲染。
+        /// 两个来源：
+        /// <list type="number">
+        /// <item>孤儿 shader：出现在依赖图里、只被其它 shader 通过 UsePass/Fallback 引用，没有任何材质直接使用。
+        ///       从桶内材质的 shader 出发 BFS 遍历 <see cref="_shaderToShaderDeps"/>，覆盖
+        ///       "材质 → shader A → 孤儿 B → 孤儿 C" 这种链式引用。</item>
+        /// <item>目录内未被任何材质使用的 shader：保证 <see cref="ShaderRootDir"/> 下每个 shader
+        ///       都能被收集到所属目录的 SVC 里，即使美术还没建对应材质。</item>
+        /// </list>
+        /// 两条来源按 <see cref="Shader"/> 去重；非项目 shader（URP/引擎内置）会被跳过，因为它们最终会被
+        /// <see cref="FilterNonProjectShaders"/> 从 SVC 里剔除，渲染它们只是浪费编译时间。
         /// </summary>
-        /// <param name="materials">当前子目录加载出来的真实材质。</param>
+        /// <param name="folderName">当前 shader 子目录名（<see cref="ShaderRootDir"/> 下的一级目录）。</param>
+        /// <param name="materials">当前桶内真实加载出来的材质。</param>
         /// <returns>需要额外渲染的临时 Material 列表；调用方用完必须 <c>DestroyImmediate</c>。</returns>
-        private static List<Material> CreateOrphanShaderMaterials(List<Material> materials)
+        private static List<Material> CreateSupplementalMaterials(string folderName, List<Material> materials)
         {
             var result = new List<Material>();
-            if (_orphanShaderPaths == null || _orphanShaderPaths.Count == 0) return result;
-
-            var needed = new HashSet<string>();
-            var visited = new HashSet<string>();
-            var queue = new Queue<string>();
+            var covered = new HashSet<Shader>();
             foreach (var m in materials)
             {
                 if (m == null || m.shader == null) continue;
-                var sPath = AssetDatabase.GetAssetPath(m.shader);
-                if (!string.IsNullOrEmpty(sPath)) queue.Enqueue(sPath);
+                covered.Add(m.shader);
             }
 
-            while (queue.Count > 0)
+            // 来源 1：孤儿 shader。
+            if (_orphanShaderPaths != null && _orphanShaderPaths.Count > 0)
             {
-                var cur = queue.Dequeue();
-                if (!visited.Add(cur)) continue;
-                if (!_shaderToShaderDeps.TryGetValue(cur, out var deps)) continue;
-                foreach (var d in deps)
+                var needed = new HashSet<string>();
+                var visited = new HashSet<string>();
+                var queue = new Queue<string>();
+                foreach (var m in materials)
                 {
-                    if (_orphanShaderPaths.Contains(d)) needed.Add(d);
-                    if (!visited.Contains(d)) queue.Enqueue(d);
+                    if (m == null || m.shader == null) continue;
+                    var sPath = AssetDatabase.GetAssetPath(m.shader);
+                    if (!string.IsNullOrEmpty(sPath)) queue.Enqueue(sPath);
+                }
+
+                while (queue.Count > 0)
+                {
+                    var cur = queue.Dequeue();
+                    if (!visited.Add(cur)) continue;
+                    if (!_shaderToShaderDeps.TryGetValue(cur, out var deps)) continue;
+                    foreach (var d in deps)
+                    {
+                        if (_orphanShaderPaths.Contains(d)) needed.Add(d);
+                        if (!visited.Contains(d)) queue.Enqueue(d);
+                    }
+                }
+
+                foreach (var p in needed)
+                {
+                    var shader = AssetDatabase.LoadAssetAtPath<Shader>(p);
+                    if (shader == null) continue;
+                    // 变体按 shader 自己所在的目录归档：其它目录的孤儿由它自己的桶负责收集，
+                    // 这里再收一遍会在多个 SVC 里产生重复条目。
+                    if (!string.Equals(GetShaderBucket(shader), folderName, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!covered.Add(shader)) continue;
+                    result.Add(CreateTempMaterial(shader, "__SVC_Orphan_"));
                 }
             }
 
-            foreach (var p in needed)
+            // 来源 2：本目录下没有被任何材质使用的 shader。
+            foreach (var shaderPath in GetShaderPathsInFolder(folderName))
             {
-                var shader = AssetDatabase.LoadAssetAtPath<Shader>(p);
+                var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
                 if (shader == null) continue;
-                var mat = new Material(shader)
-                {
-                    hideFlags = HideFlags.DontSave,
-                    name = $"__SVC_Orphan_{shader.name}"
-                };
-                result.Add(mat);
+                if (!covered.Add(shader)) continue;
+                result.Add(CreateTempMaterial(shader, "__SVC_Unused_"));
+                Debug.Log($"[SVC] [{folderName}] Shader has no material, using a temporary one: {shaderPath}");
             }
+
             return result;
+        }
+
+        /// <summary>建一个不参与保存的临时材质，<see cref="HideFlags.DontSave"/> 保证不会写进场景/资产。</summary>
+        private static Material CreateTempMaterial(Shader shader, string namePrefix)
+        {
+            return new Material(shader)
+            {
+                hideFlags = HideFlags.DontSave,
+                name = namePrefix + shader.name
+            };
         }
 
         /// <summary>
@@ -635,22 +674,119 @@ namespace Assets.Editor.ShaderVariant
         }
 
         /// <summary>
-        /// 加载 <paramref name="folderPath"/> 目录（含子孙目录）下的所有材质。
-        /// 先把路径归一化为正斜杠，再对 <c>AssetDatabase.FindAssets</c> 的结果做前缀过滤，
-        /// 防御 Windows 下 <c>Directory.GetDirectories</c> 返回混合斜杠时
-        /// <c>searchInFolders</c> 参数失效、Unity 退化到全项目搜索的历史坑。
+        /// 扫描项目中全部材质，按"材质所用 shader 所属的 <see cref="ShaderRootDir"/> 一级子目录"分桶。
+        /// 桶名即 SVC 的子目录名，返回结果按桶名排序，保证每次收集顺序稳定。
+        ///
+        /// 过滤规则：
+        /// <list type="bullet">
+        /// <item>跳过 <c>Packages/</c> 下的材质（URP/TMP 等第三方包自带材质不需要预热）。</item>
+        /// <item>跳过 shader 不在 <see cref="ShaderRootDir"/>/&lt;子目录&gt;/ 下的材质 ——
+        ///       它们的变体最终会被 <see cref="FilterNonProjectShaders"/> 剔除，渲染没有意义。</item>
+        /// <item>即使某个子目录下没有任何材质，也会加入结果（空列表），
+        ///       以便 <see cref="CreateSupplementalMaterials"/> 为目录内的 shader 建临时材质。</item>
+        /// </list>
         /// </summary>
-        private static List<Material> LoadMaterialsInFolder(string folderPath)
+        private static SortedDictionary<string, List<Material>> CollectMaterialsByShaderFolder()
         {
-            var normalized = folderPath.Replace('\\', '/').TrimEnd('/');
-            var prefix = normalized + "/";
-            return AssetDatabase.FindAssets("t:Material", new[] { normalized })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(p => !string.IsNullOrEmpty(p) &&
-                            p.Replace('\\', '/').StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                .Select(AssetDatabase.LoadAssetAtPath<Material>)
-                .Where(m => m != null && m.shader != null)
-                .ToList();
+            var result = new SortedDictionary<string, List<Material>>(StringComparer.OrdinalIgnoreCase);
+            int skipped = 0;
+
+            foreach (var g in AssetDatabase.FindAssets("t:Material"))
+            {
+                var matPath = NormalizePath(AssetDatabase.GUIDToAssetPath(g));
+                if (string.IsNullOrEmpty(matPath)) continue;
+                if (matPath.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase)) continue;
+
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+                if (mat == null || mat.shader == null) continue;
+
+                var folderName = GetShaderBucket(mat.shader);
+                if (string.IsNullOrEmpty(folderName))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                if (!result.TryGetValue(folderName, out var list))
+                {
+                    list = new List<Material>();
+                    result.Add(folderName, list);
+                }
+                list.Add(mat);
+            }
+
+            foreach (var folderName in GetShaderSubFolders())
+            {
+                if (!result.ContainsKey(folderName))
+                {
+                    result.Add(folderName, new List<Material>());
+                }
+            }
+
+            if (skipped > 0)
+            {
+                Debug.Log($"[SVC] Skipped {skipped} material(s) whose shader is not under '{ShaderRootDir}/<SubFolder>/'.");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 取 <see cref="ShaderRootDir"/> 下的所有一级子目录名。只返回至少包含一个 .shader 的目录，
+        /// 避免对仅有 SVC 的目录重复建空集合。
+        /// </summary>
+        private static IEnumerable<string> GetShaderSubFolders()
+        {
+            if (!Directory.Exists(ShaderRootDir)) yield break;
+
+            foreach (var dir in Directory.GetDirectories(ShaderRootDir))
+            {
+                var name = Path.GetFileName(dir);
+                if (string.IsNullOrEmpty(name) || name.StartsWith(".", StringComparison.Ordinal)) continue;
+                if (!GetShaderPathsInFolder(name).Any()) continue;
+                yield return name;
+            }
+        }
+
+        /// <summary>
+        /// 列出 <c>{ShaderRootDir}/{folderName}</c> 下（含更深子目录）的所有 .shader 资源路径。
+        /// </summary>
+        private static IEnumerable<string> GetShaderPathsInFolder(string folderName)
+        {
+            var folder = $"{ShaderRootDir}/{folderName}";
+            if (!AssetDatabase.IsValidFolder(folder)) yield break;
+
+            foreach (var g in AssetDatabase.FindAssets("t:Shader", new[] { folder }))
+            {
+                var p = NormalizePath(AssetDatabase.GUIDToAssetPath(g));
+                if (string.IsNullOrEmpty(p)) continue;
+                if (!p.EndsWith(".shader", StringComparison.OrdinalIgnoreCase)) continue;
+                yield return p;
+            }
+        }
+
+        /// <summary>
+        /// 取 shader 资源路径在 <see cref="ShaderRootDir"/> 下的一级子目录名；
+        /// shader 不在该目录下、或直接放在根目录（没有子目录）时返回 null。
+        /// </summary>
+        private static string GetShaderBucket(Shader shader)
+        {
+            if (shader == null) return null;
+            var path = NormalizePath(AssetDatabase.GetAssetPath(shader));
+            var prefix = ShaderRootDir + "/";
+            if (string.IsNullOrEmpty(path) || !path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var relative = path.Substring(prefix.Length);
+            int slash = relative.IndexOf('/');
+            if (slash <= 0) return null;
+            return relative.Substring(0, slash);
+        }
+
+        /// <summary>统一成正斜杠，避免 Windows 下 <c>Directory</c> 与 <c>AssetDatabase</c> 斜杠混用。</summary>
+        private static string NormalizePath(string path)
+        {
+            return string.IsNullOrEmpty(path) ? path : path.Replace('\\', '/');
         }
 
         /// <summary>

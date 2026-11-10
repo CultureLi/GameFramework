@@ -10,6 +10,7 @@ namespace GameServer.Configuration;
 ///   --heartbeat-timeout 30
 ///   --navmesh NavData/navmesh.rnav
 ///   --config ../Client/Assets/StreamingAssets/Config
+///   --mapdata MapData/OpenWorld
 /// </summary>
 public sealed class ServerConfig
 {
@@ -22,13 +23,13 @@ public sealed class ServerConfig
     public string ConfigDirectory { get; init; } =
         Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
     public string MapDataDirectory { get; init; } =
-        Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "..", "Client", "Assets", "BundleRes", "MapData", "OpenWorld"));
+        Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "MapData", "OpenWorld"));
 
     public const string Usage =
         "用法: GameServer [--addr 0.0.0.0:19000] [--handshake-timeout 10] " +
         "[--heartbeat-timeout 30] [--navmesh NavData/navmesh.rnav] " +
         "[--config ../Client/Assets/StreamingAssets/Config] " +
-        "[--mapdata ../Client/Assets/BundleRes/MapData/OpenWorld]";
+        "[--mapdata MapData/OpenWorld]";
 
     public static ServerConfig Parse(string[] args)
     {
@@ -40,7 +41,7 @@ public sealed class ServerConfig
         var configDirectory = Path.GetFullPath(Path.Combine(
             Directory.GetCurrentDirectory(), "..", "Client", "Assets", "StreamingAssets", "Config"));
         var mapDataDirectory = Path.GetFullPath(Path.Combine(
-            Directory.GetCurrentDirectory(), "..", "Client", "Assets", "BundleRes", "MapData", "OpenWorld"));
+            Directory.GetCurrentDirectory(), "MapData", "OpenWorld"));
 
         for (var i = 0; i < args.Length; i++)
         {

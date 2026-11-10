@@ -44,22 +44,6 @@ namespace GameEntry
 
             AppConfig.GetLoginServer(out var host, out var port);
 
-            // 兜底：如果 Entry 阶段 Protos 程序集还没加载，这里强制加载并重新注册消息
-            if (ProtoTypeHelper.GetMsgId(typeof(LoginReq)) == 0)
-            {
-                _ = typeof(LoginReq).Assembly;
-                ProtoTypeHelper.CollectMsgType();
-            }
-
-            var loginMsgId = ProtoTypeHelper.GetMsgId(typeof(LoginReq));
-            if (loginMsgId == 0)
-            {
-                Complete(false, "LoginReq 未注册到 ProtoTypeHelper，请检查 Protos 程序集是否加载");
-                return;
-            }
-
-            Debug.Log($"[Login] 连接 {host}:{port}，LoginReq msgId={loginMsgId}");
-
             FW.NetMgr.Create(host, port);
 
             if (!_handlersRegistered)

@@ -19,7 +19,7 @@ namespace Assets.Editor
         {
             Debug.Log("GenSpriteMapper Stat..............");
             var st = System.Diagnostics.Stopwatch.StartNew();
-            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
+            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/AssetBundles/GlobalData/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
             so.Clear();
@@ -38,7 +38,7 @@ namespace Assets.Editor
         {
             var atlasGuids = AssetDatabase.FindAssets(
                 "t:SpriteAtlas",
-                new[] { "Assets/BundleRes/UISprite" }
+                new[] { "Assets/Arts/UI" }
             );
 
             foreach (var guid in atlasGuids)
@@ -95,7 +95,7 @@ namespace Assets.Editor
         private static void CollectSingleSprites(AddressableAssetSettings settings, SpriteMapper mapper)
         {
             //找到所有名为 SingleSprite 的文件夹
-            var folderGuids = AssetDatabase.FindAssets("SingleSprite", new[] { "Assets/BundleRes/UISprite" });
+            var folderGuids = AssetDatabase.FindAssets("SingleSprite", new[] { "Assets/Arts/UI" });
 
             foreach (var folderGuid in folderGuids)
             {
@@ -134,7 +134,7 @@ namespace Assets.Editor
         //[MenuItem("Tools/UI/Clear SpriteMapper", false, 1000)]
         public static void ClearSpriteMapper()
         {
-            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/BundleRes/CommonSOData/SpriteMapper.asset");
+            var so = AssetDatabase.LoadAssetAtPath<SpriteMapper>("Assets/AssetBundles/GlobalData/SpriteMapper.asset");
 
             var setting = AddressableAssetSettingsDefaultObject.Settings;
 

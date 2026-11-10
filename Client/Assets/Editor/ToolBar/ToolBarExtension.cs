@@ -23,7 +23,7 @@ public class ToolbarExtensions
                 {
                     if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                     {
-                        EditorSceneManager.OpenScene("Assets/BundleRes/Scene/Launcher.unity", OpenSceneMode.Single);
+                        EditorSceneManager.OpenScene("Assets/AssetBundles/Scene/Launcher.unity", OpenSceneMode.Single);
                         EditorApplication.EnterPlaymode();
                     }
                 }

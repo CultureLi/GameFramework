@@ -4,6 +4,7 @@ using GameEntry;
 using Google.Protobuf.WellKnownTypes;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace GameMain
 {
@@ -15,6 +16,10 @@ namespace GameMain
     {
         private const float kVisualYOffset = 1f;
         private const float kSyncCorrectionThreshold = 0.75f;
+        private static readonly Color kMarchLineColor = new Color(0.2f, 1f, 0.95f, 1f);
+
+        /// <summary>行军线预制体的 Addressables 地址。</summary>
+        private const string kMarchLineAddress = "Assets/AssetBundles/Prefab/MarchLine/TroopMarchLineWorld.prefab";
 
         private readonly List<Vector3> _corners = new List<Vector3>();
 
@@ -26,6 +31,10 @@ namespace GameMain
         private bool _moving;
         private int _cornerIndex;
         private Vector3 _serverPosition;
+        private MarchLine _marchLine;
+        private bool _marchLineLoading;
+        private bool _destroyed;
+        private readonly List<Vector3> _marchPath = new List<Vector3>();
 
         public void Initialize(ulong playerId, Vector3 spawn)
         {
@@ -91,6 +100,7 @@ namespace GameMain
             }
 
             _seq++;
+            _marchLine?.SetActive(false);
             FW.NetMgr.SendMsg(new PathFindReq
             {
                 Seq = _seq,
@@ -130,6 +140,16 @@ namespace GameMain
             _cornerIndex = _corners.Count > 1 ? 1 : _corners.Count;
             _moving = _cornerIndex < _corners.Count;
 
+            if (_moving)
+            {
+                EnsureMarchLine();
+                RefreshMarchLine();
+            }
+            else
+            {
+                _marchLine?.SetActive(false);
+            }
+
             Debug.Log($"[Path] 收到路径 pathId={ack.PathId} corners={_corners.Count} speed={_speed}");
         }
 
@@ -144,6 +164,7 @@ namespace GameMain
             {
                 _moving = false;
                 _cornerIndex = _corners.Count;
+                _marchLine?.SetActive(false);
                 transform.position = _serverPosition + Vector3.up * kVisualYOffset;
                 transform.rotation = Quaternion.Euler(0f, sync.RotationY, 0f);
                 return;
@@ -170,6 +191,7 @@ namespace GameMain
             if (_cornerIndex >= _corners.Count)
             {
                 _moving = false;
+                _marchLine?.SetActive(false);
                 return;
             }
 
@@ -184,7 +206,15 @@ namespace GameMain
                 transform.position = target;
                 _cornerIndex++;
                 if (_cornerIndex >= _corners.Count)
+                {
                     _moving = false;
+                    _marchLine?.SetActive(false);
+                }
+                else
+                {
+                    _marchLine?.SetPath(BuildMarchPath());
+                }
+
                 return;
             }
 
@@ -198,6 +228,122 @@ namespace GameMain
                     Quaternion.LookRotation(lookDirection),
                     Time.deltaTime * 12f);
             }
+
+            // 起点每帧跟随角色，剩余拐点沿用服务端路径。
+            _marchLine?.SetPath(BuildMarchPath());
+        }
+
+        /// <summary>玩家脚底 + 剩余拐点，构成当前行军线的世界坐标路径。</summary>
+        private List<Vector3> BuildMarchPath()
+        {
+            _marchPath.Clear();
+            _marchPath.Add(transform.position - Vector3.up * kVisualYOffset);
+
+            for (int i = _cornerIndex; i < _corners.Count; i++)
+                _marchPath.Add(_corners[i]);
+
+            return _marchPath;
+        }
+
+        /// <summary>
+        /// 异步加载并实例化行军线预制体。加载期间 <see cref="_marchLineLoading"/> 为 true，
+        /// 完成后由 <see cref="OnMarchLineLoaded"/> 调 <see cref="RefreshMarchLine"/> 补上当前路径。
+        /// </summary>
+        private void EnsureMarchLine()
+        {
+            if (_marchLine != null || _marchLineLoading)
+                return;
+
+            if (FW.ResMgr == null)
+            {
+                Debug.LogError("[MarchLine] FW.ResMgr 未初始化，无法加载 " + kMarchLineAddress);
+                return;
+            }
+
+            _marchLineLoading = true;
+            try
+            {
+                var handle = FW.ResMgr.InstantiateAsync(kMarchLineAddress);
+                handle.Completed += OnMarchLineLoaded;
+            }
+            catch (System.Exception ex)
+            {
+                _marchLineLoading = false;
+                Debug.LogError("[MarchLine] 异步加载异常: " + ex.Message);
+            }
+        }
+
+        private void OnMarchLineLoaded(AsyncOperationHandle<GameObject> handle)
+        {
+            _marchLineLoading = false;
+
+            if (handle.Status != AsyncOperationStatus.Succeeded || handle.Result == null)
+            {
+                Debug.LogError("[MarchLine] 异步加载失败: " + kMarchLineAddress);
+                FW.ResMgr?.Release(handle);
+                return;
+            }
+
+            var go = handle.Result;
+
+            // 加载期间玩家已被销毁：直接释放，别把实例留在场景里。
+            if (_destroyed)
+            {
+                ReleaseMarchLine(go);
+                return;
+            }
+
+            go.name = "MarchLine";
+            _marchLine = go.GetComponent<MarchLine>();
+            if (_marchLine == null)
+            {
+                Debug.LogError("[MarchLine] 预制体缺少 MarchLine 组件: " + kMarchLineAddress);
+                ReleaseMarchLine(go);
+                return;
+            }
+
+            RefreshMarchLine();
+        }
+
+        /// <summary>
+        /// 按当前移动状态刷新行军线。路径响应到达时调用一次，异步加载完成时再调用一次，
+        /// 保证加载期间收到的路径不会丢。
+        /// </summary>
+        private void RefreshMarchLine()
+        {
+            if (_marchLine == null)
+                return;
+
+            if (!_moving)
+            {
+                _marchLine.SetActive(false);
+                return;
+            }
+
+            _marchLine.color = kMarchLineColor;
+            _marchLine.Initialize(BuildMarchPath(), false);
+            _marchLine.SetActive(true);
+        }
+
+        private void ReleaseMarchLine(GameObject go)
+        {
+            if (go == null)
+                return;
+
+            if (FW.ResMgr == null || !FW.ResMgr.ReleaseInstance(go))
+                Destroy(go);
+        }
+
+        private void OnDestroy()
+        {
+            _destroyed = true;
+
+            if (_marchLine == null)
+                return;
+
+            var go = _marchLine.gameObject;
+            _marchLine = null;
+            ReleaseMarchLine(go);
         }
 
         private void OnGUI()

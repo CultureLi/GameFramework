@@ -45,7 +45,7 @@ namespace MapEditor
 
         public static string GetDataFolderPath()
         {
-            return "Assets/BundleRes/MapData/" + SanitizeFileName(GetMapName());
+            return "Assets/AssetBundles/MapData/" + SanitizeFileName(GetMapName());
         }
 
         /// <summary>

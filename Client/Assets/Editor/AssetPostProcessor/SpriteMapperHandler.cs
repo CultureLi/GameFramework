@@ -17,7 +17,7 @@ namespace Assets.Editor.AssetPostProcessor
             string[] movedFromAssetPaths)
         {
             if (importedAssets.Concat(deletedAssets).Concat(movedAssets).Concat(movedFromAssetPaths)
-                .Any(path => path.StartsWith("Assets/BundleRes/Arts/UI")))
+                .Any(path => path.StartsWith("Assets/Arts/UI")))
             {
                 GenerateSpriteMapper.GenSpriteMapper();
             }

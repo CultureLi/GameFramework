@@ -15,13 +15,13 @@ view_navmesh.bat
 ```bat
 dotnet run --project Tools\NavMeshViewer\NavMeshViewer.csproj -- ^
   NavData\navmesh.rnav ^
-  ..\Client\Assets\BundleRes\MapData\OpenWorld\BuildingData.bytes
+  MapData\OpenWorld\BuildingData.bytes
 ```
 
 不传参数时会自动向上查找：
 
 - `NavData/navmesh.rnav`
-- `Client/Assets/BundleRes/MapData/OpenWorld/BuildingData.bytes`
+- `Server/MapData/OpenWorld/BuildingData.bytes`
 
 ## 操作
 

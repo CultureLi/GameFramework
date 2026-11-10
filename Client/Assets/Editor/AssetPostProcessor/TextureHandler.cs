@@ -23,7 +23,7 @@ namespace Assets.Editor.AssetPostProcessor
         {
             foreach (var assetPath in importedAssets)
             {
-                if (!assetPath.StartsWith("Assets/BundleRes/Arts/UI"))
+                if (!assetPath.StartsWith("Assets/Arts/UI"))
                     continue;
 
                 var importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 public static class GenerateUIConst
 {
-    private const string UIRootPath = "Assets/BundleRes/UI";
+    private const string UIRootPath = "Assets/AssetBundles/UI";
     private const string OutputPath = "Assets/HotFixScripts/GameMain/Const/UIConst.cs";
 
     [MenuItem("Tools/UI/生成UIConst")]
@@ -39,7 +39,7 @@ public static class GenerateUIConst
             // 转为 Unity 路径格式
             var unityPath = file.Replace("\\", "/");
 
-            // 相对 Assets/BundleRes/UI
+            // 相对 Assets/AssetBundles/UI
             var relativePath = unityPath.Substring(UIRootPath.Length + 1);
             relativePath = relativePath.Replace(".prefab", "");
 
