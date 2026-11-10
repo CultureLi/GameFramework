@@ -83,12 +83,35 @@ namespace Launcher
             }
         }
 
+        /// <summary>
+        /// AppDomain 中是否已经有同名程序集。
+        /// 编辑器（Mono）里热更程序集已经由 Unity 按 asmdef 编译并加载，
+        /// 再 Assembly.Load 一份会得到第二套同名类型，导致 ProtoTypeHelper
+        /// 把每个 proto 消息判定成和自己碰撞。
+        /// </summary>
+        static bool IsAssemblyLoaded(string name)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                if (assembly.GetName().Name == name)
+                    return true;
+            }
+
+            return false;
+        }
+
         IEnumerator LoadHotFixDlls()
         {
             var sortedList = GetSortedDllList();
             Debug.Log($"加载所有HotFixDll count:{sortedList.Count}");
             foreach (var info in sortedList)
             {
+                if (IsAssemblyLoaded(info.name))
+                {
+                    Debug.Log($"[Launcher] 程序集已加载，跳过热更 DLL: {info.name}");
+                    continue;
+                }
+
                 var dllPath = Path.Combine(Application.persistentDataPath, "HotFixDll", $"{info.name}.dll.bytes");
                 Debug.Log($"presistent dllPath: {dllPath}");
 

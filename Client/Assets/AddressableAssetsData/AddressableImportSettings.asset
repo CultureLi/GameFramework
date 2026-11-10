@@ -15,80 +15,10 @@ MonoBehaviour:
   rulesEnabled: 1
   allowGroupCreation: 1
   rules:
-  - path: Assets/BundleRes/UISprite.*\.spriteatlas(v2|)$
+  - path: ^Assets/Arts/Font/[^/]+\.[^/]+$
     matchType: 1
-    groupName: UISprite
-    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: Assets/BundleRes/UISprite.*/*/SingleSprite$
-    matchType: 1
-    groupName: UISprite
-    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: Assets/BundleRes/Scene/.*\.unity$
-    matchType: 1
-    groupName: Scene
-    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: ^Assets/BundleRes/SceneChunk/[^/]+/[^/.]+$
-    matchType: 1
-    groupName: SceneChunk
+    groupName: Font
     groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: ^Assets/BundleRes/Material+/[^/.]+$
-    matchType: 1
-    groupName: Material
-    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: Assets/BundleRes/Texture/Scene/([^/]+)/.+\.(png|jpg|jpeg|tga|exr|psd|tif|tiff|hdr|bmp)$
-    matchType: 1
-    groupName: Texture
-    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: Assets/BundleRes/Texture/SkyBox$
-    matchType: 1
-    groupName: Texture
-    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
-    groupTemplateApplicationMode: 0
-    labelRefs: []
-    dynamicLabels: []
-    LabelMode: 0
-    simplified: 0
-    addressReplacement: 
-  - path: Assets/BundleRes/UI/.*\.prefab$
-    matchType: 1
-    groupName: UI
-    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
     dynamicLabels: []
@@ -105,9 +35,103 @@ MonoBehaviour:
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: ^Assets/BundleRes/Shader/[^/]+/[^/.]+\.*
+  - path: Assets/AssetBundles/UI/.*\.prefab$
+    matchType: 1
+    groupName: UI
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/Arts/UI.*\.spriteatlas(v2|)$
+    matchType: 1
+    groupName: UISprite
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/Arts/UI.*/*/SingleSprite$
+    matchType: 1
+    groupName: UISprite
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/UI/(?<category>[^/]+)/(?<group>Animation|Material)/.+\.[^/]+$
+    matchType: 1
+    groupName: ${group}
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels:
+    - UI_${category}
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/Map/(?<map>[^/]+)/Chunk/.*\.prefab$
+    matchType: 1
+    groupName: Chunk
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/Map/(?<map>[^/]+)/(?<group>Animation|Mesh|Texture|Material)/.+\.[^/]+$
+    matchType: 1
+    groupName: ${group}
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels:
+    - ${map}
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/FX/(?<group>[^/]+)/Common+/[^/.]+$
+    matchType: 1
+    groupName: ${group}
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels:
+    - FX
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/Arts/SkyBox/SkyBox.mat
+    matchType: 1
+    groupName: Material
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels:
+    - SkyBox
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/Shader/[^/]+/[^/.]+\.shader
     matchType: 1
     groupName: Shader
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels: []
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: ^Assets/Arts/Shader/[^/]+/[^/.]+\.shadervariants
+    matchType: 1
+    groupName: ShaderVariants
     groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
@@ -115,29 +139,40 @@ MonoBehaviour:
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: Assets/TextMesh Pro/Fonts$
+  - path: Assets/AssetBundles/GlobalData/.+\.[^/]+$
     matchType: 1
-    groupName: Font
-    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupName: GlobalData
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
     dynamicLabels: []
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: Assets/BundleRes/Font$
+  - path: Assets/AssetBundles/Scene/.*\.unity$
     matchType: 1
-    groupName: Font
-    groupTemplate: {fileID: 11400000, guid: d8661fb73925a174c999d405258295e8, type: 2}
+    groupName: Scene
+    groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
     dynamicLabels: []
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: Assets/BundleRes/CommonSOData$
+  - path: ^Assets/AssetBundles/MapData/(?<map>[^/]+)/.*\.asset$
     matchType: 1
-    groupName: CommonSOData
+    groupName: MapData
+    groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}
+    groupTemplateApplicationMode: 0
+    labelRefs: []
+    dynamicLabels:
+    - ${map}
+    LabelMode: 0
+    simplified: 0
+    addressReplacement: 
+  - path: Assets/AssetBundles/Prefab/.*\.prefab$
+    matchType: 1
+    groupName: Prefab
     groupTemplate: {fileID: 11400000, guid: e2dfd07f7f5e6384e99f72fc2a57668c, type: 2}
     groupTemplateApplicationMode: 0
     labelRefs: []
