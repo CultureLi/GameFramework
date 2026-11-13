@@ -1,5 +1,3 @@
-using UnityEditor;
-
 namespace Framework
 {
     public enum EShutdownType

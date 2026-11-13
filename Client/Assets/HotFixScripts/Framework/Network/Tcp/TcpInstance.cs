@@ -155,6 +155,11 @@ namespace Framework
         {
             DisposeConnection();
             _dispatcher?.Dispose();
+
+            lock (_pendingLock)
+            {
+                _pendingMsgs.Clear();
+            }
         }
 
     }

@@ -8,6 +8,7 @@
         public uint id;
         public virtual void Clear()
         {
+            id = 0;
         }
     }
 }

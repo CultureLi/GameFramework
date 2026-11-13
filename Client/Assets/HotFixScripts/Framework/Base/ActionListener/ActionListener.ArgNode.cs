@@ -19,9 +19,14 @@ namespace Framework
 
             public static ArgNode Spawn<T>(T e) where T : TArg
             {
+                return Spawn(typeof(T), e);
+            }
+
+            public static ArgNode Spawn(Type type, TArg e)
+            {
                 ArgNode eventNode = ReferencePool.Acquire<ArgNode>();
                 eventNode._data = e;
-                eventNode._type = e.GetType();
+                eventNode._type = type;
                 return eventNode;
             }
 

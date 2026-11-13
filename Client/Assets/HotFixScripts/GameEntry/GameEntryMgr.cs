@@ -19,17 +19,14 @@ namespace GameEntry
             FW.I.Initialize();
             AppConfig.Initialize();
 
-            // HybridCLR 热更程序集在启动后才 Assembly.Load，这里再收集一次消息类型，
-            // 确保 Protos 程序集里的 LoginReq/LoginAck 等消息能拿到正确的 msgId。
-            // 先通过 typeof 强制触发热更 Protos 程序集加载，避免它还没进入 AppDomain 时漏注册。
-            _ = typeof(Google.Protobuf.WellKnownTypes.LoginReq).Assembly;
+            //收集消息类型
             ProtoTypeHelper.CollectMsgType();
 
             FW.UIMgr.CloseAll();
+
             Debug.Log("加载Login场景");
             //在completed回调中调用handler.WaitForCompletion(),或者加载其他资源会报错, 所以在帧末在处理
             ///Reentering the Update method is not allowed.  This can happen when calling WaitForCompletion on an operation while inside of a callback
-
             await FW.ResMgr.LoadSceneAsync("Login").ToUniTask(FW.CoroutineRunner);
 
             await UniTask.WaitForEndOfFrame(FW.CoroutineRunner);
@@ -46,7 +43,7 @@ namespace GameEntry
 
         internal Transform UIRoot
         {
-            get;set;
+            get; set;
         }
 
         internal string RemoteCatalogHash { get; set; }

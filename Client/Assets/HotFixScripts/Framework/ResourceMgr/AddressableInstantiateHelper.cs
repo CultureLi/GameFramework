@@ -90,10 +90,11 @@ namespace Framework
                 return;
 
             // Framework 是底层程序集，不能反向依赖 GameEntry.FW；统一走 FrameworkMgr 的缓存属性。
-            var resMgr = FrameworkMgr.ResMgr;
-            if (resMgr == null)
+            // 这里必须用 TryGetModule：OnDestroy 可能发生在 Shutdown 之后，
+            // 用 FrameworkMgr.ResMgr 会把刚销毁的模块重新创建出来。
+            if (!FrameworkMgr.TryGetModule<IResourceMgr>(out var resMgr))
             {
-                Debug.LogWarning($"[AddressableInstanceHandle] IResourceMgr 已不可用，无法释放句柄: {gameObject.name}");
+                Debug.LogWarning($"[AddressableInstanceHandle] IResourceMgr 已不可用，跳过句柄释放: {gameObject.name}");
                 return;
             }
 

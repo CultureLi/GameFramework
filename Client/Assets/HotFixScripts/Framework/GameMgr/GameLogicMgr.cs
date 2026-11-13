@@ -16,6 +16,15 @@ namespace Framework
         public virtual void Dispose()
         {
         }
+
+        /// <summary>
+        /// 清理 <see cref="GameMgrBase{T}"/> 上的静态实例引用。
+        /// 不清理的话，Shutdown 之后 CreateMgr&lt;T&gt; 会直接返回这个已销毁的旧实例，
+        /// 导致它既不会被重新 Initialize，也不会再收到 SecondUpdate。
+        /// </summary>
+        internal virtual void ResetStaticInstance()
+        {
+        }
     }
 
     public abstract class GameMgrBase<T> : GameMgrBase where T : GameMgrBase<T>, new()
@@ -23,6 +32,11 @@ namespace Framework
         public static T I
         {
             get; internal set;
+        }
+
+        internal override void ResetStaticInstance()
+        {
+            I = null;
         }
     }
 
@@ -51,9 +65,11 @@ namespace Framework
         public Action OnInitialize { get; set;}
         public void Initialize()
         {
-            foreach (var mgr in _mgrs)
+            // 用下标遍历并实时读 Count：Manager 在 Initialize 里再 CreateMgr 出来的新 Manager
+            // 也会在本次初始化里被初始化到，而不是等到下一次。
+            for (int i = 0; i < _mgrs.Count; i++)
             {
-                mgr.Initialize();
+                _mgrs[i].Initialize();
             }
             OnInitialize.InvokeSafely();
         }
@@ -63,23 +79,29 @@ namespace Framework
             foreach (var mgr in _mgrs)
             {
                 mgr.Dispose();
+                mgr.ResetStaticInstance();
             }
             _mgrs.Clear();
         }
 
 
-        float _lastSecondUpdateTime = 0;
+        private float _secondUpdateTimer = 0f;
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            if (Time.realtimeSinceStartup - _lastSecondUpdateTime >= 1)
+            // 用框架传入的真实时间累加，而不是自己读 Time.realtimeSinceStartup：
+            // 后者在一帧内多次调用、暂停、回放时行为和框架的节拍不一致。
+            _secondUpdateTimer += realElapseSeconds;
+            if (_secondUpdateTimer < 1f)
             {
-                _lastSecondUpdateTime = Time.realtimeSinceStartup;
-                foreach (var mgr in _mgrs)
+                return;
+            }
+
+            _secondUpdateTimer -= 1f;
+            for (int i = 0; i < _mgrs.Count; i++)
+            {
+                if (_mgrs[i] is ISecondUpdate secondUpdate)
                 {
-                    if (mgr is ISecondUpdate secondUpdate)
-                    {
-                        secondUpdate.SecondUpdate();
-                    }
+                    secondUpdate.SecondUpdate();
                 }
             }
         }

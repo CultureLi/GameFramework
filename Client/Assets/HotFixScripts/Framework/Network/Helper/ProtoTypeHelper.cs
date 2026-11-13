@@ -12,6 +12,10 @@ namespace Framework
         private static readonly Dictionary<Type, uint> _typeToIdMap = new Dictionary<Type, uint>();
         private static readonly Dictionary<uint, Type> _idToTypeMap = new Dictionary<uint, Type>();
 
+        // 每个消息类型只创建一个样本实例，把它的 Parser 缓存下来。
+        // 收包时用它反序列化，避免每条消息都 Activator.CreateInstance 一个空对象再丢掉。
+        private static readonly Dictionary<uint, MessageParser> _idToParserMap = new Dictionary<uint, MessageParser>();
+
         /// <summary>
         /// 已经扫描过的程序集。CollectMsgType 会被调用多次（启动时 + HybridCLR 热更程序集加载后），
         /// 只处理新加载的程序集，避免每次都把全部程序集 GetTypes 一遍。
@@ -32,6 +36,14 @@ namespace Framework
         public static Type GetMsgType(uint id)
         {
             return _idToTypeMap.TryGetValue(id, out var type) ? type : null;
+        }
+
+        /// <summary>
+        /// 获取消息类型的反序列化器，收包线程使用。
+        /// </summary>
+        public static MessageParser GetMsgParser(uint id)
+        {
+            return _idToParserMap.TryGetValue(id, out var parser) ? parser : null;
         }
 
         /// <summary>
@@ -127,6 +139,16 @@ namespace Framework
 
             _typeToIdMap[type] = msgId;
             _idToTypeMap[msgId] = type;
+
+            try
+            {
+                var sample = (IMessage)Activator.CreateInstance(type);
+                _idToParserMap[msgId] = sample.Descriptor.Parser;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[ProtoTypeHelper] 无法创建消息 {type.FullName} 的解析器: {e.Message}");
+            }
         }
 
         /// <summary>

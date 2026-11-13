@@ -25,8 +25,11 @@ namespace Framework
             {
                 _request = UnityWebRequest.Get(path);
                 _request.SendWebRequest();
-                while (!_request.isDone)
-                    ;
+                if (!WaitForRequest(_request))
+                {
+                    throw new IOException($"FileStreamEx 打开失败: {path}, error: {_request.error}");
+                }
+
                 var nativeData = _request.downloadHandler.nativeData;
                 unsafe
                 {
@@ -41,6 +44,28 @@ namespace Framework
             {
                 Stream = new FileStream(path, FileMode.Open, FileAccess.Read);
             }
+        }
+
+        /// <summary>
+        /// 同步等待 UnityWebRequest 完成。
+        /// 原来写的是 while (!isDone); —— 空转占满一个核心，而且请求如果因为平台限制永远不完成，
+        /// 主线程会直接卡死。这里加了超时，至少能把错误暴露出来。
+        /// </summary>
+        private static bool WaitForRequest(UnityWebRequest request, float timeoutSeconds = 30f)
+        {
+            float deadline = UnityEngine.Time.realtimeSinceStartup + timeoutSeconds;
+            while (!request.isDone)
+            {
+                if (UnityEngine.Time.realtimeSinceStartup > deadline)
+                {
+                    request.Abort();
+                    return false;
+                }
+
+                System.Threading.Thread.Sleep(1);
+            }
+
+            return request.result == UnityWebRequest.Result.Success;
         }
 
         public override bool CanRead => Stream.CanRead;

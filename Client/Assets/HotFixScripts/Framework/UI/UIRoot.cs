@@ -17,10 +17,18 @@ namespace Framework
 
         private IUIManager _uiMgr;
         private RenderTexture _rt;
-        
+        private Coroutine _blurCoroutine;
+        private bool _blurRequested;
+
         protected void Awake()
         {
             //mask.material = blurMaterial;
+            if (template == null)
+            {
+                Debug.LogError("UIRoot.template 未配置，UI 分组无法创建。");
+                return;
+            }
+
             template.SetActive(false);
             _uiMgr = FrameworkMgr.UIMgr;
             for (var type = EUIGroupType.HUD; type <= EUIGroupType.Tips; type++)
@@ -35,14 +43,26 @@ namespace Framework
 
         public void ShowBlurMask(bool show)
         {
-            if (show)
+            _blurRequested = show;
+
+            if (!show)
             {
-                StartCoroutine(BlurMask());
+                if (mask != null)
+                {
+                    mask.enabled = false;
+                }
+
+                // 正在抓图的过程中被要求关闭：协程会在抓图结束后自己退出，这里不打断抓图，
+                // 避免 Canvas 的 RenderMode 停在 ScreenSpaceCamera 上。
+                return;
             }
-            else
+
+            if (_blurCoroutine != null)
             {
-                mask.enabled = false;
+                return;
             }
+
+            _blurCoroutine = StartCoroutine(BlurMask());
         }
 
         private IEnumerator BlurMask()
@@ -50,37 +70,98 @@ namespace Framework
             // 这里先要把UI的Canvas改成ScreenSpaceCamera模式，设置Canvans的camera为UICamera
             for (var groupType = EUIGroupType.HUD; groupType <= EUIGroupType.Popup; groupType++)
             {
-                var canvas = _uiMgr.GetGroup(groupType).Canvas;
+                var group = _uiMgr.GetGroup(groupType);
+                if (group == null)
+                {
+                    continue;
+                }
+
+                var canvas = group.Canvas;
+                if (canvas == null)
+                {
+                    continue;
+                }
+
                 canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                canvas.worldCamera = _uiMgr.UIRoot.uiCamera;
+                canvas.worldCamera = uiCamera;
             }
 
-            int width = Screen.width;
-            int height = Screen.height;
+            int width = Mathf.Max(1, Screen.width);
+            int height = Mathf.Max(1, Screen.height);
 
-            uiCamera.gameObject.SetActive(true);
-
-            if (_rt != null)
+            if (uiCamera != null)
             {
-                RenderTexture.ReleaseTemporary(_rt);
+                uiCamera.gameObject.SetActive(true);
             }
-            _rt = RenderTexture.GetTemporary(width, height, 0);
-            _rt.filterMode = FilterMode.Bilinear;
-            GaussianBlurFeature.Instance.Blur(_rt, blurMaterial);
+
+            // 用常驻的 RenderTexture，而不是 GetTemporary：
+            // temp RT 归还后可能被其他系统拿走复用，而这张贴图会长期挂在 RawImage 上显示。
+            if (_rt == null || _rt.width != width || _rt.height != height)
+            {
+                if (_rt != null)
+                {
+                    _rt.Release();
+                    UnityEngine.Object.Destroy(_rt);
+                }
+
+                _rt = new RenderTexture(width, height, 0)
+                {
+                    filterMode = FilterMode.Bilinear,
+                    name = "UIRootBlurRT",
+                };
+                _rt.Create();
+            }
+
+            bool blurApplied = GaussianBlurFeature.Instance != null;
+            if (blurApplied)
+            {
+                GaussianBlurFeature.Instance.Blur(_rt, blurMaterial);
+            }
+            else
+            {
+                Debug.LogWarning("GaussianBlurFeature 未挂到 URP Renderer 上，模糊遮罩不会生效。");
+            }
 
             yield return new WaitForEndOfFrame();
 
-            uiCamera.gameObject.SetActive(false);
-            mask.enabled = true;
-            mask.texture = _rt;
+            if (uiCamera != null)
+            {
+                uiCamera.gameObject.SetActive(false);
+            }
 
             for (var groupType = EUIGroupType.HUD; groupType <= EUIGroupType.Popup; groupType++)
             {
-                var canvas = _uiMgr.GetGroup(groupType).Canvas;
-                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                var group = _uiMgr.GetGroup(groupType);
+                var canvas = group?.Canvas;
+                if (canvas != null)
+                {
+                    canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                }
             }
 
-            _uiMgr.UIRoot.maskCanvas.sortingOrder = _uiMgr.GetGroup(EUIGroupType.Popup).GetTopUISortingOrder() - 1;
+            if (blurApplied && _blurRequested && mask != null && _rt != null)
+            {
+                mask.texture = _rt;
+                mask.enabled = true;
+
+                var popupGroup = _uiMgr.GetGroup(EUIGroupType.Popup);
+                if (maskCanvas != null && popupGroup != null)
+                {
+                    maskCanvas.sortingOrder = popupGroup.GetTopUISortingOrder() - 1;
+                }
+            }
+
+            _blurCoroutine = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (_rt != null)
+            {
+                _rt.Release();
+                UnityEngine.Object.Destroy(_rt);
+                _rt = null;
+            }
         }
     }
 }

@@ -32,8 +32,11 @@ namespace Framework
 
         public void Invoke(T2 ev)
         {
-            foreach (Action<T1> cb in _callback)
+            // 用下标而不是 foreach：回调里订阅/退订是很常见的用法，
+            // 直接 foreach 会因为 List 版本号变化抛 InvalidOperationException。
+            for (int i = 0; i < _callback.Count; i++)
             {
+                var cb = _callback[i];
                 try
                 {
                     cb?.Invoke((T1)ev);
@@ -69,8 +72,9 @@ namespace Framework
 
         public void Invoke(T ev)
         {
-            foreach (Action<T> cb in _callback)
+            for (int i = 0; i < _callback.Count; i++)
             {
+                var cb = _callback[i];
                 try
                 {
                     cb?.Invoke(ev);

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 
 namespace Framework
 {
@@ -22,13 +21,15 @@ namespace Framework
             buf[offset] = val;
         }
 
+        /// <summary>
+        /// 大端写入 int。直接按位写，避免 BitConverter.GetBytes 每条消息产生的临时数组。
+        /// </summary>
         public static void PackInt(int val, byte[] buf, int offset = 0)
         {
-            byte[] intBuf = BitConverter.GetBytes(IPAddress.HostToNetworkOrder(val));
-            for (int i = 0; i < intBuf.GetLength(0); i++)
-            {
-                buf[offset + i] = intBuf[i];
-            }
+            buf[offset] = (byte)(val >> 24);
+            buf[offset + 1] = (byte)(val >> 16);
+            buf[offset + 2] = (byte)(val >> 8);
+            buf[offset + 3] = (byte)val;
         }
 
         public static byte UnPackByte(byte[] buf, ref int offset)
@@ -53,8 +54,10 @@ namespace Framework
 
         public static int UnPackInt(byte[] buf, int offset = 0)
         {
-            int val = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buf, offset));
-            return val;
+            return (buf[offset] << 24)
+                   | (buf[offset + 1] << 16)
+                   | (buf[offset + 2] << 8)
+                   | buf[offset + 3];
         }
     }
 }

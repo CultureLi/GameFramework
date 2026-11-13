@@ -24,9 +24,19 @@ namespace Framework
 
         public void ReleaseSprite()
         {
-            if (_sprite != null)
+            if (_sprite == null)
             {
-                _spriteMgr.ReleaseSprite(_sprite);
+                return;
+            }
+
+            var sprite = _sprite;
+            // 先清引用再释放：否则 OnDestroy 会对同一个 Sprite 再释放一次，
+            // Addressables 的引用计数会被减到 0 以下。
+            _sprite = null;
+
+            if (_spriteMgr != null)
+            {
+                _spriteMgr.ReleaseSprite(sprite);
             }
         }
         private void OnDestroy()

@@ -41,16 +41,47 @@ namespace Framework
             public void Dispose()
             {
                 _disposed = true;
+                // 等线程退出，避免它继续访问已经 Dispose 掉的连接/加密器。
+                if (_thread != null && _thread.IsAlive && _thread != Thread.CurrentThread)
+                {
+                    _thread.Join(200);
+                }
+                _thread = null;
             }
 
             private void ReceiveLoop()
             {
-                var stream = _connecter.TCPClient.GetStream();
+                NetworkStream stream = null;
+                try
+                {
+                    // 这行以前在 try 之外：重连/断开瞬间 TCPClient 为 null 时线程会直接抛异常退出，
+                    // 没有日志也没有重连，表现为"突然收不到消息"。
+                    var client = _connecter.TCPClient;
+                    if (client == null)
+                    {
+                        Debug.LogWarning("[Network] Receiver 启动时连接已失效。");
+                        return;
+                    }
+
+                    stream = client.GetStream();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                    return;
+                }
+
                 while (!_disposed)
                 {
                     try
                     {
-                        if (_connecter.IsConnected && stream.DataAvailable)
+                        if (!_connecter.IsConnected)
+                        {
+                            Thread.Sleep(10);
+                            continue;
+                        }
+
+                        if (stream.DataAvailable)
                         {
                             var packet = UnPack(stream);
                             if (packet != null)
@@ -58,6 +89,16 @@ namespace Framework
                                 _dispatcher.DispatchAsync(packet);
                             }
                         }
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+                    catch (System.IO.IOException e)
+                    {
+                        // 连接被关闭：退出循环，不再刷日志。
+                        Debug.LogWarning($"[Network] 连接已断开: {e.Message}");
+                        break;
                     }
                     catch (Exception e)
                     {
@@ -80,6 +121,7 @@ namespace Framework
             byte[] unZipBuffer = new byte[NetDefine.SCMaxMsgLen*10];
             private SCPacket UnPack(NetworkStream stream)
             {
+                SCPacket packet = null;
                 try
                 {
                     if (!stream.ReadCompletely(headerBuffer, NetDefine.SCHeaderLen))
@@ -89,19 +131,25 @@ namespace Framework
                     var length = PackHelper.UnPackInt(headerBuffer, ref offset);
                     var msgId = (uint)PackHelper.UnPackInt(headerBuffer, ref offset);
                     var flag = PackHelper.UnPackByte(headerBuffer, ref offset);
-                    var type = ProtoTypeHelper.GetMsgType(msgId);
+                    var parser = ProtoTypeHelper.GetMsgParser(msgId);
 
-                    if (length < 0 || length >= NetDefine.SCMaxMsgLen)
+                    // 缓冲刚好能放下 SCMaxMsgLen 字节，等于上限是合法的。
+                    if (length < 0 || length > NetDefine.SCMaxMsgLen)
                     {
-                        throw new Exception($"PackMsg - type:{type} Size:{length}");
+                        throw new Exception($"PackMsg - msgId:{msgId} Size:{length}");
                     }
 
                     if (!stream.ReadCompletely(bodyBuffer, length))
                         return null;
 
-                    var packet = ReferencePool.Acquire<SCPacket>();
+                    if (parser == null)
+                    {
+                        Debug.LogError($"[Network] 未注册的消息 id: {msgId}，丢弃该包。");
+                        return null;
+                    }
+
+                    packet = ReferencePool.Acquire<SCPacket>();
                     packet.id = msgId;
-                    packet.msg = Activator.CreateInstance(type) as IMessage;
 
                     var buffer = bodyBuffer;
                     var size = length;
@@ -110,6 +158,10 @@ namespace Framework
                     if ((flag & NetDefine.FlagZip) != 0)
                     {
                         size = ZipHelper.UnZip(buffer, length, unZipBuffer);
+                        if (size <= 0)
+                        {
+                            throw new Exception($"UnZip failed, msgId:{msgId}");
+                        }
                         buffer = unZipBuffer;
                     }
 
@@ -117,15 +169,25 @@ namespace Framework
                     if ((flag & NetDefine.FlagCrypt) != 0)
                     {
                         buffer = _cryptor.Decrypt(buffer, 0, size);
+                        if (buffer == null)
+                        {
+                            throw new Exception($"Decrypt failed, msgId:{msgId}");
+                        }
                         size = buffer.Length;
                     }
 
-                    packet.msg = packet.msg.Descriptor.Parser.ParseFrom(buffer, 0, size);
+                    // 用缓存的 Parser 反序列化，避免每条消息多 new 一个空实例。
+                    packet.msg = parser.ParseFrom(buffer, 0, size);
 
                     return packet;
                 }
                 catch (Exception e)
                 {
+                    if (packet != null)
+                    {
+                        ReferencePool.Release(packet);
+                    }
+
                     Debug.LogException(e);
                     return null;
                 }

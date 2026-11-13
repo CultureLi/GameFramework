@@ -47,7 +47,20 @@ namespace Framework
             }
             var handle = FrameworkMgr.ResMgr.InstantiateAsync("Assets/AssetBundles/UI/Root/UIRoot.prefab");
             handle.WaitForCompletion();
+            if (handle.Status != UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded
+                || handle.Result == null)
+            {
+                Debug.LogError("UIRoot.prefab 加载失败，UI 系统不可用。");
+                return;
+            }
+
             UIRoot = handle.Result.GetComponent<UIRoot>();
+            if (UIRoot == null)
+            {
+                Debug.LogError("UIRoot.prefab 根节点上没有 UIRoot 组件。");
+                return;
+            }
+
             GameObject.DontDestroyOnLoad(handle.Result);
         }
 
@@ -163,6 +176,12 @@ namespace Framework
         private void InternalOpenUI(EUIGroupType groupType, string name, ViewData userData = null)
         {
             var group = GetGroup(groupType);
+            if (group == null)
+            {
+                Debug.LogError($"UIManager OpenUI Error, group '{groupType}' 还没有创建（UIRoot 未初始化？）");
+                return;
+            }
+
             group.OpenUI(name, userData);
         }
 
@@ -174,7 +193,7 @@ namespace Framework
         public bool RefocusTopUI(EUIGroupType groupType)
         {
             var group = GetGroup(groupType);
-            return group.RefocusTopUI();
+            return group != null && group.RefocusTopUI();
         }
 
         /// <summary>
@@ -199,7 +218,7 @@ namespace Framework
         public void CloseAll(EUIGroupType groupType)
         {
             var group = GetGroup(groupType);
-            group.CloseAll();
+            group?.CloseAll();
         }
 
         /// <summary>
@@ -220,7 +239,7 @@ namespace Framework
         public void HideAll(EUIGroupType groupType)
         {
             var group = GetGroup(groupType);
-            group.HideAll();
+            group?.HideAll();
         }
 
         /// <summary>
@@ -228,14 +247,19 @@ namespace Framework
         /// </summary>
         /// <param name="elapseSeconds">逻辑流逝时间，以秒为单位。</param>
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
-        float _lastSecondUpdateTime = 0;
+        float _secondUpdateTimer = 0f;
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
-            if (Time.realtimeSinceStartup - _lastSecondUpdateTime >= 1)
+            // 和 GameLogicMgr 一样，用框架传入的真实时间累加，避免自读 realtimeSinceStartup
+            // 带来的"一帧内多次调用"和暂停行为不一致的问题。
+            _secondUpdateTimer += realElapseSeconds;
+            if (_secondUpdateTimer < 1f)
             {
-                _lastSecondUpdateTime = Time.realtimeSinceStartup;
-                SecondUpdate();
+                return;
             }
+
+            _secondUpdateTimer -= 1f;
+            SecondUpdate();
         }
 
         void SecondUpdate()
@@ -260,7 +284,7 @@ namespace Framework
 
         public void SetCanBeReleased(GameObject go, bool flag)
         {
-
+            UIPrefabPool.SetCanBeReleased(go, flag);
         }
     }
 }

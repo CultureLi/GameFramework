@@ -330,7 +330,7 @@ namespace GameMain
             if (go == null)
                 return;
 
-            if (FW.ResMgr == null || !FW.ResMgr.ReleaseInstance(go))
+            if (FW.ResMgr?.ReleaseInstance(go) ?? true)
                 Destroy(go);
         }
 

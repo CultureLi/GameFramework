@@ -26,7 +26,7 @@ namespace Assets.HotFixScripts.GameMain
 
         private void OnDestroy()
         {
-            FW.FsmMgr.DestroyFsm(_stageFsm);
+            FW.FsmMgr?.DestroyFsm(_stageFsm);
         }
     }
 }

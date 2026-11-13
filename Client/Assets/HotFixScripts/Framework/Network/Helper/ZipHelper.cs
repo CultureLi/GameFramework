@@ -47,9 +47,9 @@ namespace Framework
                 int offset = 0;
                 var originLength = PackHelper.UnPackInt(srcBuffer, ref offset);
 
-                if (originLength >= dstBuffer.Length)
+                if (originLength <= 0 || originLength > dstBuffer.Length)
                 {
-                    throw new Exception("UnZip dstBuffer too small");
+                    throw new Exception($"UnZip dstBuffer too small, originLength:{originLength}, dst:{dstBuffer.Length}");
                 }
 
                 return LZ4Codec.Decode(srcBuffer, offset, srcLength - offset, dstBuffer, 0, originLength);

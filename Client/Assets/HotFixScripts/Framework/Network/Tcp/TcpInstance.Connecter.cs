@@ -106,11 +106,17 @@ namespace Framework
             public void Disconnect()
             {
                 if (!IsConnected)
+                {
+                    // 已经断开也要把残留的 TcpClient 释放掉（超时/异常后它可能还在）。
+                    _TcpClient?.Dispose();
+                    _TcpClient = null;
                     return;
+                }
 
                 try
                 {
                     _TcpClient.Close();
+                    _TcpClient.Dispose();
                     _TcpClient = null;
                 }
                 catch (Exception e)

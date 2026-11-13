@@ -35,17 +35,29 @@ namespace Framework
             info._view = view;
             info._view.Wrapper = info;
             info._canvas = view.GetComponent<Canvas>();
-            info.CustomSortingOrder = info._canvas.sortingOrder;
+            if (info._canvas == null)
+            {
+                // 没有 Canvas 的界面仍然允许打开，只是不能参与 SortingOrder 分层。
+                UnityEngine.Debug.LogError($"UI prefab '{assetPath}' 根节点上没有 Canvas，层级排序将不可用。");
+                info.CustomSortingOrder = 0;
+            }
+            else
+            {
+                info.CustomSortingOrder = info._canvas.sortingOrder;
+            }
             info._view.name = view.name.Replace("(Clone)", "");
 
             view.transform.SetParent(info.UIGroup.Root);
-            RectTransform uiTransform = info.Canvas.GetComponent<RectTransform>();
-            uiTransform.anchoredPosition = Vector2.zero;
-            uiTransform.anchorMin = Vector2.zero;
-            uiTransform.anchorMax = Vector2.one;
-            uiTransform.pivot = Vector2.one * .5f;
-            uiTransform.sizeDelta = Vector2.zero;
-            uiTransform.localScale = Vector3.one;
+            var uiTransform = view.transform as RectTransform;
+            if (uiTransform != null)
+            {
+                uiTransform.anchoredPosition = Vector2.zero;
+                uiTransform.anchorMin = Vector2.zero;
+                uiTransform.anchorMax = Vector2.one;
+                uiTransform.pivot = Vector2.one * .5f;
+                uiTransform.sizeDelta = Vector2.zero;
+                uiTransform.localScale = Vector3.one;
+            }
 
             info._view.gameObject.SetActive(false);
 
@@ -57,8 +69,16 @@ namespace Framework
         public void Release(PrefabObjectPool pool)
         {
             // 重新设置回去，避免复用的时候层级不对
-            _canvas.sortingOrder = CustomSortingOrder;
-            pool.UnSpawn(_view.gameObject);
+            if (_canvas != null)
+            {
+                _canvas.sortingOrder = CustomSortingOrder;
+            }
+
+            if (_view != null)
+            {
+                pool.UnSpawn(_view.gameObject);
+            }
+
             ReferencePool.Release(this);
         }
 
@@ -74,6 +94,11 @@ namespace Framework
 
         public void SetSortingOrder(int sortingOrder)
         {
+            if (_canvas == null)
+            {
+                return;
+            }
+
             _canvas.overrideSorting = true;
             _canvas.sortingOrder = sortingOrder;
         }
@@ -109,8 +134,16 @@ namespace Framework
 
         public void Clear()
         {
+            // 解掉 ViewBase 对 wrapper 的反向引用：wrapper 会进引用池复用，
+            // 池化的 GameObject 如果还指着旧的 wrapper，下次打开就会拿到错误的界面信息。
+            if (_view != null)
+            {
+                _view.Wrapper = null;
+            }
+
             _initShow = true;
             assetPath = null;
+            UIGroup = null;
             _data = null;
             _view = null;
             _canvas = null;

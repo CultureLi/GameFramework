@@ -10,21 +10,16 @@ namespace Framework
         /// </summary>
         public static class Assembly
         {
-            private static readonly System.Reflection.Assembly[] _assemblies = null;
             private static readonly Dictionary<string, Type> _cachedTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
-
-            static Assembly()
-            {
-                _assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            }
 
             /// <summary>
             /// 获取已加载的程序集。
+            /// 每次都向 AppDomain 取，而不是静态构造时快照：
+            /// HybridCLR 的热更程序集是在启动之后才 Assembly.Load 的，快照会永远漏掉它们。
             /// </summary>
-            /// <returns>已加载的程序集。</returns>
             public static System.Reflection.Assembly[] GetAssemblies()
             {
-                return _assemblies;
+                return AppDomain.CurrentDomain.GetAssemblies();
             }
 
             /// <summary>
@@ -33,8 +28,9 @@ namespace Framework
             /// <returns>已加载的程序集中的所有类型。</returns>
             public static Type[] GetTypes()
             {
+                var assemblies = GetAssemblies();
                 List<Type> results = new List<Type>();
-                foreach (System.Reflection.Assembly assembly in _assemblies)
+                foreach (System.Reflection.Assembly assembly in assemblies)
                 {
                     results.AddRange(assembly.GetTypes());
                 }
@@ -54,7 +50,7 @@ namespace Framework
                 }
 
                 results.Clear();
-                foreach (System.Reflection.Assembly assembly in _assemblies)
+                foreach (System.Reflection.Assembly assembly in GetAssemblies())
                 {
                     results.AddRange(assembly.GetTypes());
                 }
@@ -85,7 +81,7 @@ namespace Framework
                     return type;
                 }
 
-                foreach (System.Reflection.Assembly assembly in _assemblies)
+                foreach (System.Reflection.Assembly assembly in GetAssemblies())
                 {
                     type = Type.GetType($"{typeName}, {assembly.FullName}");
                     if (type != null)

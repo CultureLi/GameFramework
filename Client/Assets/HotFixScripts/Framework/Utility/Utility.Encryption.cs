@@ -19,7 +19,12 @@ namespace Framework
             /// <returns>异或后的二进制流。</returns>
             public static byte[] GetQuickXorBytes(byte[] bytes, byte[] code)
             {
-                return GetXorBytes(bytes, 0, QuickEncryptLength, code);
+                if (bytes == null)
+                {
+                    return null;
+                }
+
+                return GetXorBytes(bytes, 0, Math.Min(QuickEncryptLength, bytes.Length), code);
             }
 
             /// <summary>
@@ -29,7 +34,12 @@ namespace Framework
             /// <param name="code">异或二进制流。</param>
             public static void GetQuickSelfXorBytes(byte[] bytes, byte[] code)
             {
-                GetSelfXorBytes(bytes, 0, QuickEncryptLength, code);
+                if (bytes == null)
+                {
+                    return;
+                }
+
+                GetSelfXorBytes(bytes, 0, Math.Min(QuickEncryptLength, bytes.Length), code);
             }
 
             /// <summary>
@@ -116,7 +126,9 @@ namespace Framework
                 }
 
                 int codeIndex = startIndex % codeLength;
-                for (int i = startIndex; i < length; i++)
+                // 原实现写成 i < length，startIndex > 0 时既会漏算又会越界。
+                int end = startIndex + length;
+                for (int i = startIndex; i < end; i++)
                 {
                     bytes[i] ^= code[codeIndex++];
                     codeIndex %= codeLength;

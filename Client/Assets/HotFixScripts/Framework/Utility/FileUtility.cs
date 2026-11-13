@@ -11,6 +11,27 @@ namespace Framework
 {
     public static class FileUtility
     {
+        /// <summary>
+        /// 同步等待 UnityWebRequest 完成（带超时）。
+        /// 原来的 while (!isDone); 会空转占满一个核心，请求不完成时主线程会卡死。
+        /// </summary>
+        private static bool WaitForRequest(UnityWebRequest request, float timeoutSeconds = 30f)
+        {
+            float deadline = Time.realtimeSinceStartup + timeoutSeconds;
+            while (!request.isDone)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    request.Abort();
+                    return false;
+                }
+
+                System.Threading.Thread.Sleep(1);
+            }
+
+            return request.result == UnityWebRequest.Result.Success;
+        }
+
         public static string ReadAllText(string path)
         {
             if (path.IndexOf("://", StringComparison.Ordinal) >= 0)
@@ -18,8 +39,12 @@ namespace Framework
                 using (var request = UnityWebRequest.Get(path))
                 {
                     request.SendWebRequest();
-                    while (!request.isDone)
-                        ;
+                    if (!WaitForRequest(request))
+                    {
+                        Debug.LogError($"FileUtility.ReadAllText failed: {path}, error: {request.error}");
+                        return null;
+                    }
+
                     return request.downloadHandler.text;
                 }
             }
@@ -60,8 +85,12 @@ namespace Framework
                 using (var request = UnityWebRequest.Get(path))
                 {
                     request.SendWebRequest();
-                    while (!request.isDone)
-                        ;
+                    if (!WaitForRequest(request))
+                    {
+                        Debug.LogError($"FileUtility.ReadAllBytes failed: {path}, error: {request.error}");
+                        return null;
+                    }
+
                     return request.downloadHandler.data;
                 }
             }

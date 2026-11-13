@@ -80,12 +80,14 @@ namespace Framework
             if (string.IsNullOrEmpty(name))
             {
                 Debug.LogError("UI name is invalid.");
+                return;
             }
 
-            //已存在，激活
+            //已存在，激活（重新打开时要把新的 userData 带进去，否则显示的还是上一次的数据）
             var wrapper = GetViewWrapper(name);
             if (wrapper != null)
             {
+                wrapper.UpdateViewData(userData);
                 RefocusUI(wrapper);
                 return;
             }
@@ -93,6 +95,8 @@ namespace Framework
             // 正在加载
             if (_loadingUIs.Contains(name))
             {
+                // "加载中先关掉、又立刻打开"：撤销关闭意图，等加载完成后正常打开。
+                _toReleaseOnLoading.Remove(name);
                 Debug.Log($"UI {name} is loading....");
                 return;
             }
@@ -102,8 +106,11 @@ namespace Framework
 
             var assetPath = $"{UIMgr.UIAssetRootPath}/{name}.prefab";
 
-            // 异步加载
-            if (userData != null && userData.AsyncLoad)
+            // userData 为 null 时走 ViewData.DefaultAsyncLoad（默认异步），
+            // 避免每次首次打开界面都在主线程 WaitForCompletion。
+            bool asyncLoad = userData != null ? userData.AsyncLoad : ViewData.DefaultAsyncLoad;
+
+            if (asyncLoad)
             {
                 UIMgr.UIPrefabPool.SpawnAsync(assetPath, (assetGo) =>
                 {
@@ -122,25 +129,35 @@ namespace Framework
             // 从正在加载列表中移除
             _loadingUIs.Remove(name);
 
-            // 在加载过程中关闭了界面，加载完后不会打开
-            if (_toReleaseOnLoading.Contains(name))
+            // 在加载过程中关闭了界面：对象已经实例化出来了，必须还回池子，
+            // 否则它会一直挂在池子里处于"已获取"状态，永远不会被回收。
+            if (_toReleaseOnLoading.Remove(name))
             {
-                _toReleaseOnLoading.Remove(name);
+                if (viewGo != null)
+                {
+                    UIMgr.UIPrefabPool.UnSpawn(viewGo);
+                }
                 return;
             }
 
-            if (viewGo != null)
+            if (viewGo == null)
             {
-                var view = viewGo.GetComponent<ViewBase>();
-                var wrapper = UIViewWrapper.Create(this, name, userData, view);
-                OnBeforeOpenUI(wrapper);
-                DoOpenUI(wrapper);
-                OnAfterOpenUI(wrapper);
+                Debug.LogError($"Load UI Failure: {name}");
+                return;
             }
-            else
+
+            var view = viewGo.GetComponent<ViewBase>();
+            if (view == null)
             {
-                Debug.Log($"Load UI Failure: {name}");
+                Debug.LogError($"Load UI Failure: {name} 根节点上没有 ViewBase 组件。");
+                UIMgr.UIPrefabPool.UnSpawn(viewGo);
+                return;
             }
+
+            var wrapper = UIViewWrapper.Create(this, name, userData, view);
+            OnBeforeOpenUI(wrapper);
+            DoOpenUI(wrapper);
+            OnAfterOpenUI(wrapper);
         }
 
         public virtual void OnBeforeOpenUI(UIViewWrapper wrapper)
@@ -215,7 +232,16 @@ namespace Framework
         {
             var wrapper = GetViewWrapper(name);
             if (wrapper == null)
+            {
+                // 还在异步加载中：记下关闭意图，加载完成时直接把实例还回池子。
+                if (_loadingUIs.Contains(name))
+                {
+                    _toReleaseOnLoading.Add(name);
+                    return true;
+                }
+
                 return false;
+            }
 
             _viewWrappers.Remove(wrapper);
             _viewWrapperMap.Remove(wrapper.assetPath);
@@ -246,20 +272,30 @@ namespace Framework
         /// </summary>
         public virtual void CloseAll()
         {
-            foreach (var wrapper in _viewWrappers)
+            // 先摘记录再逐个关闭：DoClose 里的业务回调（OnClose）可能又去开/关其他界面，
+            // 边遍历边改 _viewWrappers 会抛集合被修改异常，甚至重复释放。
+            var wrappers = _viewWrappers.ToArray();
+            _viewWrappers.Clear();
+            _viewWrapperMap.Clear();
+
+            foreach (var wrapper in wrappers)
             {
                 wrapper.DoClose();
                 wrapper.Release(UIMgr.UIPrefabPool);
             }
-            _viewWrappers.Clear();
-            _viewWrapperMap.Clear();
+
+            // 正在加载中的界面也一并标记为"加载完就丢弃"，否则关全部之后它们还会弹出来。
+            foreach (var loadingName in _loadingUIs)
+            {
+                _toReleaseOnLoading.Add(loadingName);
+            }
         }
 
         public virtual void HideAll()
         {
-            foreach (var wrapper in _viewWrappers)
+            for (int i = 0; i < _viewWrappers.Count; i++)
             {
-                wrapper.DoHide();
+                _viewWrappers[i].DoHide();
             }
         }
 
@@ -272,9 +308,10 @@ namespace Framework
 
         public virtual void SecondUpdate()
         {
-            foreach (var wrapper in _viewWrappers)
+            // 快照长度 + 边界判断：界面的 SecondUpdate 里关掉自己是常见写法。
+            for (int i = 0; i < _viewWrappers.Count; i++)
             {
-                wrapper.SecondUpdate();
+                _viewWrappers[i].SecondUpdate();
             }
         }
     }

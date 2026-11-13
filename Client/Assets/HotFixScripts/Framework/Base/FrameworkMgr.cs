@@ -11,6 +11,17 @@ namespace Framework
         public static EShutdownType ShutdownType { get; private set; } = EShutdownType.None;
         private static readonly LinkedList<IFramework> _gameFrameworkModules = new LinkedList<IFramework>();
 
+        // Update 时先拷一份再遍历：模块的 Update 里可能第一次访问某个还没创建的模块
+        // （例如事件回调里第一次取 CfgMgr），那会往链表里插入节点，
+        // 直接遍历 LinkedList 会抛 "Collection was modified"。
+        private static readonly List<IFramework> _updateCache = new List<IFramework>();
+
+        /// <summary>
+        /// 是否已经彻底关闭。彻底关闭后不再允许按需创建模块，避免退出/重启阶段
+        /// （例如 AddressableInstanceHandle.OnDestroy）把刚销毁的模块重新创建出来。
+        /// </summary>
+        public static bool IsShutdown { get; private set; }
+
         // 各模块的强类型缓存：Framework 内部和 GameEntry.FW 统一从这里取，
         // 避免每次都在 GetModule 里做接口名拼接 + Type.GetType + 链表扫描。
         // 注意：不能在模块构造函数里访问这些属性——CreateModule 是"先构造、后注册"，会造成重入创建。
@@ -45,7 +56,13 @@ namespace Framework
         /// <param name="realElapseSeconds">真实流逝时间，以秒为单位。</param>
         public static void Update(float elapseSeconds, float realElapseSeconds)
         {
-            foreach (IFramework module in _gameFrameworkModules)
+            _updateCache.Clear();
+            for (LinkedListNode<IFramework> node = _gameFrameworkModules.First; node != null; node = node.Next)
+            {
+                _updateCache.Add(node.Value);
+            }
+
+            foreach (IFramework module in _updateCache)
             {
                 module.Update(elapseSeconds, realElapseSeconds);
             }
@@ -71,6 +88,9 @@ namespace Framework
             // 缓存必须跟着失效：Shutdown 后模块链表可能已被清空，
             // 不清缓存的话 FrameworkMgr.ResMgr / FW.ResMgr 会拿到已销毁的实例。
             ResetModuleCache();
+
+            // 只有彻底关闭才禁止再创建模块；Restart 时模块链表仍然保留，下次访问复用已有实例。
+            IsShutdown = type == EShutdownType.Shutdown;
         }
 
         /// <summary>清空模块缓存。模块本身由 _gameFrameworkModules 管理，这里只处理强类型引用。</summary>
@@ -97,7 +117,40 @@ namespace Framework
         /// <remarks>如果要获取的游戏框架模块不存在，则自动创建该游戏框架模块。</remarks>
         public static T GetModule<T>() where T : class
         {
-            Type interfaceType = typeof(T);
+            Type moduleType = ResolveModuleType(typeof(T));
+            return GetModule(moduleType) as T;
+        }
+
+        /// <summary>
+        /// 尝试获取已创建的模块。找不到时返回 false，**不会触发模块创建**。
+        /// 用于退出阶段、销毁回调等"只想知道模块还在不在"的场景。
+        /// </summary>
+        public static bool TryGetModule<T>(out T module) where T : class
+        {
+            module = null;
+            if (IsShutdown)
+            {
+                return false;
+            }
+
+            Type moduleType = ResolveModuleType(typeof(T));
+            foreach (IFramework current in _gameFrameworkModules)
+            {
+                if (current.GetType() == moduleType)
+                {
+                    module = current as T;
+                    return module != null;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 由模块接口类型解析出实现类型，例如 Framework.IEventMgr -> Framework.EventMgr。
+        /// </summary>
+        private static Type ResolveModuleType(Type interfaceType)
+        {
             if (!interfaceType.IsInterface)
             {
                 throw new Exception($"You must get module by interface, but '{interfaceType.FullName}' is not.");
@@ -115,7 +168,7 @@ namespace Framework
                 throw new Exception($"Can not find Game Framework module type '{moduleName}'.");
             }
 
-            return GetModule(moduleType) as T;
+            return moduleType;
         }
 
         /// <summary>
@@ -144,6 +197,12 @@ namespace Framework
         /// <returns>要创建的游戏框架模块。</returns>
         private static IFramework CreateModule(Type moduleType)
         {
+            if (IsShutdown)
+            {
+                throw new InvalidOperationException(
+                    $"Framework 已经关闭，不能再创建模块 '{moduleType.FullName}'。请检查是否有销毁回调在 Shutdown 之后访问模块。");
+            }
+
             IFramework module = (IFramework)Activator.CreateInstance(moduleType);
             if (module == null)
             {

@@ -322,6 +322,7 @@ namespace Framework
             foreach (KeyValuePair<Type, FsmState> state in _states)
             {
                 state.Value.OnDestroy();
+                state.Value.DetachFsm();
             }
 
             _name = null;
@@ -360,7 +361,11 @@ namespace Framework
             _currentState.OnLeave();
             _currentStateTime = 0f;
             _currentState = state;
-            Debug.Log($"-----EnterState----- {_currentState.GetType().Name}");
+            // 正式包不打日志：状态机在战斗里可能每秒切几十次，Debug.Log 会带来明显开销。
+            if (Debug.isDebugBuild)
+            {
+                Debug.Log($"-----EnterState----- {_currentState.GetType().Name}");
+            }
             _currentState.OnEnter();
         }
     }

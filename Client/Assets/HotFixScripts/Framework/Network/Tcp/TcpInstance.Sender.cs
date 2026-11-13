@@ -39,6 +39,11 @@ namespace Framework
             public void Dispose()
             {
                 _disposed = true;
+                if (_thread != null && _thread.IsAlive && _thread != Thread.CurrentThread)
+                {
+                    _thread.Join(200);
+                }
+                _thread = null;
             }
 
             private void SendLoop()
@@ -93,9 +98,10 @@ namespace Framework
             private readonly int _compressThreshold = 0;
             private CSPacket Pack(IMessage msg)
             {
+                CSPacket packet = null;
                 try
                 {
-                    var packet = ReferencePool.Acquire<CSPacket>();
+                    packet = ReferencePool.Acquire<CSPacket>();
                     packet.id = ProtoTypeHelper.GetMsgId(msg.GetType());
                     if (packet.id == 0)
                     {
@@ -107,6 +113,10 @@ namespace Framework
 
                     packet.flag = 0;
                     var length = msg.CalculateSize();
+                    if (length > NetDefine.CSMaxMsgLen)
+                    {
+                        throw new Exception($"消息过大，无法发送: {msg.GetType()} size: {length} > {NetDefine.CSMaxMsgLen}");
+                    }
 
                     // 先序列化 msg 成为原始字节数组
                     using (var memStream = new MemoryStream(_bodyBuffer))
@@ -122,14 +132,23 @@ namespace Framework
                     packet.flag |= NetDefine.FlagCrypt;
                     //加密后字节数会变化, 因为会填充补齐数据
                     var buffer = _cryptor.Encrypt(_bodyBuffer, 0, length);
+                    if (buffer == null)
+                    {
+                        throw new Exception($"加密失败: {msg.GetType()}");
+                    }
                     length = buffer.Length;
                     var originLength = length;
 
                     // 压缩
-                    if ( originLength > _compressThreshold)
+                    if (originLength > _compressThreshold)
                     {
                         packet.flag |= NetDefine.FlagZip;
-                        length = ZipHelper.Zip(buffer, buffer.Length, _zipBuffer);
+                        var zipLength = ZipHelper.Zip(buffer, buffer.Length, _zipBuffer);
+                        if (zipLength <= 0)
+                        {
+                            throw new Exception($"压缩失败: {msg.GetType()}");
+                        }
+                        length = zipLength;
                         buffer = _zipBuffer;
                     }
 
@@ -152,6 +171,12 @@ namespace Framework
                 }
                 catch (Exception e)
                 {
+                    // 失败必须归还，否则每发一条异常消息就漏一个池对象。
+                    if (packet != null)
+                    {
+                        ReferencePool.Release(packet);
+                    }
+
                     Debug.LogException(e);
                     return null;
                 }

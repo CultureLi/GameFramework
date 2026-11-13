@@ -62,6 +62,14 @@ namespace Framework
         }
 
         /// <summary>
+        /// 有限状态机销毁时解除对状态机的引用，避免被销毁的 FSM 被状态对象一直持有。
+        /// </summary>
+        internal void DetachFsm()
+        {
+            _fsm = null;
+        }
+
+        /// <summary>
         /// 切换当前有限状态机状态。
         /// </summary>
         /// <typeparam name="TState">要切换到的有限状态机状态类型。</typeparam>

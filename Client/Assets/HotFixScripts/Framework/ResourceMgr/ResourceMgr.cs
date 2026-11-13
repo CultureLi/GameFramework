@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Policy;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.AddressableAssets.ResourceLocators;
@@ -52,32 +51,34 @@ namespace Framework
         {
             for (int i = 0; i < tryCount; i++)
             {
-                var uwr = UnityWebRequest.Get(path);
-                uwr.timeout = timeout;
-                yield return uwr.SendWebRequest();
-                if (uwr.result == UnityWebRequest.Result.Success)
+                using (var uwr = UnityWebRequest.Get(path))
                 {
-                    try
+                    uwr.timeout = timeout;
+                    yield return uwr.SendWebRequest();
+                    if (uwr.result == UnityWebRequest.Result.Success)
                     {
-                        completedCb?.Invoke(uwr.downloadHandler);
+                        try
+                        {
+                            completedCb?.Invoke(uwr.downloadHandler);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                        yield break;
                     }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
-                    yield break;
-                }
-                else
-                {
-                    if (i == tryCount - 1)
-                    {
-                        Debug.LogWarning($"Download failed: {path} error: {uwr.error}");
-                    }
-                    completedCb?.Invoke(null);
+
+                    Debug.LogWarning($"Download failed ({i + 1}/{tryCount}): {path} error: {uwr.error}");
                 }
 
-                yield return new WaitForSeconds(1f);
+                if (i < tryCount - 1)
+                {
+                    yield return new WaitForSeconds(1f);
+                }
             }
+
+            // 只有所有重试都失败才回调一次 null，避免调用方收到多次失败通知。
+            completedCb?.Invoke(null);
         }
 
         /// <summary>
@@ -305,13 +306,22 @@ namespace Framework
             {
                 handle.AddCompleted(_ =>
                 {
+                    if (handle.Status != AsyncOperationStatus.Succeeded || !handle.Result.Scene.IsValid())
+                    {
+                        Debug.LogError($"LoadSceneAsync '{scenePath}' failed.");
+                        return;
+                    }
+
                     var newScene = handle.Result.Scene;
                     handle.Result.ActivateAsync().AddCompleted(_ =>
                     {
                         SceneManager.SetActiveScene(newScene);
                     });
 
-                    UnloadSceneAsync(oldScene);
+                    if (oldScene.IsValid())
+                    {
+                        UnloadSceneAsync(oldScene);
+                    }
                 });
             }
 
@@ -323,8 +333,9 @@ namespace Framework
             var handle = SceneManager.UnloadSceneAsync(scene);
             handle.AddCompleted((_) =>
             {
+                // 只做资源卸载；GC.Collect 在卸载场景时调用会造成明显的帧卡顿，
+                // 需要回收时由 Loading 阶段或启动流程显式调用。
                 Resources.UnloadUnusedAssets();
-                GC.Collect();
             });
 
             return handle;
@@ -336,7 +347,6 @@ namespace Framework
             handle.AddCompleted((_) =>
             {
                 Resources.UnloadUnusedAssets();
-                GC.Collect();
             });
             return handle;
         }

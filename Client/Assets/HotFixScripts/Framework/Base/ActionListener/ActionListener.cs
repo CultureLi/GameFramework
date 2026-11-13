@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace Framework
@@ -11,7 +12,8 @@ namespace Framework
     {
         private readonly Dictionary<Type, IActionList<TArg>> _listeners = new();
 
-        private readonly Queue<ArgNode> _nodeQueue = new();
+        // 网络收包线程会往里塞，主线程 Update 里取，必须用线程安全队列。
+        private readonly ConcurrentQueue<ArgNode> _nodeQueue = new();
 
         public int NodeCount
         {
@@ -78,14 +80,27 @@ namespace Framework
         }
 
         /// <summary>
-        /// 派发事件（异步）放入队列，在Update中处理
+        /// 派发事件（异步）放入队列，在Update中处理。
+        /// 使用编译期类型 typeof(T) 作为派发键，与同步 Dispatch&lt;T&gt; 保持一致
+        /// （原来用 ev.GetType()，同一个 Broadcast 走同步/异步会命中不同的监听器）。
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="ev"></param>
         public void DispatchAsync<T>(T ev) where T : TArg
         {
-            var data = ArgNode.Spawn(ev);
-            _nodeQueue.Enqueue(data);
+            DispatchAsync(typeof(T), ev);
+        }
+
+        /// <summary>
+        /// 派发事件（异步），按指定类型派发。
+        /// 网络层拿到的是 IMessage 运行时对象，需要按它的真实类型派发。
+        /// </summary>
+        public void DispatchAsync(Type eventType, TArg ev)
+        {
+            if (eventType == null)
+            {
+                throw new ArgumentNullException(nameof(eventType));
+            }
+
+            _nodeQueue.Enqueue(ArgNode.Spawn(eventType, ev));
         }
 
         /// <summary>
@@ -95,10 +110,9 @@ namespace Framework
         public void Update(float elapseSeconds, float realElapseSeconds)
         {
             int msgCount = 0;
-            while (_nodeQueue.Count > 0 && msgCount < _maxCntPerFrame)
+            while (msgCount < _maxCntPerFrame && _nodeQueue.TryDequeue(out var node))
             {
                 msgCount++;
-                var node = _nodeQueue.Dequeue();
                 Dispatch(node.Type, node.Data);
                 ArgNode.UnSpawn(node);
             }
@@ -106,11 +120,10 @@ namespace Framework
 
         public void ClearNodes()
         {
-            foreach (var node in _nodeQueue)
+            while (_nodeQueue.TryDequeue(out var node))
             {
-                ReferencePool.Release(node);
+                ArgNode.UnSpawn(node);
             }
-            _nodeQueue.Clear();
         }
 
         public void Dispose()

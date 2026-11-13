@@ -32,6 +32,8 @@ namespace Framework
             public void Dispose()
             {
                 _isFinished = false;
+                _aes?.Dispose();
+                _aes = null;
             }
 
             private void GenerateAESKey()
@@ -136,6 +138,12 @@ namespace Framework
             /// <returns></returns>
             public byte[] Encrypt(byte[] buff, int offset, int length)
             {
+                if (_aes == null)
+                {
+                    Debug.LogError("Encrypt Error: AES key 尚未完成交换。");
+                    return null;
+                }
+
                 try
                 {
                     using var encryptor = _aes.CreateEncryptor();
@@ -157,6 +165,12 @@ namespace Framework
             /// <returns></returns>
             public byte[] Decrypt(byte[] buff, int offset, int length)
             {
+                if (_aes == null)
+                {
+                    Debug.LogError("Decrypt Error: AES key 尚未完成交换。");
+                    return null;
+                }
+
                 try
                 {
                     using var decryptor = _aes.CreateDecryptor();

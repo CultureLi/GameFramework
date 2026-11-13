@@ -527,31 +527,32 @@ namespace Framework
                         {
                             _cachedToReleaseObjects.Add(candidateObjects[i]);
                             candidateObjects.RemoveAt(i);
-                            continue;
                         }
                     }
 
                     toReleaseCount -= _cachedToReleaseObjects.Count;
                 }
 
-                for (int i = 0; toReleaseCount > 0 && i < candidateObjects.Count; i++)
+                if (toReleaseCount <= 0 || candidateObjects.Count == 0)
                 {
-                    for (int j = i + 1; j < candidateObjects.Count; j++)
-                    {
-                        if (candidateObjects[i].LastUseTime > candidateObjects[j].LastUseTime)
-                        {
-                            T temp = candidateObjects[i];
-                            candidateObjects[i] = candidateObjects[j];
-                            candidateObjects[j] = temp;
-                        }
-                    }
+                    return _cachedToReleaseObjects;
+                }
 
+                // 按最后一次使用时间从旧到新排序，取最旧的 N 个。
+                // 原实现是双重循环的选择排序（O(n²)），池子规模一大就很明显。
+                candidateObjects.Sort(s_lastUseTimeComparer);
+
+                int count = toReleaseCount < candidateObjects.Count ? toReleaseCount : candidateObjects.Count;
+                for (int i = 0; i < count; i++)
+                {
                     _cachedToReleaseObjects.Add(candidateObjects[i]);
-                    toReleaseCount--;
                 }
 
                 return _cachedToReleaseObjects;
             }
+
+            private static readonly Comparison<T> s_lastUseTimeComparer =
+                (a, b) => a.LastUseTime.CompareTo(b.LastUseTime);
 
             public void SetCanBeReleased(GameObject go, bool canBeReleased)
             {
