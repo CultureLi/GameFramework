@@ -24,14 +24,6 @@ namespace Framework
             private float _autoReleaseTime;
 
             /// <summary>
-            /// 预释放对象
-            /// </summary>
-            public Action<T> PreReleaseObject
-            {
-                get;set;
-            }
-
-            /// <summary>
             /// 初始化对象池的新实例。
             /// </summary>
             /// <param name="name">对象池名称。</param>
@@ -358,6 +350,32 @@ namespace Framework
             }
 
             /// <summary>
+            /// 强制移除对象（不检查 UnityEngine.Object 是否已被销毁）。
+            /// 对象已经被 Unity 销毁时，C# 包装对象和 instanceId 仍然存在，字典查找是安全的；
+            /// 真正会抛异常的是 Unspawn/ReleaseObject 里的假 null 检查，这里刻意跳过。
+            /// </summary>
+            public bool ForceRemoveObject(UnityEngine.Object target)
+            {
+                // 注意用 ReferenceEquals：Unity 的 == 对已销毁对象返回 true，这里要的是"C# 引用本身是否为空"。
+                if (ReferenceEquals(target, null))
+                    return false;
+
+                if (!_objectMap.TryGetValue(target, out var internalObject))
+                    return false;
+
+                if (_objects.TryGetValue(internalObject.Name, out var objectList))
+                {
+                    objectList.Remove(internalObject);
+                }
+
+                _objectMap.Remove(target);
+
+                internalObject.Release();
+                ReferencePool.Release(internalObject);
+                return true;
+            }
+
+            /// <summary>
             /// 释放对象池中的可释放对象。
             /// </summary>
             public override void Release()
@@ -446,16 +464,20 @@ namespace Framework
 
             public override void Shutdown()
             {
-                foreach ((var key, var value) in _objectMap)
+                // 先摘记录再逐个释放：Release 会触发对象自己的回调（例如 PrefabObjectPool 的
+                // OnInstanceDestroyed 可能反过来调用 ForceRemoveObject），
+                // 直接遍历 _objectMap 边释放边被改会抛 "Collection was modified"。
+                var toRelease = new List<Object<T>>(_objectMap.Values);
+                _objectMap.Clear();
+                _objects.Clear();
+                _cachedCanReleaseObjects.Clear();
+                _cachedToReleaseObjects.Clear();
+
+                foreach (var value in toRelease)
                 {
                     value.Release();
                     ReferencePool.Release(value);
                 }
-
-                _objects.Clear();
-                _objectMap.Clear();
-                _cachedCanReleaseObjects.Clear();
-                _cachedToReleaseObjects.Clear();
             }
 
             private Object<T> GetObject(UnityEngine.Object target)
@@ -530,8 +552,13 @@ namespace Framework
 
                 return _cachedToReleaseObjects;
             }
+
             public void SetCanBeReleased(GameObject go, bool canBeReleased)
             {
+                // GetObject 对 null 会抛异常；UI 关闭流程里可能拿到已销毁的引用，这里直接忽略。
+                if (go == null)
+                    return;
+
                 var obj = GetObject(go);
                 if (obj != null)
                     obj.CanBeReleased = canBeReleased;

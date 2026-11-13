@@ -22,7 +22,7 @@ namespace Framework
         {
             //mask.material = blurMaterial;
             template.SetActive(false);
-            _uiMgr = FrameworkMgr.GetModule<IUIManager>();
+            _uiMgr = FrameworkMgr.UIMgr;
             for (var type = EUIGroupType.HUD; type <= EUIGroupType.Tips; type++)
             {
                 var groupRoot = GameObject.Instantiate(template, transform);

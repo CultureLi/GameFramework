@@ -9,7 +9,7 @@ namespace Framework
 {
     public interface ISpriteMgr
     {
-        void Init(IResourceMgr resMgr);
+        void Init();
         Sprite LoadSprite(string spriteName);
         void ReleaseSprite(Sprite sprite);
     }

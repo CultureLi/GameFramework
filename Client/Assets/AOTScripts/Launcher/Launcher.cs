@@ -35,7 +35,7 @@ namespace Launcher
 
         IEnumerator LoadMetaData()
         {
-            Debug.Log("¼ÓÔØmetaDataList");
+            Debug.Log("load metaDataList");
             var localPath = Path.Combine(Application.streamingAssetsPath, "metaDataList.json");
             var req = UnityWebRequest.Get(localPath);
             yield return req.SendWebRequest();
@@ -52,7 +52,6 @@ namespace Launcher
                 yield return request.SendWebRequest();
 
                 int err = (int)HybridCLR.RuntimeApi.LoadMetadataForAOTAssembly(request.downloadHandler.data, HybridCLR.HomologousImageMode.SuperSet);
-                //Debug.Log($"²¹³äÔªÊı¾İ:{name}. ret:{err}");
             }
             Debug.Log("load meta data end....");
         }
@@ -83,12 +82,6 @@ namespace Launcher
             }
         }
 
-        /// <summary>
-        /// AppDomain ÖĞÊÇ·ñÒÑ¾­ÓĞÍ¬Ãû³ÌĞò¼¯¡£
-        /// ±à¼­Æ÷£¨Mono£©ÀïÈÈ¸ü³ÌĞò¼¯ÒÑ¾­ÓÉ Unity °´ asmdef ±àÒë²¢¼ÓÔØ£¬
-        /// ÔÙ Assembly.Load Ò»·İ»áµÃµ½µÚ¶şÌ×Í¬ÃûÀàĞÍ£¬µ¼ÖÂ ProtoTypeHelper
-        /// °ÑÃ¿¸ö proto ÏûÏ¢ÅĞ¶¨³ÉºÍ×Ô¼ºÅö×²¡£
-        /// </summary>
         static bool IsAssemblyLoaded(string name)
         {
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -103,12 +96,12 @@ namespace Launcher
         IEnumerator LoadHotFixDlls()
         {
             var sortedList = GetSortedDllList();
-            Debug.Log($"¼ÓÔØËùÓĞHotFixDll count:{sortedList.Count}");
+            Debug.Log($"HotFixDll count:{sortedList.Count}");
             foreach (var info in sortedList)
             {
                 if (IsAssemblyLoaded(info.name))
                 {
-                    Debug.Log($"[Launcher] ³ÌĞò¼¯ÒÑ¼ÓÔØ£¬Ìø¹ıÈÈ¸ü DLL: {info.name}");
+                    Debug.Log($"[Launcher] ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¼ï¿½ï¿½Ø£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¸ï¿½ DLL: {info.name}");
                     continue;
                 }
 
@@ -119,25 +112,24 @@ namespace Launcher
                 {
                     var bytes = File.ReadAllBytes(dllPath);
                     Assembly.Load(bytes);
-                    Debug.Log($"presistent-----¼ÓÔØDll³É¹¦{info.name}");
+                    Debug.Log($"presistent-----load dll: {info.name}");
                     continue;
                 }
 
-                //StreamingAssetsÖĞµÄÎÄ¼şÃ»°ì·¨ÓÃFile.ExistsÅĞ¶Ï
                 dllPath = Path.Combine(Application.streamingAssetsPath, "HotFixDll", $"{info.name}.dll.bytes");
                 Debug.Log($"streamingAsset dllPath: {dllPath}");
                 var request = UnityWebRequest.Get(dllPath);
                 yield return request.SendWebRequest();
                 if (request.result == UnityWebRequest.Result.Success)
                 {
-                    Debug.Log($"streamingAsset-----¼ÓÔØDll³É¹¦{info.name}");
                     Assembly.Load(request.downloadHandler.data);
+                    Debug.Log($"streamingAsset-----load dll: {info.name}");
                 }
             }
         }
 
         /// <summary>
-        /// °´ÒÀÀµË³Ğò¼ÓÔØ
+        /// æŠŠdllæ’ä¸ªåºï¼Œç¡®ä¿ä¾èµ–çš„dllå…ˆåŠ è½½
         /// </summary>
         /// <param name="remoteManifest"></param>
         /// <returns></returns>
@@ -177,20 +169,20 @@ namespace Launcher
 
             if (entranceAssembly == null)
             {
-                Debug.LogError("Ã»ÓĞÕÒµ½Entrance");
+                Debug.LogError("entranceAssembly is Null");
                 return;
             }
 
             Type entry = entranceAssembly.GetType("GameEntry.GameEntryMgr");
             if (entry == null)
             {
-                Debug.LogError("Ã»ÓĞÕÒµ½GameEntryMgr");
+                Debug.LogError("GameEntryMgr is Null");
                 return;
             }
             var method = entry.GetMethod("Entry");
             if (method == null)
             {
-                Debug.LogError("Ã»ÓĞÕÒµ½Entry Method");
+                Debug.LogError("Entry Method is Null");
                 return;
             }
             method.Invoke(null, null);

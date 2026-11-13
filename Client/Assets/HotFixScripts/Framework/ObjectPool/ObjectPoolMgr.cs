@@ -23,6 +23,8 @@ namespace Framework
         {
             _objectPools = new Dictionary<TypeNamePair, ObjectPoolBase>();
             _cachedAllObjectPools = new List<ObjectPoolBase>();
+            // 之前这里没有赋值，GetAllObjectPools(sort: true) 里的 List.Sort(null) 会直接抛异常。
+            _objectPoolComparer = (a, b) => string.CompareOrdinal(a.FullName, b.FullName);
         }
 
         /// <summary>
@@ -539,30 +541,6 @@ namespace Framework
             }
 
             ObjectPool<T> objectPool = new ObjectPool<T>(name, allowMultiSpawn, autoReleaseInterval, capacity, expireTime);
-            _objectPools.Add(typeNamePair, objectPool);
-            return objectPool;
-        }
-
-        private ObjectPoolBase InternalCreateObjectPool(Type objectType, string name, bool allowMultiSpawn, float autoReleaseInterval, int capacity, float expireTime, int priority)
-        {
-            if (objectType == null)
-            {
-                throw new Exception("Object type is invalid.");
-            }
-
-            if (!typeof(ObjectBase).IsAssignableFrom(objectType))
-            {
-                throw new Exception($"Object type '{objectType.FullName}' is invalid.");
-            }
-
-            TypeNamePair typeNamePair = new TypeNamePair(objectType, name);
-            if (HasObjectPool(objectType, name))
-            {
-                throw new Exception($"Already exist object pool '{typeNamePair}'.");
-            }
-
-            Type objectPoolType = typeof(ObjectPool<>).MakeGenericType(objectType);
-            ObjectPoolBase objectPool = (ObjectPoolBase)Activator.CreateInstance(objectPoolType, name, allowMultiSpawn, autoReleaseInterval, capacity, expireTime, priority);
             _objectPools.Add(typeNamePair, objectPool);
             return objectPool;
         }

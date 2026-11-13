@@ -39,13 +39,13 @@ namespace Framework
             UIPrefabPool = PrefabObjectPool.Create("UIPrefabPool", expireTime: 5);
         }
 
-        public void Init(IResourceMgr resMgr)
+        public void Init()
         {
             if (UIRoot != null)
             {
                 return;
             }
-            var handle = resMgr.InstantiateAsync("Assets/AssetBundles/UI/Root/UIRoot.prefab");
+            var handle = FrameworkMgr.ResMgr.InstantiateAsync("Assets/AssetBundles/UI/Root/UIRoot.prefab");
             handle.WaitForCompletion();
             UIRoot = handle.Result.GetComponent<UIRoot>();
             GameObject.DontDestroyOnLoad(handle.Result);

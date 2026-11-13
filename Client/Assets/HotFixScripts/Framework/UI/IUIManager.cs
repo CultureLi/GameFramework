@@ -10,16 +10,16 @@ namespace Framework
         /// <summary>
         /// UI资源根路径。
         /// </summary>
-        string UIAssetRootPath { get;}
+        string UIAssetRootPath { get; }
 
-        PrefabObjectPool UIPrefabPool { get;}
+        PrefabObjectPool UIPrefabPool { get; }
 
         UIRoot UIRoot
         {
             get;
         }
 
-        void Init(IResourceMgr resMgr);
+        void Init();
 
         /// <summary>
         /// 添加界面组。

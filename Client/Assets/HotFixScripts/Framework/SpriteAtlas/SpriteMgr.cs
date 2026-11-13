@@ -11,13 +11,12 @@ namespace Framework
     internal sealed partial class SpriteMgr : IFramework, ISpriteMgr
     {
         SpriteMapper _data;
-        IResourceMgr _resMgr;
-        public void Init(IResourceMgr resMgr)
+
+        public void Init()
         {
             AutoReleaseSprite.Init(this);
 
-            _resMgr = resMgr;
-            var op = resMgr.LoadAsset<SpriteMapper>("Assets/AssetBundles/GlobalData/SpriteMapper.asset");
+            var op = FrameworkMgr.ResMgr.LoadAsset<SpriteMapper>("Assets/AssetBundles/GlobalData/SpriteMapper.asset");
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 _data = op.Result;
@@ -41,7 +40,7 @@ namespace Framework
             {
                 return null;
             }
-            var op = _resMgr.LoadAsset<Sprite>(address);
+            var op = FrameworkMgr.ResMgr.LoadAsset<Sprite>(address);
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 return op.Result;
@@ -56,12 +55,12 @@ namespace Framework
             {
                 return;
             }
-            _resMgr.Release(sprite);
+            FrameworkMgr.ResMgr.Release(sprite);
         }
 
         public void Shutdown(EShutdownType type)
         {
-            _resMgr.Release(_data);
+            FrameworkMgr.ResMgr.Release(_data);
         }
 
         public void Update(float elapseSeconds, float realElapseSeconds)

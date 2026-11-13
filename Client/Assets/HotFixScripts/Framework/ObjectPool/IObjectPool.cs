@@ -145,6 +145,17 @@ namespace Framework
         bool ReleaseObject(UnityEngine.Object target);
 
         /// <summary>
+        /// 强制移除对象（不检查 UnityEngine.Object 是否已被销毁）。
+        /// 用于"对象已被 Unity 销毁、但池子里还留着它的记录"的场景：
+        /// <see cref="Unspawn(UnityEngine.Object)"/>/<see cref="ReleaseObject(UnityEngine.Object)"/>
+        /// 开头都对 target 做了假 null 检查并抛异常，无法处理这种情况。
+        /// 移除时会调用对象自己的 Release()，由对象决定是否销毁 GameObject / 释放句柄。
+        /// </summary>
+        /// <param name="target">要移除的对象（允许是已销毁的对象）。</param>
+        /// <returns>是否在池中找到了该记录并移除。</returns>
+        bool ForceRemoveObject(UnityEngine.Object target);
+
+        /// <summary>
         /// 释放对象池中的可释放对象。
         /// </summary>
         void Release();
@@ -173,6 +184,20 @@ namespace Framework
         /// </summary>
         void ReleaseAllUnused();
 
+        /// <summary>
+        /// 设置对象是否允许被自动释放（UI 模块用它控制回收时机）。
+        /// </summary>
         void SetCanBeReleased(GameObject go, bool canBeReleased);
+    }
+
+    public interface IInstanceOwner
+    {
+        /// <summary>
+        /// 实例被销毁时的回调。
+        /// 用 int 而不是 GameObject：回调发生在 OnDestroy 期间，此时 GameObject 已经是
+        /// Unity 的"假 null"，按引用传递没有意义；GetInstanceID 的结果在销毁后依然稳定。
+        /// </summary>
+        /// <param name="instanceId">被销毁实例的 instanceId。</param>
+        void OnInstanceDestroyed(int instanceId);
     }
 }

@@ -27,7 +27,7 @@ namespace Framework
 
         public LocalizationMgr()
         {
-            _cfgMgr = FrameworkMgr.GetModule<IConfigMgr>();
+            _cfgMgr = FrameworkMgr.CfgMgr;
             Initialize();
         }
 
