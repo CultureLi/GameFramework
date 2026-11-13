@@ -16,7 +16,7 @@ namespace Framework
 
         }
 
-        public override void OnBeforeOpenUI(UIViewWrapper wrapper)
+        public override void OnBeforeOpenUI(string name, ViewData userData)
         {
             // 隐藏主界面
             UIMgr.HideAll(EUIGroupType.HUD);

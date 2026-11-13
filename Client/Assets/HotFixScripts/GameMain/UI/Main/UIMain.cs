@@ -31,7 +31,7 @@ namespace GameMain.UI
 
         public void OpenRole()
         {
-            FW.UIMgr.OpenWnd("Setting/UISetting");
+            FW.UIMgr.OpenPopup("Setting/UISetting");
         }
 
         public void OpenPopup1()

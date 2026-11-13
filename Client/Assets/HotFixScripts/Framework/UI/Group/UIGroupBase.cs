@@ -8,8 +8,8 @@ namespace Framework
     public enum EUIGroupType
     {
         HUD = 1, // 主界面
-        Wnd, // 一级界面（活动 / 背包 / 商店 / 角色）
-        Popup, // 弹窗界面（二级界面 / 消息框 / MsgBox)
+        Wnd, // 全屏一级界面（活动 / 背包 / 商店 / 角色）
+        Popup, // 弹窗二级界面（确认框 / MsgBox / )
         Tips, // 提示信息（飘字、气泡、跑马灯等）
     }
 
@@ -101,6 +101,7 @@ namespace Framework
                 return;
             }
 
+            OnBeforeOpenUI(name, userData);
             // 添加到加载列表中
             _loadingUIs.Add(name);
 
@@ -155,12 +156,11 @@ namespace Framework
             }
 
             var wrapper = UIViewWrapper.Create(this, name, userData, view);
-            OnBeforeOpenUI(wrapper);
             DoOpenUI(wrapper);
             OnAfterOpenUI(wrapper);
         }
 
-        public virtual void OnBeforeOpenUI(UIViewWrapper wrapper)
+        public virtual void OnBeforeOpenUI(string name, ViewData userData)
         {
 
         }
@@ -175,7 +175,7 @@ namespace Framework
 
         public virtual void OnAfterOpenUI(UIViewWrapper wrapper)
         {
-            
+
         }
 
         public bool HasUI(string name)
@@ -192,7 +192,7 @@ namespace Framework
         {
             _viewWrappers.Remove(wrapper);
             RefreshSortingOrder();
-            OnBeforeOpenUI(wrapper);
+            OnBeforeOpenUI(wrapper.assetPath, wrapper.Data);
             DoOpenUI(wrapper);
             OnAfterOpenUI(wrapper);
         }
@@ -205,7 +205,7 @@ namespace Framework
         private void RefreshSortingOrder()
         {
             var cnt = _viewWrappers.Count;
-            for (var idx = 0; idx < cnt; idx ++)
+            for (var idx = 0; idx < cnt; idx++)
             {
                 _viewWrappers[idx].SetSortingOrder(CalculateOrder(idx));
             }

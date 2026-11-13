@@ -15,7 +15,7 @@ namespace Framework
 
         }
 
-        public override void OnBeforeOpenUI(UIViewWrapper wrapper)
+        public override void OnBeforeOpenUI(string name, ViewData userData)
         {
             UIMgr.UIRoot.ShowBlurMask(true);
         }
@@ -29,7 +29,6 @@ namespace Framework
             else
             {
                 UIMgr.UIRoot.ShowBlurMask(false);
-                UIMgr.RefocusTopUI(EUIGroupType.HUD);
             }
         }
 

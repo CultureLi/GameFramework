@@ -19,7 +19,7 @@ namespace Framework
         private ViewBase _view;
         public Canvas Canvas => _canvas;
         private Canvas _canvas;
-        private ViewData _data;
+        public ViewData Data { get; private set; }
         private bool _initShow = true;
         // 在prefab中自定义的层级，在Group层级基础+自定义 = 该ui最终层级
         public int CustomSortingOrder
@@ -31,7 +31,7 @@ namespace Framework
             var info = ReferencePool.Acquire<UIViewWrapper>();
             info.UIGroup = group;
             info.assetPath = assetPath;
-            info._data = data;
+            info.Data = data;
             info._view = view;
             info._view.Wrapper = info;
             info._canvas = view.GetComponent<Canvas>();
@@ -84,7 +84,7 @@ namespace Framework
 
         public void UpdateViewData(ViewData data)
         {
-            _data = data;
+            Data = data;
         }
 
         public void SetParent(Transform parent)
@@ -107,7 +107,7 @@ namespace Framework
         {
             _view.gameObject.SetActive(true);
             SetSortingOrder(sortingOrder);
-            _view.OnShow(_initShow, _data);
+            _view.OnShow(_initShow, Data);
             _initShow = false;
         }
 
@@ -144,7 +144,7 @@ namespace Framework
             _initShow = true;
             assetPath = null;
             UIGroup = null;
-            _data = null;
+            Data = null;
             _view = null;
             _canvas = null;
             CustomSortingOrder = 0;

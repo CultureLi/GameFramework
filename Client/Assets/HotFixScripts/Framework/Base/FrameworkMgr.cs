@@ -199,8 +199,7 @@ namespace Framework
         {
             if (IsShutdown)
             {
-                throw new InvalidOperationException(
-                    $"Framework 已经关闭，不能再创建模块 '{moduleType.FullName}'。请检查是否有销毁回调在 Shutdown 之后访问模块。");
+                return null;
             }
 
             IFramework module = (IFramework)Activator.CreateInstance(moduleType);
