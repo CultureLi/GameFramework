@@ -159,7 +159,7 @@ MonoBehaviour:
     LabelMode: 0
     simplified: 0
     addressReplacement: 
-  - path: ^Assets/AssetBundles/MapData/(?<map>[^/]+)/.*\.asset$
+  - path: ^Assets/AssetBundles/MapData/(?<map>[^/]+)/.+\.[^/]+$
     matchType: 1
     groupName: MapData
     groupTemplate: {fileID: 11400000, guid: 14630cefdb9d6af418ce7b8d0526d1b2, type: 2}

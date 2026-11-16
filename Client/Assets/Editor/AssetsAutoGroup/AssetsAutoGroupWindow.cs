@@ -402,6 +402,8 @@ namespace GameFramework.EditorTools.AssetsAutoGroup
             // 打包资源
             Add(specs, "Assets/AssetBundles/GlobalData", "GlobalData", 1, "");
             Add(specs, "Assets/AssetBundles/MapData", "MapData", 1, "asset");
+            // 单机寻路使用的 navmesh.bytes 也随地图数据放在 MapData/<场景名>/ 下。
+            Add(specs, "Assets/AssetBundles/MapData", "MapData", 1, "bytes");
             Add(specs, "Assets/AssetBundles/Prefab", "Prefab", 1, "prefab");
             Add(specs, "Assets/AssetBundles/Scene", "Scene", 1, "unity");
             Add(specs, "Assets/AssetBundles/UI", "UI", 1, "prefab");

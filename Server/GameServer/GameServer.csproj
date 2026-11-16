@@ -51,9 +51,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Unity 导出的导航数据，发布时一起拷贝 -->
-    <None Include="..\NavData\navmesh.rnav" Link="NavData\navmesh.rnav"
-          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Unity 按场景导出的导航数据，发布时保持 MapData/<场景名>/navmesh.rnav 结构一起拷贝 -->
+    <None Include="..\MapData\**\navmesh.rnav"
+          Link="MapData\%(RecursiveDir)navmesh.rnav"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

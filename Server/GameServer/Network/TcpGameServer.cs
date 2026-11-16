@@ -43,6 +43,7 @@ public sealed class TcpGameServer
         Rsa = RSA.Create(2048);
         PublicKeyXml = BuildPublicKeyXml(Rsa);
         ConfigManager = new ServerConfigMgr(config.ConfigDirectory);
+        Log.Info($"[server] 场景={config.SceneName} 地图数据={config.MapDataDirectory} 导航数据={config.NavMeshPath}");
         _navMesh = NavMeshWorld.Load(config.NavMeshPath);
         _mapData = MapDataStore.Load(config.MapDataDirectory, ConfigManager);
         _gateAccess = new GateAccessStore(_mapData.Gates);

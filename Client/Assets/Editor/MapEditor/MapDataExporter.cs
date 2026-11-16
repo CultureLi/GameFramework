@@ -178,19 +178,19 @@ namespace MapEditor
                     MakeAddressable(prefabPath, "Prefab", prefabPath, result);
 
                 if (HasModule(modules, MapExportModule.Building))
-                    MakeAddressable($"{folder}/BuildingData.asset", "CommonData",
+                    MakeAddressable($"{folder}/BuildingData.asset", "MapData",
                         $"{folder}/BuildingData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Decorate))
-                    MakeAddressable($"{folder}/DecorateData.asset", "CommonData",
+                    MakeAddressable($"{folder}/DecorateData.asset", "MapData",
                         $"{folder}/DecorateData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Resource))
-                    MakeAddressable($"{folder}/ResourceData.asset", "CommonData",
+                    MakeAddressable($"{folder}/ResourceData.asset", "MapData",
                         $"{folder}/ResourceData.asset", result);
 
                 if (HasModule(modules, MapExportModule.Obstacle))
-                    MakeAddressable($"{folder}/ObstacleData.asset", "CommonData",
+                    MakeAddressable($"{folder}/ObstacleData.asset", "MapData",
                         $"{folder}/ObstacleData.asset", result);
             }
 

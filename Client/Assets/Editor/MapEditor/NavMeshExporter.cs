@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using GameFramework.Level;
+using MapEditor;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -44,18 +47,104 @@ namespace RecastNavigation
         }
 
         /// <summary>
-        /// 服务端实际读取的 .rnav 路径：GameServer.csproj 把 Server/NavData/navmesh.rnav 链接进了
-        /// 各个构建输出，所以这里直接固定到仓库里的这一份，而不是跟当前打开的场景走。
+        /// 当前导出使用的场景名（与 MapDataExporter 一致）。
+        /// </summary>
+        public static string GetSceneName()
+        {
+            return MapEditorUtils.SanitizeFileName(MapEditorUtils.GetMapName());
+        }
+
+        /// <summary>
+        /// 服务端导航数据：&lt;仓库根&gt;/Server/MapData/&lt;场景名&gt;/navmesh.rnav
         /// </summary>
         public static string GetServerNavDataPath()
         {
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "..", "Server", "NavData", "navmesh.rnav"));
+            string repoRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            return Path.Combine(repoRoot, "Server", "MapData", GetSceneName(), "navmesh.rnav");
         }
 
-        /// <summary>给 MapEditor 窗口用的导出入口：直接写到 Server/NavData/navmesh.rnav。</summary>
+        /// <summary>
+        /// 客户端导航数据：Assets/AssetBundles/MapData/&lt;场景名&gt;/navmesh.bytes
+        /// </summary>
+        public static string GetClientNavDataPath()
+        {
+            return Path.GetFullPath(Path.Combine(
+                Application.dataPath, "AssetBundles", "MapData", GetSceneName(), "navmesh.bytes"));
+        }
+
+        public static string GetClientNavDataAssetPath()
+        {
+            return "Assets/AssetBundles/MapData/" + GetSceneName() + "/navmesh.bytes";
+        }
+
+        /// <summary>
+        /// 给 MapEditor 窗口用的导出入口：服务端和客户端都写到各自 MapData/&lt;场景名&gt; 下，
+        /// 同时保留旧路径副本，兼容现有服务器配置和工具。
+        /// </summary>
         public static bool ExportToServerNavData()
         {
-            return Export(GetServerNavDataPath());
+            string serverPath = GetServerNavDataPath();
+            if (!Export(serverPath))
+                return false;
+
+            string clientPath = GetClientNavDataPath();
+            CopyNavMesh(serverPath, clientPath);
+
+            // 兼容旧路径：Server/NavData 与 Resources/NavData 仍保留一份。
+            string repoRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            CopyNavMesh(serverPath,
+                Path.Combine(repoRoot, "Server", "NavData", "navmesh.rnav"));
+            CopyNavMesh(serverPath,
+                Path.Combine(Application.dataPath, "Resources", "NavData", "navmesh.bytes"));
+
+            AssetDatabase.Refresh();
+            AssetDatabase.ImportAsset(GetClientNavDataAssetPath());
+            AssetDatabase.ImportAsset("Assets/Resources/NavData/navmesh.bytes");
+            MakeAddressable(GetClientNavDataAssetPath());
+
+            Debug.Log("[NavMeshExporter] 服务端导航数据: " + serverPath);
+            Debug.Log("[NavMeshExporter] 客户端导航数据: " + clientPath);
+            return true;
+        }
+
+        private static void CopyNavMesh(string source, string destination)
+        {
+            string directory = Path.GetDirectoryName(destination);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            File.Copy(source, destination, true);
+        }
+
+        private static void MakeAddressable(string assetPath)
+        {
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            if (settings == null)
+            {
+                Debug.LogWarning("[NavMeshExporter] Addressables 未初始化，导航数据需要手动加入 Addressables");
+                return;
+            }
+
+            string guid = AssetDatabase.AssetPathToGUID(assetPath);
+            if (string.IsNullOrEmpty(guid))
+            {
+                Debug.LogWarning("[NavMeshExporter] 资源没有 GUID: " + assetPath);
+                return;
+            }
+
+            var group = settings.FindGroup("MapData") ?? settings.DefaultGroup;
+            if (group == null)
+            {
+                Debug.LogWarning("[NavMeshExporter] 找不到 MapData 分组，导航数据未加入 Addressables");
+                return;
+            }
+
+            var entry = settings.CreateOrMoveEntry(guid, group, false, false);
+            if (entry == null)
+                return;
+
+            entry.address = assetPath;
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryModified, entry, false, true);
         }
 
         private static bool Export(string path)

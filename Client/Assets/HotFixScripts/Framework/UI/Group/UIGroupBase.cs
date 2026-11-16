@@ -46,7 +46,7 @@ namespace Framework
             UIMgr = uiMgr;
             Root = root;
             GroupType = groupType;
-            _groupLayer = (int)GroupType * 10000;
+            _groupLayer = (int)GroupType * 100;
         }
 
         /// <summary>

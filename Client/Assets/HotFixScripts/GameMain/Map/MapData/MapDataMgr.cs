@@ -49,7 +49,12 @@ namespace GameMain
             _pending = 4;
 
             Load<BuildingData>($"{basePath}/BuildingData.asset",
-                data => { _building = data; OnOneDone(); },
+                data =>
+                {
+                    _building = data;
+                    PathfindingMgr.I?.SetLocalBuildingData(data);
+                    OnOneDone();
+                },
                 () => OnLoadFailed("BuildingData"));
 
             Load<DecorateData>($"{basePath}/DecorateData.asset",

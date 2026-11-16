@@ -24,7 +24,7 @@ namespace GameEntry
         }
         private void OnDestroy()
         {
-            FW.FsmMgr.DestroyFsm(_stageFsm);
+            FW.FsmMgr?.DestroyFsm(_stageFsm);
         }
     }
 }

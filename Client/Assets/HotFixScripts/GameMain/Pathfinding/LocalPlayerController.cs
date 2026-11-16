@@ -44,6 +44,40 @@ namespace GameMain
             transform.rotation = Quaternion.identity;
         }
 
+        /// <summary>玩家脚底世界坐标（导航网格高度）。</summary>
+        public Vector3 FeetPosition => transform.position - Vector3.up * kVisualYOffset;
+
+        /// <summary>单机模式：直接应用客户端 Recast 计算出的路径。</summary>
+        public void ApplyLocalPath(List<Vector3> corners)
+        {
+            if (corners == null || corners.Count == 0)
+                return;
+
+            _pathId++;
+            _corners.Clear();
+            _corners.AddRange(corners);
+
+            transform.position = new Vector3(
+                corners[0].x,
+                corners[0].y + kVisualYOffset,
+                corners[0].z);
+
+            _cornerIndex = _corners.Count > 1 ? 1 : _corners.Count;
+            _moving = _cornerIndex < _corners.Count;
+
+            if (_moving)
+            {
+                EnsureMarchLine();
+                RefreshMarchLine();
+            }
+            else
+            {
+                _marchLine?.SetActive(false);
+            }
+
+            Debug.Log($"[Path] 单机路径 pathId={_pathId} corners={_corners.Count} speed={_speed}");
+        }
+
         /// <summary>服务端确认后的移动速度；正在移动时立即生效。</summary>
         public void SetMoveSpeed(float speed)
         {
@@ -101,6 +135,13 @@ namespace GameMain
 
             _seq++;
             _marchLine?.SetActive(false);
+
+            if (GameModeSettings.IsSinglePlayer)
+            {
+                PathfindingMgr.I?.RequestLocalPath(target);
+                return;
+            }
+
             FW.NetMgr.SendMsg(new PathFindReq
             {
                 Seq = _seq,
@@ -348,8 +389,9 @@ namespace GameMain
 
         private void OnGUI()
         {
+            string mode = GameModeSettings.IsSinglePlayer ? "单机" : "联机";
             GUI.Label(new Rect(12f, 12f, 760f, 24f),
-                "左键点击地面寻路；G 开关所有关卡门（服务端权威）");
+                $"{mode}模式：左键点击地面寻路；G 开关所有关卡门");
         }
 
         private static Vec3 ToVec3(Vector3 value) => new Vec3
