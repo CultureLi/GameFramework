@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 using Luban.DataLoader;
 using Luban.Pipeline;
 using Luban.Schema;
@@ -95,11 +95,11 @@ internal static class Program
             "-t", "client",
             "-c", "cs-bin","cs-lazyload-bin",
             "-d", "bin", "bin-offsetlength",
-            "--conf", "E:\\Work\\GameFramework\\Client\\DataTables\\luban.conf",
+            "--conf", "E:\\Work\\GameFramework\\DataTables\\luban.conf",
             "-x", "outputCodeDir=E:\\Work\\GameFramework\\Client\\Assets\\HotFixScripts\\GameMain\\Config\\Gen",
             "-x", "outputDataDir=E:\\Work\\GameFramework\\Client\\Assets\\StreamingAssets\\Config",
             "-x", "pathValidator.rootDir=E:\\Work\\GameFramework\\Client",
-            "--customTemplateDir","E:\\Work\\GameFramework\\Client\\Tools\\Luban\\Templates",
+            "--customTemplateDir","E:\\Work\\GameFramework\\Tools\\Luban\\Templates",
             "--i18nTable", "I18nCfg",
             "--genCodeExclude", "I18nCfg","LanguageCfg",
             "--genOffsetTables", "ItemSummaryCfg","ResourceSummaryCfg",

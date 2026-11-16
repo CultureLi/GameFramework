@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <!-- HybridCLR 热更新代码会引用 DotRecast，防止 IL2CPP 裁剪掉导航类型。 -->
+  <assembly fullname="DotRecast.Core" preserve="all" />
+  <assembly fullname="DotRecast.Detour" preserve="all" />
+</linker>

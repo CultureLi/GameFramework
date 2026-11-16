@@ -19,6 +19,11 @@ public class CsharpBinCodeTarget : CsharpCodeTargetBase
 
         foreach (var table in ctx.ExportTables)
         {
+            if (ctx.Assembly.GenCodeExclude.Contains(table.PureName))
+            {
+                continue;
+            }
+
             if (ctx.Assembly.I18nTableName.Contains(table.PureName))
             {
                 continue;
