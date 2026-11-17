@@ -109,6 +109,8 @@ namespace GameMain
         Rect _loadRect;
         /// <summary>下一次重算加载集合的时刻。</summary>
         float _nextRefreshTime;
+        /// <summary>节点是否处于激活状态。区域切换时节点会被隐藏，异步回调要据此丢弃结果。</summary>
+        bool _active = true;
 
         /// <summary>视口四角，只给自己投射的回退路径用。既然从它们身上只取一个外接矩形，
         /// 四个角的先后顺序就无关紧要了。</summary>
@@ -130,6 +132,49 @@ namespace GameMain
         void Start()
         {
             _pool = PrefabObjectPool.Create(poolName, poolCapacity, poolExpireTime);
+        }
+
+        private void OnEnable()
+        {
+            // Midgard / OpenWorld 区域切换时会反复启用/禁用节点：
+            // 重新启用后立刻重新计算需要加载的地块。
+            _active = true;
+            _nextRefreshTime = 0f;
+        }
+
+        private void OnDisable()
+        {
+            _active = false;
+            _wantedThisPass.Clear();
+            _pendingUnloadAt.Clear();
+
+            // 编辑器停止运行 / 程序退出时，框架的对象池可能已经先销毁，
+            // 真正回收交给 OnDestroy 里的保护逻辑处理。
+            if (FrameworkMgr.ShutdownType == EShutdownType.Shutdown)
+                return;
+
+            UnloadAll();
+        }
+
+        /// <summary>把当前已经加载的地块全部还回池里。</summary>
+        void UnloadAll()
+        {
+            if (_pool == null)
+            {
+                _loaded.Clear();
+                return;
+            }
+
+            foreach (var pair in _loaded)
+            {
+                if (pair.Value == null)
+                    continue;
+
+                try { _pool.UnSpawn(pair.Value); }
+                catch { /* 池比我们先销毁 —— 忽略 */ }
+            }
+
+            _loaded.Clear();
         }
 
         void OnDestroy()
@@ -299,8 +344,8 @@ namespace GameMain
                 _loading.Remove(key);
                 if (go == null) return;
 
-                // 异步这段时间里相机可能已经走开了，不再需要就直接还回池里。
-                if (!_wantedThisPass.Contains(key) && !IsWantedNow(key))
+                // 异步这段时间里相机可能已经走开了，或者整个区域已经被隐藏。
+                if (!_active || (!_wantedThisPass.Contains(key) && !IsWantedNow(key)))
                 {
                     _pool.UnSpawn(go);
                     return;

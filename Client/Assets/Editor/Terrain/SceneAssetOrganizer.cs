@@ -18,7 +18,7 @@ namespace GameFramework.EditorTools.TerrainGen
     /// <item>Material  → <c>Assets/Arts/Map/&lt;场景名&gt;/Material</c></item>
     /// <item>Texture   → <c>Assets/Arts/Map/&lt;场景名&gt;/Texture</c></item>
     /// <item>Shader    → <c>Assets/Arts/Shader/&lt;场景名&gt;</c>（不放在 Map 下）</item>
-    /// <item>地块预制体 → <c>Assets/Arts/Map/&lt;场景名&gt;/Chunk/&lt;块名&gt;/&lt;块名&gt;.prefab</c></item>
+    /// <item>地块预制体 → <c>Assets/Arts/Map/&lt;场景名&gt;/Chunk/&lt;块名&gt;.prefab</c>（平铺，和 WorldChunkStreaming 的加载路径一致）</item>
     /// </list>
     ///
     /// 用法：
@@ -32,7 +32,7 @@ namespace GameFramework.EditorTools.TerrainGen
     ///       主资源类型归类，而不是按文件名或目录名猜。</item>
     /// <item>创建或清空 Chunk / Mesh / Material / Texture / Shader 五个目标目录。</item>
     /// <item>把源预制体里每个 <c>OpenWorldTerrainData x(i) y(j)</c> 节点单独存成预制体，
-    ///       放进 <c>.../Chunk/OpenWorldTerrainData x(i) y(j)/</c>。</item>
+    ///       平铺放进 <c>.../Chunk/OpenWorldTerrainData x(i) y(j).prefab</c>。</item>
     /// <item>其余资源按类型整批 <see cref="AssetDatabase.MoveAsset"/> 到对应目录。</item>
     /// </list>
     ///
@@ -63,7 +63,7 @@ namespace GameFramework.EditorTools.TerrainGen
         // ---------------------------------------------------------------- 菜单入口
 
         /// <summary>只有选中了文件夹才让菜单项可点。</summary>
-        //[MenuItem("Assets/整理场景资产", true, 1001)]
+        [MenuItem("Assets/整理场景资产", true, 1001)]
         static bool ValidateOrganize()
         {
             foreach (string folder in GetSelectedFolders())
@@ -71,7 +71,7 @@ namespace GameFramework.EditorTools.TerrainGen
             return false;
         }
 
-        //[MenuItem("Assets/整理场景资产", false, 1001)]
+        [MenuItem("Assets/整理场景资产", false, 1001)]
         static void Organize()
         {
             var folders = GetSelectedFolders();
@@ -422,16 +422,14 @@ namespace GameFramework.EditorTools.TerrainGen
                         throw new System.OperationCanceledException("用户取消");
                     }
 
-                    string chunkFolder = plan.ChunkRoot + "/" + chunkName;
-                    EnsureFolder(chunkFolder);
-
                     // 提到预览场景的根上，世界坐标保持不变：TerrainToMesh 已经把每块的世界坐标
                     // 烘进了 localPosition，容器和根又都是单位变换，所以存出来的预制体
                     // 根节点就带着正确的位置，和 WorldChunkStreaming 里 forcePositionByIndex=false 的约定一致。
+                    string chunkAssetPath = plan.ChunkRoot + "/" + chunkName + ".prefab";
                     chunk.SetParent(null, true);
 
                     bool ok;
-                    PrefabUtility.SaveAsPrefabAsset(chunk.gameObject, chunkFolder + "/" + chunkName + ".prefab", out ok);
+                    PrefabUtility.SaveAsPrefabAsset(chunk.gameObject, chunkAssetPath, out ok);
                     if (ok) savedPrefabs++;
                     else Debug.LogError("[整理场景资产] 预制体保存失败：" + chunkName, contents);
                 }
@@ -468,7 +466,7 @@ namespace GameFramework.EditorTools.TerrainGen
 
             var sb = new StringBuilder();
             sb.AppendLine("[整理场景资产] " + plan.SceneName + " 整理完成");
-            sb.AppendLine("  地块预制体  " + savedPrefabs + "/" + plan.ChunkNames.Count + "  -> " + plan.ChunkRoot + "/<块名>/<块名>.prefab");
+            sb.AppendLine("  地块预制体  " + savedPrefabs + "/" + plan.ChunkNames.Count + "  -> " + plan.ChunkRoot + "/<块名>.prefab");
             sb.AppendLine("  Mesh        " + movedMeshes + "/" + plan.Meshes.Count + "  -> " + plan.MeshRoot);
             sb.AppendLine("  材质        " + movedMaterials + "/" + plan.Materials.Count + "  -> " + plan.MaterialRoot);
             sb.AppendLine("  贴图        " + movedTextures + "/" + plan.Textures.Count + "  -> " + plan.TextureRoot);

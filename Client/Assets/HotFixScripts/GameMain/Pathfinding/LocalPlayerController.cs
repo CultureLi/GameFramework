@@ -47,6 +47,24 @@ namespace GameMain
         /// <summary>玩家脚底世界坐标（导航网格高度）。</summary>
         public Vector3 FeetPosition => transform.position - Vector3.up * kVisualYOffset;
 
+        /// <summary>
+        /// 直接传送到某个位置并停止当前移动。
+        /// 用于 Midgard / OpenWorld 区域切换后落到新地图的导航网格出生点。
+        /// </summary>
+        public void Teleport(Vector3 spawn)
+        {
+            _spawn = spawn;
+            _corners.Clear();
+            _cornerIndex = 0;
+            _moving = false;
+            _pathId++;
+
+            _marchLine?.SetActive(false);
+
+            transform.position = new Vector3(spawn.x, spawn.y + kVisualYOffset, spawn.z);
+            transform.rotation = Quaternion.identity;
+        }
+
         /// <summary>单机模式：直接应用客户端 Recast 计算出的路径。</summary>
         public void ApplyLocalPath(List<Vector3> corners)
         {
@@ -92,6 +110,10 @@ namespace GameMain
 
         private void HandleClick()
         {
+            // 建造 / 移动模式下左键用于放置建筑，不再触发寻路。
+            if (CityBuildCtrl.IsEditing)
+                return;
+
             if (!Input.GetMouseButtonDown(0))
                 return;
 
@@ -121,6 +143,10 @@ namespace GameMain
                     PathfindingMgr.I?.RequestGateInfo(gate.InstanceId);
                     return;
                 }
+
+                // 内城建筑：短按不寻路，长按交给 CityBuildCtrl 进入移动状态。
+                if (hit.collider != null && hit.collider.GetComponentInParent<CityBuilding>() != null)
+                    return;
 
                 target = hit.point;
             }

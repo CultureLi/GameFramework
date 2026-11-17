@@ -14,5 +14,11 @@ namespace GameMain
         /// 烘焙 NavMesh 时会被当成阻挡。装饰物则会被忽略，不影响导航网格。
         /// </summary>
         Obstacle = 3,
+
+        /// <summary>
+        /// 可建造区域：不对应任何配置表，编辑器中拖拽画出绿色矩形；
+        /// 导出矩形的 Pos/Size/RotationY，运行时据此生成内城的建造网格。
+        /// </summary>
+        BuildableArea = 4,
     }
 }

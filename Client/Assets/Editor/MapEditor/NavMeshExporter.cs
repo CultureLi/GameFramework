@@ -36,16 +36,6 @@ namespace RecastNavigation
             public bool open;
         }
 
-        //[MenuItem("Tools/RecastNavigationServer/Export NavMesh")]
-        public static void ExportActiveScene()
-        {
-            string path = EditorUtility.SaveFilePanel("Export NavMesh (.rnav)", Application.dataPath, "navmesh", "rnav");
-            if (string.IsNullOrEmpty(path))
-                return;
-
-            Export(path);
-        }
-
         /// <summary>
         /// 当前导出使用的场景名（与 MapDataExporter 一致）。
         /// </summary>
@@ -78,10 +68,12 @@ namespace RecastNavigation
         }
 
         /// <summary>
-        /// 给 MapEditor 窗口用的导出入口：服务端和客户端都写到各自 MapData/&lt;场景名&gt; 下，
-        /// 同时保留旧路径副本，兼容现有服务器配置和工具。
+        /// 给 MapEditor 窗口用的导出入口：
+        ///   服务端：&lt;仓库根&gt;/Server/MapData/&lt;场景名&gt;/navmesh.rnav
+        ///   客户端：Assets/AssetBundles/MapData/&lt;场景名&gt;/navmesh.bytes
+        /// 只写这两处，不再保留旧路径副本。
         /// </summary>
-        public static bool ExportToServerNavData()
+        public static bool ExportNavMesh()
         {
             string serverPath = GetServerNavDataPath();
             if (!Export(serverPath))
@@ -90,16 +82,8 @@ namespace RecastNavigation
             string clientPath = GetClientNavDataPath();
             CopyNavMesh(serverPath, clientPath);
 
-            // 兼容旧路径：Server/NavData 与 Resources/NavData 仍保留一份。
-            string repoRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
-            CopyNavMesh(serverPath,
-                Path.Combine(repoRoot, "Server", "NavData", "navmesh.rnav"));
-            CopyNavMesh(serverPath,
-                Path.Combine(Application.dataPath, "Resources", "NavData", "navmesh.bytes"));
-
             AssetDatabase.Refresh();
             AssetDatabase.ImportAsset(GetClientNavDataAssetPath());
-            AssetDatabase.ImportAsset("Assets/Resources/NavData/navmesh.bytes");
             MakeAddressable(GetClientNavDataAssetPath());
 
             Debug.Log("[NavMeshExporter] 服务端导航数据: " + serverPath);

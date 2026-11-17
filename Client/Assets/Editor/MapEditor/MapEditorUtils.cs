@@ -8,7 +8,7 @@ namespace MapEditor
 {
     /// <summary>
     /// 地图编辑器共用的场景结构、网格和测量工具。
-    /// 当前节点结构：场景根节点 DataEditor，下面挂 Building、Decorate、Resource、Obstacle。
+    /// 当前节点结构：场景根节点 DataEditor，下面挂 Building、Decorate、Resource、Obstacle、BuildableArea。
     /// 同时兼容旧版本的 Scene/DataRoot、Scene/DataEditor 等布局，定位时自动迁移。
     /// </summary>
     public static class MapEditorUtils
@@ -20,6 +20,7 @@ namespace MapEditor
         public const string DecorateRootName = "Decorate";
         public const string ResourceRootName = "Resource";
         public const string ObstacleRootName = "Obstacle";
+        public const string BuildableAreaRootName = "BuildableArea";
 
         private static readonly string[] CategoryRootNames =
         {
@@ -27,6 +28,7 @@ namespace MapEditor
             DecorateRootName,
             ResourceRootName,
             ObstacleRootName,
+            BuildableAreaRootName,
         };
 
         /// <summary>
@@ -49,7 +51,7 @@ namespace MapEditor
         }
 
         /// <summary>
-        /// 查找/创建 DataEditor 根节点，并保证 Building、Decorate、Resource、Obstacle 是它的子节点。
+        /// 查找/创建 DataEditor 根节点，并保证 Building、Decorate、Resource、Obstacle、BuildableArea 是它的子节点。
         /// create=false 时只查找，不修改场景。
         /// </summary>
         public static Transform EnsureHierarchy(bool create, out Transform dataRoot)
@@ -96,6 +98,7 @@ namespace MapEditor
             EnsureCategoryRoot(dataEditor.transform, DecorateRootName);
             EnsureCategoryRoot(dataEditor.transform, ResourceRootName);
             EnsureCategoryRoot(dataEditor.transform, ObstacleRootName);
+            EnsureCategoryRoot(dataEditor.transform, BuildableAreaRootName);
 
             DeleteLegacySceneRoot(scene, dataEditor);
 
@@ -278,6 +281,7 @@ namespace MapEditor
                 case MapEntityCategory.Decorate: return DecorateRootName;
                 case MapEntityCategory.Resource: return ResourceRootName;
                 case MapEntityCategory.Obstacle: return ObstacleRootName;
+                case MapEntityCategory.BuildableArea: return BuildableAreaRootName;
                 default: return null;
             }
         }

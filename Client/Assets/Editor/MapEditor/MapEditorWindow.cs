@@ -24,7 +24,7 @@ namespace MapEditor
     {
         private const string MenuPath = "Tools/Map Editor";
 
-        private static readonly string[] CategoryNames = { "建筑物", "装饰物", "采集资源", "障碍物" };
+        private static readonly string[] CategoryNames = { "建筑物", "装饰物", "采集资源", "障碍物", "可建造区域" };
 
         private sealed class Choice
         {
@@ -45,11 +45,16 @@ namespace MapEditor
         private float _cellSize = 1f;
         private bool _snapSelected = true;
 
+        /// <summary>可建造区域拖拽绘制中的起点（世界坐标）。</summary>
+        private bool _areaDragging;
+        private Vector3 _areaDragStart;
+
         private bool _exportAll = true;
         private bool _exportBuilding = true;
         private bool _exportDecorate = true;
         private bool _exportResource = true;
         private bool _exportObstacle = true;
+        private bool _exportBuildableArea = true;
 
         /// <summary>导出目标：客户端（ScriptableObject）与服务端（二进制），可多选，默认全选。</summary>
         private bool _exportClient = true;
@@ -188,6 +193,7 @@ namespace MapEditor
                 _exportDecorate = newExportAll;
                 _exportResource = newExportAll;
                 _exportObstacle = newExportAll;
+                _exportBuildableArea = newExportAll;
             }
 
             EditorGUILayout.BeginHorizontal();
@@ -195,9 +201,11 @@ namespace MapEditor
             _exportDecorate = EditorGUILayout.ToggleLeft("Decorate", _exportDecorate);
             _exportResource = EditorGUILayout.ToggleLeft("Resource", _exportResource);
             _exportObstacle = EditorGUILayout.ToggleLeft("Obstacle", _exportObstacle);
+            _exportBuildableArea = EditorGUILayout.ToggleLeft("BuildableArea", _exportBuildableArea);
             EditorGUILayout.EndHorizontal();
 
-            _exportAll = _exportBuilding && _exportDecorate && _exportResource && _exportObstacle;
+            _exportAll = _exportBuilding && _exportDecorate && _exportResource && _exportObstacle &&
+                         _exportBuildableArea;
 
             EditorGUILayout.BeginHorizontal();
             _exportClient = EditorGUILayout.ToggleLeft("客户端", _exportClient);
@@ -225,7 +233,8 @@ namespace MapEditor
 
             EditorGUILayout.HelpBox(
                 $"{(_lastExport.Client ? "客户端" : "")}{(_lastExport.Client && _lastExport.Server ? "+" : "")}{(_lastExport.Server ? "服务端" : "")}  " +
-                $"建筑 {_lastExport.BuildingCount}，装饰 {_lastExport.DecorateCount}，资源 {_lastExport.ResourceCount}，障碍 {_lastExport.ObstacleCount}",
+                $"建筑 {_lastExport.BuildingCount}，装饰 {_lastExport.DecorateCount}，资源 {_lastExport.ResourceCount}，" +
+                $"障碍 {_lastExport.ObstacleCount}，可建造区域 {_lastExport.BuildableAreaCount}",
                 _lastExport.Success ? MessageType.Info : MessageType.Error);
 
             for (int i = 0; i < _lastExport.Errors.Count && i < 10; i++)
@@ -242,7 +251,7 @@ namespace MapEditor
         private void DrawSceneToolsSection()
         {
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("场景资产整理", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("场景资源整理", EditorStyles.boldLabel);
 
             bool hasSceneInfo = SceneAssetOrganizer.TryGetCurrentSceneInfo(out var sceneInfo);
             if (hasSceneInfo && sceneInfo.IsValid)
@@ -250,11 +259,15 @@ namespace MapEditor
                 EditorGUILayout.HelpBox(
                     $"场景: {sceneInfo.SceneName}\n" +
                     $"源目录: {sceneInfo.SourceFolder}\n" +
-                    $"（{sceneInfo.ChunkNames.Count} 块地形，{sceneInfo.Textures.Count} 张贴图，{sceneInfo.Materials.Count} 个材质）\n" +
-                    $"输出到: {sceneInfo.ChunkRoot}",
+                    $"（{sceneInfo.ChunkNames.Count} 块地形，{sceneInfo.Meshes.Count} 个 Mesh，" +
+                    $"{sceneInfo.Materials.Count} 个材质，{sceneInfo.Textures.Count} 张贴图，" +
+                    $"{sceneInfo.Shaders.Count} 个 Shader）\n" +
+                    $"地块输出: {sceneInfo.ChunkRoot}/<块名>.prefab\n" +
+                    $"Mesh/材质/贴图: Assets/Arts/Map/{sceneInfo.SceneName}/\n" +
+                    $"Shader 输出: {sceneInfo.ShaderRoot}",
                     MessageType.Info);
 
-                if (GUILayout.Button("整理当前场景资产"))
+                if (GUILayout.Button("整理场景文件到对应目录", GUILayout.Height(30f)))
                     SceneAssetOrganizer.OrganizeCurrentScene();
             }
             else
@@ -265,7 +278,8 @@ namespace MapEditor
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("NavMesh", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("导出目标", NavMeshExporter.GetServerNavDataPath());
+            EditorGUILayout.LabelField("服务端目标", NavMeshExporter.GetServerNavDataPath());
+            EditorGUILayout.LabelField("客户端目标", NavMeshExporter.GetClientNavDataAssetPath());
 
             var navSurfaces = Object.FindObjectsOfType<NavMeshSurface>();
             bool baking = false;
@@ -291,11 +305,15 @@ namespace MapEditor
                 if (GUILayout.Button("导出 NavMesh (.rnav)"))
                 {
                     if (EditorUtility.DisplayDialog("导出 NavMesh",
-                            "将覆盖服务端读取的导航数据:\n" + NavMeshExporter.GetServerNavDataPath(),
+                            "将覆盖以下导航数据:\n" +
+                            "服务端: " + NavMeshExporter.GetServerNavDataPath() + "\n" +
+                            "客户端: " + NavMeshExporter.GetClientNavDataAssetPath(),
                             "导出", "取消"))
                     {
-                        if (NavMeshExporter.ExportToServerNavData())
-                            Debug.Log("[MapEditor] NavMesh 已导出到 " + NavMeshExporter.GetServerNavDataPath());
+                        if (NavMeshExporter.ExportNavMesh())
+                            Debug.Log("[MapEditor] NavMesh 已导出:\n" +
+                                      "服务端 " + NavMeshExporter.GetServerNavDataPath() + "\n" +
+                                      "客户端 " + NavMeshExporter.GetClientNavDataAssetPath());
                     }
                 }
             }
@@ -394,7 +412,12 @@ namespace MapEditor
         {
             _choices.Clear();
 
-            if (!_configError)
+            if (_tab == (int)MapEntityCategory.BuildableArea)
+            {
+                // 可建造区域不关联配置表，列表里只放一个用于进入拖拽绘制的条目。
+                AddBuildableAreaChoice();
+            }
+            else if (!_configError)
             {
                 if (_tab == (int)MapEntityCategory.Building && _buildingTable != null)
                 {
@@ -454,6 +477,18 @@ namespace MapEditor
             });
         }
 
+        private void AddBuildableAreaChoice()
+        {
+            _choices.Add(new Choice
+            {
+                Id = 0,
+                Name = "可建造区域（拖拽绘制绿色矩形）",
+                AssetId = 0,
+                AssetPath = null,
+                Info = "不关联配置表；导出矩形的 Pos / Size / RotationY",
+            });
+        }
+
         private void AddDecorationChoice(AssetPathCfg config)
         {
             if (config == null)
@@ -510,7 +545,7 @@ namespace MapEditor
 
         private MapEntityCategory GetCategory()
         {
-            return (MapEntityCategory)Mathf.Clamp(_tab, 0, 3);
+            return (MapEntityCategory)Mathf.Clamp(_tab, 0, (int)MapEntityCategory.BuildableArea);
         }
 
         private void EnsureNodes()
@@ -518,7 +553,7 @@ namespace MapEditor
             MapEditorUtils.EnsureHierarchy(true, out _);
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
             SceneView.RepaintAll();
-            Debug.Log("[MapEditor] DataEditor/Building、Decorate、Resource、Obstacle 节点已就绪");
+            Debug.Log("[MapEditor] DataEditor/Building、Decorate、Resource、Obstacle、BuildableArea 节点已就绪");
         }
 
         /// <summary>
@@ -558,6 +593,8 @@ namespace MapEditor
                 modules |= MapExportModule.Resource;
             if (_exportObstacle)
                 modules |= MapExportModule.Obstacle;
+            if (_exportBuildableArea)
+                modules |= MapExportModule.BuildableArea;
             return modules;
         }
 
@@ -580,6 +617,14 @@ namespace MapEditor
             if (choice == null)
             {
                 DestroyGhost();
+                return;
+            }
+
+            // 可建造区域没有 prefab，使用「按下 → 拖拽 → 松开」画矩形。
+            if (GetCategory() == MapEntityCategory.BuildableArea)
+            {
+                DestroyGhost();
+                HandleBuildableAreaDraw();
                 return;
             }
 
@@ -627,6 +672,127 @@ namespace MapEditor
                 currentEvent.Use();
                 Repaint();
             }
+        }
+
+        // ---------------------------------------------------------------- 可建造区域绘制
+
+        /// <summary>
+        /// 可建造区域的 Scene 绘制：左键按下确定一个角，拖动预览绿色矩形，松开提交。
+        /// 单击（没有拖出面积）会以点击点为中心放一块默认 10×10 的区域。
+        /// </summary>
+        private void HandleBuildableAreaDraw()
+        {
+            var currentEvent = Event.current;
+
+            if (currentEvent.type == EventType.Layout)
+                HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+
+            if (!TryGetGroundPoint(currentEvent.mousePosition, out Vector3 point))
+                return;
+
+            Vector3 snapped = _useGrid ? MapEditorUtils.Snap(point, _cellSize) : point;
+
+            if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0 && !currentEvent.alt)
+            {
+                _areaDragging = true;
+                _areaDragStart = snapped;
+                currentEvent.Use();
+                return;
+            }
+
+            if (_areaDragging && (currentEvent.type == EventType.MouseDrag ||
+                                  (currentEvent.type == EventType.MouseUp && currentEvent.button == 0)))
+            {
+                DrawBuildableAreaPreview(_areaDragStart, snapped);
+                SceneView.RepaintAll();
+
+                if (currentEvent.type == EventType.MouseUp)
+                {
+                    CreateBuildableArea(_areaDragStart, snapped);
+                    _areaDragging = false;
+                    currentEvent.Use();
+                }
+
+                return;
+            }
+
+            if (currentEvent.type == EventType.KeyDown && currentEvent.keyCode == KeyCode.Escape)
+            {
+                _areaDragging = false;
+                _placementEnabled = false;
+                currentEvent.Use();
+                Repaint();
+            }
+        }
+
+        private static void DrawBuildableAreaPreview(Vector3 start, Vector3 end)
+        {
+            float y = Mathf.Max(start.y, end.y) + 0.05f;
+            var corners = new[]
+            {
+                new Vector3(Mathf.Min(start.x, end.x), y, Mathf.Min(start.z, end.z)),
+                new Vector3(Mathf.Min(start.x, end.x), y, Mathf.Max(start.z, end.z)),
+                new Vector3(Mathf.Max(start.x, end.x), y, Mathf.Max(start.z, end.z)),
+                new Vector3(Mathf.Max(start.x, end.x), y, Mathf.Min(start.z, end.z)),
+            };
+
+            Handles.DrawSolidRectangleWithOutline(corners,
+                new Color(0.2f, 1f, 0.35f, 0.25f),
+                new Color(0.2f, 1f, 0.35f, 1f));
+        }
+
+        private void CreateBuildableArea(Vector3 start, Vector3 end)
+        {
+            const float minSize = 0.5f;
+
+            float width = Mathf.Abs(start.x - end.x);
+            float depth = Mathf.Abs(start.z - end.z);
+
+            bool isClick = width < minSize && depth < minSize;
+            if (isClick)
+            {
+                width = 10f;
+                depth = 10f;
+            }
+            else if (width < minSize || depth < minSize)
+            {
+                return;
+            }
+
+            Vector3 center = isClick
+                ? start
+                : new Vector3(
+                    (start.x + end.x) * 0.5f,
+                    Mathf.Min(start.y, end.y),
+                    (start.z + end.z) * 0.5f);
+
+            MapEditorUtils.EnsureHierarchy(true, out var dataRoot);
+            var categoryRoot = MapEditorUtils.GetCategoryRoot(dataRoot, MapEntityCategory.BuildableArea);
+            if (categoryRoot == null)
+            {
+                Debug.LogError("[MapEditor] 放置失败，BuildableArea 分类目录不存在");
+                return;
+            }
+
+            var go = new GameObject("BuildableArea");
+            Undo.RegisterCreatedObjectUndo(go, "Create Buildable Area");
+            go.transform.SetParent(categoryRoot, false);
+            go.transform.position = center;
+            go.transform.rotation = Quaternion.identity;
+
+            var marker = Undo.AddComponent<BuildableAreaMarker>(go);
+            marker.size = new Vector2(width, depth);
+
+            var info = Undo.AddComponent<MapEntityInfo>(go);
+            info.Category = MapEntityCategory.BuildableArea;
+            info.ConfigId = 0;
+            info.AssetId = 0;
+            info.InstanceId = System.Guid.NewGuid().ToString("N");
+
+            EditorUtility.SetDirty(go);
+            Selection.activeGameObject = go;
+            EditorSceneManager.MarkSceneDirty(go.scene);
+            SceneView.RepaintAll();
         }
 
         private bool TryGetGroundPoint(Vector2 screenPosition, out Vector3 point)

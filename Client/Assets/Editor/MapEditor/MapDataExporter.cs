@@ -18,7 +18,8 @@ namespace MapEditor
         Decorate = 2,
         Resource = 4,
         Obstacle = 8,
-        All = Building | Decorate | Resource | Obstacle,
+        BuildableArea = 16,
+        All = Building | Decorate | Resource | Obstacle | BuildableArea,
     }
 
     public sealed class MapExportResult
@@ -32,6 +33,7 @@ namespace MapEditor
         public int DecorateCount;
         public int ResourceCount;
         public int ObstacleCount;
+        public int BuildableAreaCount;
 
         public readonly List<string> Errors = new List<string>();
         public readonly List<string> Warnings = new List<string>();
@@ -122,6 +124,12 @@ namespace MapEditor
                 }
             }
 
+            // 可建造区域没有配置表、也没有 prefab，只导出矩形的 Pos/Size/RotationY，
+            // 运行时用它生成内城的建造格子与绿色区域。
+            var buildableAreas = HasModule(modules, MapExportModule.BuildableArea)
+                ? CollectBuildableAreas(dataRoot, result)
+                : new List<MapItemData>();
+
             if (result.Errors.Count > 0)
                 return result;
 
@@ -148,6 +156,9 @@ namespace MapEditor
 
                     if (HasModule(modules, MapExportModule.Obstacle))
                         WriteModule<ObstacleData>(folder, "ObstacleData", obstacles);
+
+                    if (HasModule(modules, MapExportModule.BuildableArea))
+                        WriteModule<BuildableAreaData>(folder, "BuildableAreaData", buildableAreas);
                 }
 
                 if (exportServer)
@@ -163,6 +174,9 @@ namespace MapEditor
 
                     if (HasModule(modules, MapExportModule.Obstacle))
                         WriteBinary(serverFolder, "ObstacleData.bytes", obstacles);
+
+                    if (HasModule(modules, MapExportModule.BuildableArea))
+                        WriteBinary(serverFolder, "BuildableAreaData.bytes", buildableAreas);
                 }
             }
             catch (System.Exception ex)
@@ -192,6 +206,10 @@ namespace MapEditor
                 if (HasModule(modules, MapExportModule.Obstacle))
                     MakeAddressable($"{folder}/ObstacleData.asset", "MapData",
                         $"{folder}/ObstacleData.asset", result);
+
+                if (HasModule(modules, MapExportModule.BuildableArea))
+                    MakeAddressable($"{folder}/BuildableAreaData.asset", "MapData",
+                        $"{folder}/BuildableAreaData.asset", result);
             }
 
             AssetDatabase.SaveAssets();
@@ -201,6 +219,7 @@ namespace MapEditor
             result.DecorateCount = decorates.Count;
             result.ResourceCount = resources.Count;
             result.ObstacleCount = obstacles.Count;
+            result.BuildableAreaCount = buildableAreas.Count;
             result.Success = true;
 
             string target = exportClient && exportServer
@@ -211,7 +230,8 @@ namespace MapEditor
                 : exportClient ? folder : serverFolder;
 
             Debug.Log($"[MapEditor] 导出完成({target}) -> {output} " +
-                      $"建筑={buildings.Count} 装饰={decorates.Count} 资源={resources.Count} 障碍={obstacles.Count}");
+                      $"建筑={buildings.Count} 装饰={decorates.Count} 资源={resources.Count} " +
+                      $"障碍={obstacles.Count} 可建造区域={buildableAreas.Count}");
             return result;
         }
 
@@ -340,6 +360,68 @@ namespace MapEditor
                     Id = exportId,
                     Pos = new Vector2(child.position.x, child.position.z),
                     Size = size,
+                    RotationY = Mathf.Repeat(child.eulerAngles.y, 360f),
+                });
+            }
+
+            return items;
+        }
+
+        /// <summary>
+        /// 可建造区域：不经过配置表和 prefab，直接从 <see cref="BuildableAreaMarker"/> 取矩形尺寸，
+        /// 从 Transform 取中心位置和绕 Y 旋转。导出条目的 Id 固定为 0。
+        /// </summary>
+        private static List<MapItemData> CollectBuildableAreas(Transform dataRoot, MapExportResult result)
+        {
+            var items = new List<MapItemData>();
+
+            var root = MapEditorUtils.GetCategoryRoot(dataRoot, MapEntityCategory.BuildableArea);
+            if (root == null)
+            {
+                result.Warnings.Add($"找不到分类目录: {MapEditorUtils.GetCategoryRootName(MapEntityCategory.BuildableArea)}");
+                return items;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                var child = root.GetChild(i);
+                var marker = child.GetComponent<BuildableAreaMarker>();
+                if (marker == null)
+                {
+                    result.Warnings.Add($"跳过没有 BuildableAreaMarker 的对象: {child.name}");
+                    continue;
+                }
+
+                // 可建造区域也使用稳定的 InstanceId，方便服务端/客户端以后按区域存建筑数据。
+                var info = child.GetComponent<MapEntityInfo>();
+                if (info == null)
+                {
+                    info = Undo.AddComponent<MapEntityInfo>(child.gameObject);
+                    info.Category = MapEntityCategory.BuildableArea;
+                    info.ConfigId = 0;
+                }
+
+                string instanceId = info.InstanceId;
+                if (string.IsNullOrEmpty(instanceId))
+                {
+                    instanceId = System.Guid.NewGuid().ToString("N");
+                    Undo.RecordObject(info, "Assign Buildable Area Instance Id");
+                    info.InstanceId = instanceId;
+                    EditorUtility.SetDirty(info);
+                }
+
+                if (!result.InstanceIds.Add(instanceId))
+                {
+                    result.Errors.Add($"{child.name} 的 InstanceId 重复: {instanceId}");
+                    continue;
+                }
+
+                items.Add(new MapItemData
+                {
+                    InstanceId = instanceId,
+                    Id = 0,
+                    Pos = new Vector2(child.position.x, child.position.z),
+                    Size = marker.NormalizedSize(),
                     RotationY = Mathf.Repeat(child.eulerAngles.y, 360f),
                 });
             }

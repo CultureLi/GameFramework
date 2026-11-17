@@ -26,6 +26,7 @@ namespace GameMain
         private GateInfoPanel _gatePanel;
         private readonly Dictionary<int, LevelGate> _gates = new Dictionary<int, LevelGate>();
         private LocalPathfindingService _localPathfinding;
+        private string _activeMapName;
 
         public LocalPathfindingService LocalPathfinding => _localPathfinding;
 
@@ -53,7 +54,8 @@ namespace GameMain
             }
             else
             {
-                _localPathfinding = LocalPathfindingService.Create(ResolveMapName());
+                _activeMapName = ResolveMapName();
+                _localPathfinding = LocalPathfindingService.Create(_activeMapName);
             }
 
             LevelGate.GateStateRequested += OnGateStateRequested;
@@ -268,14 +270,54 @@ namespace GameMain
             FW.NetMgr.SendMsg(new GateClaimReq { InstanceId = instanceId });
         }
 
+        /// <summary>
+        /// Main 场景切换地图区域（Midgard / OpenWorld）时由 MapDataMgr 调用。
+        /// 单机模式换一份对应区域的导航数据，并把玩家挪到新地图的出生点；
+        /// 联机模式的服务器地图是固定的，只切换表现。
+        /// </summary>
+        public void OnMapAreaChanged(string areaName)
+        {
+            if (string.IsNullOrEmpty(areaName))
+                return;
+
+            if (!IsSinglePlayer)
+            {
+                Debug.LogWarning($"[Pathfinding] 联机模式服务器地图固定，区域切换 {areaName} 只影响表现");
+                return;
+            }
+
+            // MapDataMgr 初始化时默认区域就是 Midgard，这里不必重复加载同一份导航数据。
+            if (_activeMapName == areaName && _localPathfinding != null)
+                return;
+
+            var previous = _localPathfinding;
+            _localPathfinding = LocalPathfindingService.Create(areaName);
+            previous?.Dispose();
+            _activeMapName = areaName;
+
+            if (_localPathfinding != null && _player != null)
+                _player.Teleport(_localPathfinding.SpawnPoint);
+
+            Debug.Log($"[Pathfinding] 已切换到区域导航数据: {areaName}");
+        }
+
         private static string ResolveMapName()
         {
+            // 优先取当前激活的 MapArea；两个区域节点都挂在 Main 场景里，不能靠 FindObjectOfType 猜。
+            var areas = Object.FindObjectsOfType<MapArea>(true);
+            for (int i = 0; i < areas.Length; i++)
+            {
+                if (areas[i] != null && areas[i].gameObject.activeInHierarchy &&
+                    !string.IsNullOrEmpty(areas[i].AreaName))
+                    return areas[i].AreaName;
+            }
+
             var streaming = Object.FindObjectOfType<WorldChunkStreaming>();
             if (streaming != null && !string.IsNullOrEmpty(streaming.sceneName))
                 return streaming.sceneName;
 
             var scene = SceneManager.GetActiveScene();
-            return string.IsNullOrEmpty(scene.name) ? "OpenWorld" : scene.name;
+            return string.IsNullOrEmpty(scene.name) ? MapArea.OpenWorldName : scene.name;
         }
 
         private void CreateLocalPlayer()
